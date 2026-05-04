@@ -62,26 +62,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Derive affected args
-        id: affected
+      - name: Derive nx command
+        id: nx
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
+            echo "cmd=run-many" >> "$GITHUB_OUTPUT"
             echo "args=--all" >> "$GITHUB_OUTPUT"
           else
+            echo "cmd=affected" >> "$GITHUB_OUTPUT"
             echo "args=--base=origin/main --head=HEAD" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Lint
-        run: pnpm exec nx affected --target=lint --parallel=3 ${{ steps.affected.outputs.args }}
+        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} --target=lint --parallel=3 ${{ steps.nx.outputs.args }}
 
       - name: TypeCheck
-        run: pnpm exec nx affected --target=typecheck ${{ steps.affected.outputs.args }}
+        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} --target=typecheck ${{ steps.nx.outputs.args }}
 
       - name: Test
-        run: pnpm exec nx affected --target=test --parallel=3 ${{ steps.affected.outputs.args }}
+        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} --target=test --parallel=3 ${{ steps.nx.outputs.args }}
         env:
           POSTGRES_PASSWORD: ci-password
           REDIS_PASSWORD: ''
 
       - name: Build
-        run: pnpm exec nx affected --target=build ${{ steps.affected.outputs.args }}
+        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} --target=build ${{ steps.nx.outputs.args }}
