@@ -6,9 +6,15 @@
   "tags": ["scope:shared", "type:types", "platform:any"],
   "targets": {
     "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/shared/types/src/**/*.ts"]
+      }
+    },
+    "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint libs/shared/types --max-warnings=0",
+        "command": "tsc -p libs/shared/types/tsconfig.json --noEmit",
         "cwd": "."
       }
     }

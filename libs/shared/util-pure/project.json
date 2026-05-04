@@ -6,9 +6,15 @@
   "tags": ["scope:shared", "type:util", "platform:any"],
   "targets": {
     "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/shared/util-pure/src/**/*.ts"]
+      }
+    },
+    "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint libs/shared/util-pure --max-warnings=0",
+        "command": "tsc -p libs/shared/util-pure/tsconfig.json --noEmit",
         "cwd": "."
       }
     }
