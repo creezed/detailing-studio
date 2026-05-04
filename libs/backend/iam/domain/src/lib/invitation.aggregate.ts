@@ -67,9 +67,7 @@ export class Invitation extends AggregateRoot<InvitationId> {
   static issue(props: IssueInvitationProps): Invitation {
     const expiresAt =
       props.expiresAt ??
-      DateTime.from(
-        new Date(props.now.toDate().getTime() + DEFAULT_INVITATION_HOURS * 60 * 60 * 1000),
-      );
+      DateTime.from(props.now.toDate().getTime() + DEFAULT_INVITATION_HOURS * 60 * 60 * 1000);
 
     const invitation = new Invitation(
       InvitationId.generate(props.idGen),

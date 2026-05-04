@@ -87,6 +87,20 @@ export const InvitationId = {
   },
 };
 
+export type OtpRequestId = Brand<string, 'OtpRequestId'>;
+export const OtpRequestId = {
+  from(value: string): OtpRequestId {
+    return fromUuid<'OtpRequestId'>(value);
+  },
+};
+
+export type SessionId = Brand<string, 'SessionId'>;
+export const SessionId = {
+  from(value: string): SessionId {
+    return fromUuid<'SessionId'>(value);
+  },
+};
+
 export type OutboxEventId = Brand<string, 'OutboxEventId'>;
 export const OutboxEventId = {
   from(value: string): OutboxEventId {

@@ -108,6 +108,15 @@ describe('Invitation', () => {
     }).toThrow(InvitationAlreadyAcceptedError);
   });
 
+  it('accept revoked invitation throws InvitationAlreadyAcceptedError', () => {
+    const invitation = pendingInvitation();
+    invitation.revoke(UserId.from(ISSUER_ID), LATER);
+
+    expect(() => {
+      invitation.accept('secret-token', LATER);
+    }).toThrow(InvitationAlreadyAcceptedError);
+  });
+
   it('revoke transitions PENDING to REVOKED', () => {
     const invitation = pendingInvitation();
     invitation.pullDomainEvents();
@@ -153,6 +162,17 @@ describe('Invitation', () => {
     invitation.markExpired(LATER);
 
     expect(invitation.toSnapshot().status).toBe(InvitationStatus.PENDING);
+    expect(invitation.pullDomainEvents()).toEqual([]);
+  });
+
+  it('markExpired does nothing for accepted invitation', () => {
+    const invitation = pendingInvitation();
+    invitation.accept('secret-token', LATER);
+    invitation.pullDomainEvents();
+
+    invitation.markExpired(MUCH_LATER);
+
+    expect(invitation.toSnapshot().status).toBe(InvitationStatus.ACCEPTED);
     expect(invitation.pullDomainEvents()).toEqual([]);
   });
 
