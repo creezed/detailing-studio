@@ -1,0 +1,172 @@
+---
+trigger: model_decision
+description: Правила для тестов — unit/integration/e2e, покрытие, билдеры.
+globs: ["**/*.spec.ts", "**/*.e2e.ts", "**/*.test.ts"]
+---
+
+# Тестирование — правила
+
+## Пирамида
+
+- **70%** unit на `domain/` (Jest, без БД).
+- **20%** integration на `application/` (Jest + Testcontainers с реальной PG/Redis).
+- **10%** e2e на критические пути MVP (Playwright).
+
+## Domain unit-тесты
+
+**Где:** рядом с тестируемым агрегатом — `*.aggregate.spec.ts`.
+
+```ts
+describe('WorkOrder', () => {
+  describe('close', () => {
+    it('throws if no before photos', () => {
+      const wo = WorkOrderTestBuilder.create().withPhotosBefore([]).build();
+      expect(() => wo.close(now())).toThrow(MissingBeforePhotoError);
+    });
+
+    it('throws if any line has |deviation| > 15% without reason', () => {
+      const wo = WorkOrderTestBuilder.create().closeable().build();
+      wo.addConsumption({ skuId: aSkuId(), actualAmount: 100, normAmount: 50 });
+      expect(() => wo.close(now())).toThrow(DeviationReasonRequiredError);
+    });
+
+    it('emits WorkOrderClosed event with consumption summary', () => {
+      const wo = WorkOrderTestBuilder.create().closeable().build();
+      wo.close(now());
+      const events = wo.pullDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(WorkOrderClosed);
+    });
+
+    it('changes status to CLOSED', () => {
+      const wo = WorkOrderTestBuilder.create().closeable().build();
+      wo.close(now());
+      expect(wo.toSnapshot().status).toBe('CLOSED');
+    });
+  });
+});
+```
+
+**Правила:**
+- **Никаких моков.** Domain-агрегат не зависит от внешнего мира.
+- Один тест ≤ 1 мс.
+- `arrange / act / assert` явно разделены.
+- Используй **тестовые билдеры** для подготовки агрегатов:
+
+```ts
+export class WorkOrderTestBuilder {
+  private props: WorkOrderProps = defaults();
+
+  static create(): WorkOrderTestBuilder { return new WorkOrderTestBuilder(); }
+
+  withId(id: WorkOrderId): this { this.props.id = id; return this; }
+  withPhotosBefore(photos: PhotoRef[]): this { this.props.photosBefore = photos; return this; }
+  withStatus(status: WorkOrderStatus): this { this.props.status = status; return this; }
+  closeable(): this {
+    this.props.photosBefore = [aPhotoRef()];
+    this.props.photosAfter = [aPhotoRef()];
+    this.props.actualConsumption = [aConsumptionLine()];
+    return this;
+  }
+
+  build(): WorkOrder { return WorkOrder.restore(this.props); }
+}
+```
+
+## Application integration-тесты
+
+**Где:** `application/<command-or-query>/<name>.handler.integration.spec.ts`.
+
+```ts
+describe('CloseWorkOrderHandler (integration)', () => {
+  let app: INestApplicationContext;
+  let handler: CloseWorkOrderHandler;
+  let em: EntityManager;
+
+  beforeAll(async () => {
+    app = await TestModuleBuilder.create()
+      .withDatabase('postgres')
+      .withRedis()
+      .withModule(WorkOrderInfrastructureModule)
+      .build();
+    handler = app.get(CloseWorkOrderHandler);
+    em = app.get(EntityManager);
+  });
+
+  afterEach(async () => { await truncateAllTables(em); });
+  afterAll(async () => { await app.close(); });
+
+  it('closes work order and writes WorkOrderClosed to outbox', async () => {
+    // Arrange
+    const wo = await seedWorkOrder(em, { closeable: true });
+
+    // Act
+    await handler.execute(new CloseWorkOrderCommand({ workOrderId: wo.id, actorId: anUserId() }));
+
+    // Assert
+    const stored = await em.findOne(WorkOrderSchema, { id: wo.id });
+    expect(stored?.status).toBe('CLOSED');
+
+    const outbox = await em.find(OutboxEventSchema, { aggregateId: wo.id });
+    expect(outbox).toContainEqual(expect.objectContaining({ eventType: 'WorkOrderClosed' }));
+  });
+});
+```
+
+**Правила:**
+- Поднимается реальная PG через Testcontainers (либо разово в setup-script).
+- Внешние адаптеры (SMS, Telegram, ЮKassa, MinIO) — мокаются через `useValue`.
+- Тестируется handler **целиком**: команда → агрегат → save → outbox.
+- Каждый тест чистит БД.
+
+## E2E тесты (Playwright)
+
+**Где:** `apps/<app>-e2e/src/**/*.spec.ts`.
+
+```ts
+test('client books appointment online', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Записаться' }).click();
+  await page.getByRole('button', { name: 'Полировка' }).click();
+  await page.getByRole('button', { name: 'Далее' }).click();
+  // выбор слота
+  await page.locator('[data-test=slot-button]').first().click();
+  // ...
+  await expect(page.getByText('Запись подтверждена')).toBeVisible();
+});
+```
+
+**Критические сценарии MVP** (см. engineering.md § 13.4):
+1. Клиент записывается онлайн.
+2. Менеджер создаёт приход материалов.
+3. Мастер выполняет наряд (фото до/после, расход, закрытие).
+4. Клиент отменяет запись.
+5. Владелец смотрит отчёт.
+
+## Покрытие
+
+- Domain ≥ **85%**. Меньше — PR не пройдёт.
+- Application ≥ **75%**.
+- Infrastructure ≥ **60%** (через integration).
+- Coverage report — артефакт CI.
+
+## Тестовые данные
+
+- Seed-скрипт `apps/backend/api/src/seed.ts` создаёт демо-окружение.
+- В тестах **не используй prod-seed**. Используй фабрики/билдеры:
+
+```ts
+// libs/backend/shared/testing/src/lib/factories.ts
+export const aSkuId = (): SkuId => SkuId.from('00000000-0000-0000-0000-000000000001');
+export const aClientId = (): ClientId => ClientId.from('00000000-0000-0000-0000-000000000002');
+export const aPhotoRef = (overrides?: Partial<PhotoRef>): PhotoRef => ({ /* defaults */ });
+```
+
+## Запрещено
+
+- Тесты с `setTimeout` / `wait(...)`. Только детерминистичные ожидания.
+- Тесты, требующие интернет (SMS, Telegram). Только моки.
+- Снапшот-тесты для бизнес-логики (только для UI снапшотов компонентов).
+- `it.skip(...)` без issue/TODO.
+- Зависимость одного теста от другого (state leak между тестами).
+- `expect(x).toBeTruthy()` — слабый assertion. Используй конкретные.

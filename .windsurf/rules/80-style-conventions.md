@@ -1,0 +1,113 @@
+---
+trigger: always_on
+description: Стилевые правила, именование, имя файлов, commits.
+globs:
+---
+
+# Стилевые правила
+
+## TypeScript
+
+- **Strict mode** во всём проекте: `strict: true`, `noUncheckedIndexedAccess: true`, `noImplicitOverride: true`.
+- **Никакого `any`.** Если без него никак — `unknown` + явный `narrowing`.
+- **Никакого `as Type`** для обхода типов. Только для интеропа с runtime-проверкой через тайпгард.
+- **Никаких non-null assertion `!`** (кроме явно безопасных мест с комментарием).
+- Предпочитай `readonly` поля и `readonly` массивы, где возможно.
+- `interface` для структур данных и контрактов; `type` для unions, mapped types, conditional types.
+
+## Файлы и именование
+
+| Сущность | Соглашение |
+|----------|-----------|
+| Файл с одним классом/интерфейсом | `kebab-case.<role>.ts`: `work-order.aggregate.ts`, `close-work-order.handler.ts` |
+| Имя класса | `PascalCase`: `WorkOrder`, `CloseWorkOrderHandler` |
+| Интерфейсы (контракты) | `IPascalCase`: `IWorkOrderRepository`, `IPhotoStoragePort` |
+| Типы (структуры) | `PascalCase`: `WorkOrderSnapshot`, `MoneyDto` |
+| Enum | `PascalCase`: `WorkOrderStatus`. Значения — `SCREAMING_SNAKE`: `WorkOrderStatus.IN_PROGRESS` |
+| Константы | `SCREAMING_SNAKE_CASE` |
+| Переменные, методы | `camelCase` |
+| Приватные поля | `_camelCase` (префикс подчёркивание) |
+| Тесты | `*.spec.ts` (unit/integration), `*.e2e.ts` (e2e) |
+
+## Имена доменных понятий
+
+**Точно совпадают с глоссарием** (`docs/product.md` § 2):
+
+- `Appointment` (запись) — не `Booking`, `Reservation`.
+- `WorkOrder` (наряд) — не `Order`, `Job`.
+- `Sku` (карточка номенклатуры) — не `Item`, `Product`, `Material`.
+- `Stock` (остаток) — не `Inventory` (Inventory — контекст).
+- `Batch` (партия) — не `Lot`, `Parcel`.
+- `Branch` (филиал) — не `Location`, `Office`.
+- `Bay` (рабочий пост) — не `Slot`.
+- `Master` — пользователь-исполнитель.
+- `Owner`, `Manager`, `Master`, `Client` — роли (точно эти слова).
+
+## Импорты
+
+- Группировка: 1) стандартная библиотека / Node, 2) внешние пакеты, 3) внутренние пути (`@det/*`), 4) относительные.
+- Между группами — пустая строка.
+- Сортировка внутри группы — алфавитная.
+- ESLint автоматизирует: `import/order`.
+
+```ts
+import { Injectable } from '@nestjs/common';
+
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { EntityManager } from '@mikro-orm/core';
+
+import { Clock, CLOCK } from '@det/backend/shared/ddd';
+import { CloseWorkOrderCommand } from './close-work-order.command';
+
+import { WorkOrderRepositoryToken } from '../../domain/tokens';
+import { IWorkOrderRepository } from '../../domain/work-order.repository';
+```
+
+## Комментарии
+
+- Не пиши «коммент о diff» (`// added field foo`, `// previously this did X`). Пиши о коде, а не о правке.
+- Не комментируй очевидное (`// constructor`).
+- Документируй только нетривиальные инварианты, обоснования, ссылки на ADR.
+- JSDoc — только для публичных API (контроллеры, ports, экспортируемые функции в `libs/shared/` и `libs/{backend,frontend}/shared/`).
+
+## Commits (Conventional Commits)
+
+```
+feat(scheduling): US-E5-01 create appointment from manager
+fix(inventory): correct FEFO selection when batch expires today
+refactor(work-order): extract closing-validator to domain service
+test(crm): cover client anonymization invariants
+docs(engineering): add ADR-016 for soft-delete strategy
+chore(deps): bump mikro-orm to 6.4.1
+ci(github): cache pnpm store across workflows
+```
+
+**Правила:**
+- Заголовок ≤ 80 символов.
+- Тип: `feat | fix | refactor | test | docs | chore | ci | perf | style | build`.
+- Скоуп: имя контекста (`scheduling`, `inventory`, ...) или общий (`api`, `admin`, `client`, `master`, `infra`).
+- Тело — опционально, объясняет «почему», не «что».
+- Ссылка на FR/US — обязательна для `feat` и `fix`.
+
+## Документация
+
+- Все публичные API (контроллеры) документированы Swagger.
+- Все нетривиальные решения — ADR в `docs/adr/`.
+- Изменение спецификации (`product.md`/`engineering.md`) — в том же PR, что и код.
+
+## Git
+
+- Никаких `--force` push в `main`/`develop`.
+- `--force-with-lease` допустим **только** на своих feature-ветках.
+- `git rebase` на чужих ветках — запрещён.
+- Коммиты не содержат секретов (.env, .pem, .pfx, .p12).
+- Не коммить артефакты сборки (`dist/`, `node_modules/`, `coverage/`, `.cache/`).
+
+## Запреты на runtime-уровне
+
+- `console.log`, `console.warn`, `console.error` — **запрещены** в коммитах. Только Pino.
+- `process.env.X` — только в `apps/backend/api/src/config/*.ts`. Везде остальное — через `ConfigService`.
+- `Math.random()` — только через `IdGenerator` или `RandomService` port.
+- `new Date()` в domain — только через `Clock` port.
+- Глобальные мутабельные переменные — запрещены.
+- `eval`, `Function(...)` — запрещены.

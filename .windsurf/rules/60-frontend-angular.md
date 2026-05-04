@@ -1,0 +1,204 @@
+---
+trigger: model_decision
+description: Правила для Angular-фронтенда — signals, standalone, Taiga UI + Tailwind.
+globs: ["apps/frontend/**/*.ts", "apps/frontend/**/*.html", "libs/frontend/**/*.ts", "libs/shared/**/*.ts"]
+---
+
+# Frontend (Angular) — правила
+
+## Standalone компоненты
+
+- Все компоненты, директивы, пайпы — `standalone: true`.
+- **Запрещено** создавать NgModule (кроме root в `bootstrapApplication`).
+
+```ts
+@Component({
+  standalone: true,
+  selector: 'det-active-orders-page',
+  imports: [
+    CommonModule,
+    RouterModule,
+    TuiButtonModule,
+    TuiTableModule,
+    OrderRowComponent,
+  ],
+  templateUrl: './active-orders-page.component.html',
+  styleUrl: './active-orders-page.component.scss',
+})
+export class ActiveOrdersPageComponent {
+  protected readonly store = inject(ActiveOrdersStore);
+  protected readonly router = inject(Router);
+
+  ngOnInit(): void { void this.store.load(); }
+
+  protected open(id: string): void {
+    void this.router.navigate(['/work-order', id]);
+  }
+}
+```
+
+**Правила:**
+- `inject()` вместо constructor injection (где возможно).
+- Поля компонента — `protected readonly` (для использования в шаблоне) или `private`.
+- Никаких прямых вызовов API из компонента — только через store.
+
+## State — Signals + сервисы
+
+- **Запрещено:** NgRx (любой), TanStack Query, Akita, ngxs.
+- Один store на feature: `<feature>.store.ts`, `@Injectable({ providedIn: 'root' | 'any' })`.
+- Внутри: `signal()`, `computed()`, `effect()`, `resource()`.
+
+```ts
+@Injectable({ providedIn: 'root' })
+export class ActiveOrdersStore {
+  private readonly api = inject(WorkOrderApi);
+
+  readonly orders = signal<WorkOrderListItem[]>([]);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+
+  readonly inProgress = computed(() => this.orders().filter(o => o.status === 'IN_PROGRESS'));
+  readonly count = computed(() => this.orders().length);
+
+  async load(): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const items = await firstValueFrom(this.api.listMyActive());
+      this.orders.set(items);
+    } catch (e) {
+      this.error.set(extractMessage(e));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  optimisticUpdateStatus(id: string, status: WorkOrderStatus): void {
+    this.orders.update(list => list.map(o => o.id === id ? { ...o, status } : o));
+  }
+}
+```
+
+Для серверного состояния с автоматическим refresh — `resource()`:
+
+```ts
+const params = signal<AvailabilityParams | null>(null);
+
+const availability = resource({
+  request: () => params(),
+  loader: async ({ request, abortSignal }) => {
+    if (!request) return [];
+    return inject(SchedulingApi).getAvailability(request, { signal: abortSignal });
+  },
+});
+```
+
+## HTTP
+
+- API-клиент в `libs/frontend/<ctx>/data-access/<ctx>.api.ts`. Типы request/response импорты из `@det/shared/contracts` (сгенерированы из BE).
+- Используется `inject(HttpClient)` через DI.
+- Базовый URL — DI-токен `API_BASE_URL`.
+- Interceptors глобальные: auth, refresh, error, request-id.
+
+```ts
+@Injectable({ providedIn: 'root' })
+export class WorkOrderApi {
+  private readonly http = inject(HttpClient);
+  private readonly base = inject(API_BASE_URL);
+
+  listMyActive(): Observable<WorkOrderListItem[]> {
+    return this.http.get<WorkOrderListItem[]>(`${this.base}/work-orders/my`);
+  }
+
+  close(id: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/work-orders/${id}/close`, {});
+  }
+}
+```
+
+## Reactive Forms
+
+- **Только** `ReactiveFormsModule`. **Запрещено** `[(ngModel)]` в формах.
+- `FormBuilder.nonNullable` для строгой типизации.
+- Валидаторы — переиспользуемые из `@det/shared/util` (libs/shared/util-pure/validators/).
+
+```ts
+@Component({ /* ... */ imports: [ReactiveFormsModule, TuiInputModule, /* ... */] })
+export class ReceiptFormComponent {
+  private readonly fb = inject(NonNullableFormBuilder);
+
+  protected readonly form = this.fb.group({
+    supplierId: this.fb.control<string>('', { validators: [Validators.required] }),
+    invoiceNumber: this.fb.control<string>(''),
+    invoiceDate: this.fb.control<Date | null>(null),
+    branchId: this.fb.control<string>('', { validators: [Validators.required] }),
+    lines: this.fb.array<FormGroup<ReceiptLineForm>>([], {
+      validators: [minLength(1)],
+    }),
+  });
+}
+```
+
+## Taiga UI + Tailwind
+
+- **Цвета, состояния, типографика — Taiga UI.** Никаких хардкодных цветов в Tailwind.
+- **Layout, spacing, grid — Tailwind.**
+
+```html
+<!-- ✓ хорошо -->
+<section class="flex flex-col gap-6 p-6 md:grid md:grid-cols-3 md:gap-4">
+  <button tuiButton appearance="primary" (click)="save()">Сохранить</button>
+  <button tuiButton appearance="secondary" (click)="cancel()">Отмена</button>
+</section>
+
+<!-- ✗ плохо -->
+<button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Сохранить</button>
+<div style="margin: 16px;">...</div>
+```
+
+## Маршрутизация
+
+- Lazy-loading через `loadChildren`:
+
+```ts
+{
+  path: 'work-orders',
+  loadChildren: () => import('@det/frontend/work-order/feature-active-orders').then(m => m.routes),
+  canActivate: [authGuard, roleGuard(['MASTER', 'MANAGER', 'OWNER'])],
+}
+```
+
+- Каждая `feature-*` экспортирует `routes: Routes`.
+- Guards: `authGuard`, `roleGuard(roles)`, `branchAccessGuard`.
+
+## i18n
+
+- Все строки — через `@ngx-translate/core` или Angular i18n.
+- Ключи в `libs/frontend/shared/i18n/ru.json`.
+
+```html
+<h1>{{ 'workOrder.activeList.title' | translate }}</h1>
+```
+
+## PWA (master, client)
+
+- `apps/<app>/src/manifest.webmanifest` + Service Worker.
+- Master: offline-очередь мутаций через IndexedDB + Background Sync.
+- Client: только read-кэш.
+- Admin: PWA не нужен.
+
+## Запрещено
+
+- `console.log` в коде (только при дебаге, удалять перед PR).
+- `any`, `unknown` без `narrowing`.
+- Жёсткие RxJS-цепочки в компоненте (5+ операторов). Раздели на несколько signals/streams.
+- Прямой вызов HTTP из компонента.
+- Изменение state из шаблона (`(click)="state.foo = bar"`).
+- Шаблон на 200+ строк — раздели на child-компоненты.
+- ChangeDetectionStrategy.Default — везде `OnPush`.
+
+## Тестирование
+
+- Component tests через Jest + `@angular/cdk/testing`.
+- Не тестируем UI-биндинги — тестируем поведение через harness'ы Taiga.
+- E2E — Playwright на критические user stories.

@@ -1,0 +1,36 @@
+---
+trigger: always_on
+description: Общий контекст проекта — стек, архитектурный стиль, контексты. Применяется ко всем файлам.
+globs:
+---
+
+# Detailing Studio — общий контекст
+
+**Продукт.** B2B SaaS веб-приложение для детейлинг-студии: учёт материалов и онлайн-запись клиентов. Три SPA: `admin` (для OWNER/MANAGER), `master` (PWA для мастеров), `client` (PWA для клиентов).
+
+**Стек.**
+- Monorepo: Nx + pnpm workspaces.
+- Frontend: Angular 19 standalone + Signals, Taiga UI, Tailwind, без NgRx/TanStack Query.
+- Backend: NestJS 10 (Fastify), MikroORM, PostgreSQL 16, Redis 7, MinIO, BullMQ.
+- Архитектура: строгий DDD, гексагональная, CQRS-light с in-process domain events + outbox.
+
+**Bounded contexts (8 штук):** `iam`, `catalog`, `inventory`, `crm`, `scheduling`, `work-order`, `notifications`, `billing`.
+
+**Слои в каждом контексте:** `domain/`, `application/`, `infrastructure/`, `interfaces/`.
+
+**Источники правды:**
+- Продуктовая часть: `docs/product.md` (глоссарий, FR, user stories, RBAC, NFR).
+- Инженерная часть: `docs/engineering.md` (C4, агрегаты, CQRS, API, persistence, инфра).
+- Все главные правила: `AGENTS.md` (читай первым).
+
+**Перед написанием кода:**
+1. Прочитай соответствующий FR в `product.md`.
+2. Прочитай раздел в `engineering.md`.
+3. Проверь глоссарий — имена должны совпадать.
+
+**Запрещено без явного разрешения пользователя:**
+- Менять `docs/product.md`, `docs/engineering.md`, `docs/adr/`, `AGENTS.md`, `.cursor/rules/`.
+- Нарушать слоистую архитектуру (см. правила `10-ddd-architecture`).
+- Использовать `any`, `// @ts-ignore`, `console.log`.
+
+**Размер PR:** ≤ 400 LoC. Один PR = один вертикальный срез (одна user story).
