@@ -1,0 +1,70 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": ".",
+    "declaration": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      // Shared platform:any aliases.
+      "@det/shared/contracts": [
+        "libs/shared/contracts/src/index.ts"
+      ],
+      "@det/shared/types": [
+        "libs/shared/types/src/index.ts"
+      ],
+      "@det/shared/util": [
+        "libs/shared/util-pure/src/index.ts"
+      ],
+
+      // Backend platform:node aliases.
+      "@det/backend/shared/ddd": [
+        "libs/backend/shared/ddd/src/index.ts"
+      ],
+      "@det/backend/shared/outbox": [
+        "libs/backend/shared/outbox/src/index.ts"
+      ],
+      "@det/backend/iam/domain": [
+        "libs/backend/iam/domain/src/index.ts"
+      ],
+      "@det/backend/iam/application": [
+        "libs/backend/iam/application/src/index.ts"
+      ],
+      "@det/backend/iam/infrastructure": [
+        "libs/backend/iam/infrastructure/src/index.ts"
+      ],
+      "@det/backend/iam/interfaces": [
+        "libs/backend/iam/interfaces/src/index.ts"
+      ],
+
+      // Frontend platform:angular aliases.
+      "@det/frontend/shared/ui": [
+        "libs/frontend/shared/ui/src/index.ts"
+      ],
+      "@det/frontend/shared/data-access": [
+        "libs/frontend/shared/data-access/src/index.ts"
+      ]
+
+      // Остальное добавится в следующих промптах.
+    },
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2022",
+    "useDefineForClassFields": false
+  }
+}

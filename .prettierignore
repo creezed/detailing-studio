@@ -1,0 +1,7 @@
+.nx/
+coverage/
+dist/
+node_modules/
+out-tsc/
+pnpm-lock.yaml
+tmp/
