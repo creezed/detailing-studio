@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: detailing
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Cache Nx
+        uses: actions/cache@v4
+        with:
+          path: .nx/cache
+          key: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            nx-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Derive affected args
+        id: affected
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "args=--all" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=--base=origin/main --head=HEAD" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Lint
+        run: pnpm exec nx affected --target=lint --parallel=3 ${{ steps.affected.outputs.args }}
+
+      - name: TypeCheck
+        run: pnpm exec nx affected --target=typecheck ${{ steps.affected.outputs.args }}
+
+      - name: Test
+        run: pnpm exec nx affected --target=test --parallel=3 ${{ steps.affected.outputs.args }}
+        env:
+          POSTGRES_PASSWORD: ci-password
+          REDIS_PASSWORD: ''
+
+      - name: Build
+        run: pnpm exec nx affected --target=build ${{ steps.affected.outputs.args }}
