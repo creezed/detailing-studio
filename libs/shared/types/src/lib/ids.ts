@@ -80,6 +80,13 @@ export const BatchId = {
   },
 };
 
+export type InvitationId = Brand<string, 'InvitationId'>;
+export const InvitationId = {
+  from(value: string): InvitationId {
+    return fromUuid<'InvitationId'>(value);
+  },
+};
+
 export type OutboxEventId = Brand<string, 'OutboxEventId'>;
 export const OutboxEventId = {
   from(value: string): OutboxEventId {
