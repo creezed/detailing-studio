@@ -292,6 +292,12 @@ export default tseslint.config(
   {
     files: ['libs/backend/**/*.ts', 'apps/backend/**/*.ts'],
     rules: {
+      '@typescript-eslint/no-extraneous-class': [
+        'error',
+        {
+          allowWithDecorator: true,
+        },
+      ],
       'no-restricted-imports': ['error', backendPlatformRestrictedImports],
     },
   },
