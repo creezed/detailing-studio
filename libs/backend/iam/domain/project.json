@@ -1,0 +1,22 @@
+{
+  "name": "iam-domain",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/iam/domain/src",
+  "projectType": "library",
+  "tags": ["scope:iam", "type:domain", "platform:node"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/backend/iam/domain/src/**/*.ts"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/backend/iam/domain/tsconfig.json --noEmit",
+        "cwd": "."
+      }
+    }
+  }
+}
