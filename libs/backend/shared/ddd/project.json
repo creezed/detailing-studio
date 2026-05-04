@@ -1,0 +1,16 @@
+{
+  "name": "backend-shared-ddd",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/shared/ddd/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:util", "platform:node"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint libs/backend/shared/ddd --max-warnings=0",
+        "cwd": "."
+      }
+    }
+  }
+}

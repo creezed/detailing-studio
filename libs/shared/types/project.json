@@ -1,0 +1,16 @@
+{
+  "name": "shared-types",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/types/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:types", "platform:any"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint libs/shared/types --max-warnings=0",
+        "cwd": "."
+      }
+    }
+  }
+}

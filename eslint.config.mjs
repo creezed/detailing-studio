@@ -236,6 +236,8 @@ export default tseslint.config(
     languageOptions: {
       ecmaVersion: 'latest',
       globals: {
+        module: 'readonly',
+        require: 'readonly',
         URL: 'readonly',
       },
       sourceType: 'module',
