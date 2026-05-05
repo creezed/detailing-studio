@@ -177,11 +177,11 @@ class FakeTokenGenerator implements ITokenGenerator {
 }
 
 class FakeJwtIssuer implements IJwtIssuer {
-  issueAccessToken(payload: JwtPayload): { token: string; expiresIn: number } {
-    return {
+  issueAccessToken(payload: JwtPayload): Promise<{ token: string; expiresIn: number }> {
+    return Promise.resolve({
       expiresIn: 900,
       token: `access:${payload.sub}`,
-    };
+    });
   }
 }
 

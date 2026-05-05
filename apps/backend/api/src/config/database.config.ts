@@ -7,6 +7,6 @@ export interface DatabaseConfig {
 export const databaseConfig = registerAs(
   'database',
   (): DatabaseConfig => ({
-    url: process.env['DATABASE_URL'] ?? 'postgres://detailing:detailing@127.0.0.1:5432/detailing',
+    url: process.env['DATABASE_URL'] ?? 'postgres://detailing:placeholder@127.0.0.1:5432/detailing',
   }),
 );

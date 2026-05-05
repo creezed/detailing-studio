@@ -33,6 +33,27 @@
         "command": "tsc -p apps/backend/api/tsconfig.json --noEmit",
         "cwd": "."
       }
+    },
+    "migration:up": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "set -a; [ ! -f .env ] || . ./.env; set +a; export DATABASE_URL=\"${DATABASE_URL:-postgres://${POSTGRES_USER:-detailing}:${POSTGRES_PASSWORD:-placeholder}@127.0.0.1:${POSTGRES_PORT:-5432}/${DEFAULT_DB:-detailing}}\"; TS_NODE_PROJECT=tsconfig.json pnpm mikro-orm-esm migration:up --config apps/backend/api/src/config/mikro-orm-cli.config.ts",
+        "cwd": "."
+      }
+    },
+    "migration:down": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "set -a; [ ! -f .env ] || . ./.env; set +a; export DATABASE_URL=\"${DATABASE_URL:-postgres://${POSTGRES_USER:-detailing}:${POSTGRES_PASSWORD:-placeholder}@127.0.0.1:${POSTGRES_PORT:-5432}/${DEFAULT_DB:-detailing}}\"; TS_NODE_PROJECT=tsconfig.json pnpm mikro-orm-esm migration:down --config apps/backend/api/src/config/mikro-orm-cli.config.ts",
+        "cwd": "."
+      }
+    },
+    "migration:create": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "set -a; [ ! -f .env ] || . ./.env; set +a; export DATABASE_URL=\"${DATABASE_URL:-postgres://${POSTGRES_USER:-detailing}:${POSTGRES_PASSWORD:-placeholder}@127.0.0.1:${POSTGRES_PORT:-5432}/${DEFAULT_DB:-detailing}}\"; TS_NODE_PROJECT=tsconfig.json pnpm mikro-orm-esm migration:create --config apps/backend/api/src/config/mikro-orm-cli.config.ts",
+        "cwd": "."
+      }
     }
   },
   "tags": ["scope:api", "type:app", "platform:node"]

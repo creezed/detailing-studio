@@ -80,7 +80,7 @@ export class LoginByEmailHandler implements ICommandHandler<LoginByEmailCommand,
 
     await this.sessionRepo.save(session);
 
-    const { token: accessToken, expiresIn } = this.jwtIssuer.issueAccessToken({
+    const { token: accessToken, expiresIn } = await this.jwtIssuer.issueAccessToken({
       branches: [...snapshot.branchIds],
       role: snapshot.role,
       sub: snapshot.id,

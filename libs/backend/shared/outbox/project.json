@@ -1,0 +1,22 @@
+{
+  "name": "backend-shared-outbox",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/shared/outbox/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:infrastructure", "platform:node"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/backend/shared/outbox/src/**/*.ts"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/backend/shared/outbox/tsconfig.json --noEmit",
+        "cwd": "."
+      }
+    }
+  }
+}

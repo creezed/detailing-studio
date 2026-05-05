@@ -87,7 +87,7 @@ export class RefreshTokensHandler
       throw new InvalidCredentialsError();
     }
 
-    const { token: accessToken, expiresIn } = this.jwtIssuer.issueAccessToken({
+    const { token: accessToken, expiresIn } = await this.jwtIssuer.issueAccessToken({
       branches: [...snapshot.branchIds],
       role: snapshot.role,
       sub: snapshot.id,

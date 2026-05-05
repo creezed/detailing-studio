@@ -13,7 +13,7 @@ import { RegisterOwnerHandler } from './commands/register-owner/register-owner.h
 import { RequestOtpHandler } from './commands/request-otp/request-otp.handler';
 import { GetCurrentUserHandler } from './queries/get-current-user/get-current-user.handler';
 
-import type { DynamicModule, Provider } from '@nestjs/common';
+import type { DynamicModule, ModuleMetadata, Provider } from '@nestjs/common';
 
 const COMMAND_HANDLERS = [
   AcceptInvitationHandler,
@@ -35,10 +35,13 @@ const QUERY_HANDLERS = [GetCurrentUserHandler];
   exports: [CqrsModule],
 })
 export class IamApplicationModule {
-  static register(providers: readonly Provider[]): DynamicModule {
+  static register(
+    providers: readonly Provider[],
+    imports: NonNullable<ModuleMetadata['imports']> = [],
+  ): DynamicModule {
     return {
       exports: [CqrsModule],
-      imports: [CqrsModule],
+      imports: [CqrsModule, ...imports],
       module: IamApplicationModule,
       providers: [...providers, ...COMMAND_HANDLERS, ...QUERY_HANDLERS],
     };

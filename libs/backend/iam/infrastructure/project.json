@@ -11,6 +11,14 @@
         "lintFilePatterns": ["libs/backend/iam/infrastructure/src/**/*.ts"]
       }
     },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/iam/infrastructure"],
+      "options": {
+        "jestConfig": "libs/backend/iam/infrastructure/jest.config.ts",
+        "passWithNoTests": false
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
