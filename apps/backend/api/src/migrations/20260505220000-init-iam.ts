@@ -3,14 +3,16 @@ import { Migration } from '@mikro-orm/migrations';
 export class Migration20260505220000 extends Migration {
   override up(): void {
     this.addSql(`create table if not exists "outbox_events" (
-      "id" text not null,
+      "id" uuid not null,
       "aggregate_type" text not null,
-      "aggregate_id" text not null,
+      "aggregate_id" uuid not null,
       "event_type" text not null,
       "payload" jsonb not null,
       "occurred_at" timestamptz not null,
       "published_at" timestamptz null,
-      "attempts" int not null default 0,
+      "retry_count" int not null default 0,
+      "retry_after_at" timestamptz null,
+      "failed_at" timestamptz null,
       "last_error" text null,
       constraint "outbox_events_pkey" primary key ("id")
     );`);

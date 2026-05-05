@@ -1,21 +1,40 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit, type Provider } from '@nestjs/common';
 
 import {
+  CLOCK,
   HASH_FN,
   ID_GENERATOR,
   INVITATION_REPOSITORY,
   IamApplicationModule,
   JWT_ISSUER,
+  OTP_REQUEST_REPOSITORY,
   PASSWORD_HASHER,
   REFRESH_SESSION_REPOSITORY,
   SMS_OTP,
   TOKEN_GENERATOR,
   USER_REPOSITORY,
-  OTP_REQUEST_REPOSITORY,
-  CLOCK,
 } from '@det/backend/iam/application';
-import { OutboxModule } from '@det/backend/shared/outbox';
+import {
+  InvitationAccepted,
+  InvitationExpired,
+  InvitationIssued,
+  InvitationRevoked,
+  OtpRequestFailed,
+  OtpRequestIssued,
+  OtpRequestVerified,
+  RefreshSessionCompromised,
+  RefreshSessionIssued,
+  RefreshSessionRevoked,
+  RefreshSessionRotated,
+  UserActivated,
+  UserArchived,
+  UserBlocked,
+  UserPasswordChanged,
+  UserRegistered,
+  UserUnblocked,
+} from '@det/backend/iam/domain';
+import { EventTypeRegistry, OutboxModule } from '@det/backend/shared/outbox';
 
 import { BcryptPasswordHasherAdapter } from './adapters/bcrypt-password-hasher.adapter';
 import { CryptoIdGeneratorAdapter } from './adapters/crypto-id-generator.adapter';
@@ -32,8 +51,6 @@ import { IamInvitationRepository } from './repositories/iam-invitation.repositor
 import { IamOtpRequestRepository } from './repositories/iam-otp-request.repository';
 import { IamRefreshSessionRepository } from './repositories/iam-refresh-session.repository';
 import { IamUserRepository } from './repositories/iam-user.repository';
-
-import type { Provider } from '@nestjs/common';
 
 const IAM_SCHEMAS = [
   IamUserSchema,
@@ -109,4 +126,28 @@ const INFRASTRUCTURE_PROVIDERS: readonly Provider[] = [
     ]),
   ],
 })
-export class IamInfrastructureModule {}
+export class IamInfrastructureModule implements OnModuleInit {
+  constructor(private readonly eventRegistry: EventTypeRegistry) {}
+
+  onModuleInit(): void {
+    this.eventRegistry.register([
+      { ctor: UserRegistered, eventType: 'UserRegistered' },
+      { ctor: UserPasswordChanged, eventType: 'UserPasswordChanged' },
+      { ctor: UserBlocked, eventType: 'UserBlocked' },
+      { ctor: UserUnblocked, eventType: 'UserUnblocked' },
+      { ctor: UserActivated, eventType: 'UserActivated' },
+      { ctor: UserArchived, eventType: 'UserArchived' },
+      { ctor: InvitationIssued, eventType: 'InvitationIssued' },
+      { ctor: InvitationAccepted, eventType: 'InvitationAccepted' },
+      { ctor: InvitationRevoked, eventType: 'InvitationRevoked' },
+      { ctor: InvitationExpired, eventType: 'InvitationExpired' },
+      { ctor: OtpRequestIssued, eventType: 'OtpRequestIssued' },
+      { ctor: OtpRequestVerified, eventType: 'OtpRequestVerified' },
+      { ctor: OtpRequestFailed, eventType: 'OtpRequestFailed' },
+      { ctor: RefreshSessionIssued, eventType: 'RefreshSessionIssued' },
+      { ctor: RefreshSessionRotated, eventType: 'RefreshSessionRotated' },
+      { ctor: RefreshSessionRevoked, eventType: 'RefreshSessionRevoked' },
+      { ctor: RefreshSessionCompromised, eventType: 'RefreshSessionCompromised' },
+    ]);
+  }
+}

@@ -21,13 +21,15 @@ export class OutboxService {
       em.create(OutboxEventSchema, {
         aggregateId: event.aggregateId,
         aggregateType: event.aggregateType,
-        attempts: 0,
         eventType: event.eventType,
+        failedAt: null,
         id: stableEventUuid(event.eventId),
         lastError: null,
         occurredAt: event.occurredAt,
         payload: event,
         publishedAt: null,
+        retryAfterAt: null,
+        retryCount: 0,
       }),
     );
 
