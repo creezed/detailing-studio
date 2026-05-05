@@ -39,3 +39,38 @@ export class ForbiddenInvitationIssuerError extends Error {
     this.name = 'ForbiddenInvitationIssuerError';
   }
 }
+
+export class InvalidCredentialsError extends Error {
+  constructor() {
+    super('Invalid credentials');
+    this.name = 'InvalidCredentialsError';
+  }
+}
+
+export class RefreshTokenReuseError extends Error {
+  constructor(public readonly sessionId: string) {
+    super(`Refresh token reuse detected for session ${sessionId}`);
+    this.name = 'RefreshTokenReuseError';
+  }
+}
+
+export class OtpNotFoundError extends Error {
+  constructor() {
+    super('OTP request not found or expired');
+    this.name = 'OtpNotFoundError';
+  }
+}
+
+export class SessionNotFoundError extends Error {
+  constructor() {
+    super('Refresh session not found');
+    this.name = 'SessionNotFoundError';
+  }
+}
+
+export class SessionExpiredError extends Error {
+  constructor(public readonly sessionId: string) {
+    super(`Refresh session ${sessionId} has expired`);
+    this.name = 'SessionExpiredError';
+  }
+}

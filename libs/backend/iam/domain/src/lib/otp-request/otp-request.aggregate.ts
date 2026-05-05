@@ -20,6 +20,7 @@ export interface RequestOtpProps {
   readonly phone: PhoneNumber;
   readonly purpose: OtpPurpose;
   readonly codeHash: OtpCodeHash;
+  readonly rawCode: string;
   readonly expiresAt?: DateTime;
   readonly attemptsLeft?: number;
   readonly idGen: IIdGenerator;
@@ -75,7 +76,13 @@ export class OtpRequest extends AggregateRoot<OtpRequestId> {
     );
 
     otpRequest.addEvent(
-      new OtpRequestIssued(otpRequest.id, otpRequest._phone, otpRequest._purpose, props.now),
+      new OtpRequestIssued(
+        otpRequest.id,
+        otpRequest._phone,
+        otpRequest._purpose,
+        props.rawCode,
+        props.now,
+      ),
     );
 
     return otpRequest;

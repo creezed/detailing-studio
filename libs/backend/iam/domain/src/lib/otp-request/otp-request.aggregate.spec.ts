@@ -40,6 +40,7 @@ function pendingOtp(overrides?: { attemptsLeft?: number; expiresAt?: DateTime })
     now: NOW,
     phone: PhoneNumber.from('+79990000001'),
     purpose: OtpPurpose.LOGIN,
+    rawCode: '123456',
   });
 }
 
@@ -60,8 +61,10 @@ describe('OtpRequest', () => {
 
   it('request publishes OtpRequestIssued', () => {
     const otp = pendingOtp();
+    const events = otp.pullDomainEvents();
 
-    expect(otp.pullDomainEvents()[0]).toBeInstanceOf(OtpRequestIssued);
+    expect(events[0]).toBeInstanceOf(OtpRequestIssued);
+    expect(events[0]).toMatchObject({ rawCode: '123456' });
   });
 
   it('request accepts explicit expiresAt and attemptsLeft', () => {

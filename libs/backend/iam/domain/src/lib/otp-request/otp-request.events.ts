@@ -22,6 +22,7 @@ export class OtpRequestIssued extends DomainEvent {
     public readonly otpRequestId: OtpRequestId,
     public readonly phone: PhoneNumber,
     public readonly purpose: OtpPurpose,
+    public readonly rawCode: string,
     public readonly issuedAt: DateTime,
   ) {
     super(otpRequestEventProps(otpRequestId, 'OtpRequestIssued', issuedAt));

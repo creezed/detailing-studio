@@ -1,20 +1,31 @@
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Test } from '@nestjs/testing';
 import { Client } from 'pg';
-import { GenericContainer } from 'testcontainers';
+import { GenericContainer, Wait } from 'testcontainers';
 
 import {
   Email,
-  type IInvitationRepository,
-  type IUserRepository,
   Invitation,
   InvitationId,
   InvitationStatus,
+  OtpRequest,
+  OtpRequestId,
   PasswordHash,
+  RefreshSession,
+  RefreshSessionStatus,
   Role,
+  SessionId,
   User,
   UserId,
   UserStatus,
+} from '@det/backend/iam/domain';
+import type {
+  IInvitationRepository,
+  IOtpRequestRepository,
+  IRefreshSessionRepository,
+  IUserRepository,
+  OtpPurpose,
+  OtpRequestStatus,
 } from '@det/backend/iam/domain';
 import { CLOCK, DateTime, ID_GENERATOR, PhoneNumber } from '@det/backend/shared/ddd';
 import type { DomainEvent, IClock, IIdGenerator } from '@det/backend/shared/ddd';
@@ -24,23 +35,39 @@ import { AcceptInvitationCommand } from '../../commands/accept-invitation/accept
 import { BlockUserCommand } from '../../commands/block-user/block-user.command';
 import { ChangePasswordCommand } from '../../commands/change-password/change-password.command';
 import { IssueInvitationCommand } from '../../commands/issue-invitation/issue-invitation.command';
+import { LoginByEmailCommand } from '../../commands/login-by-email/login-by-email.command';
+import { LoginByPhoneOtpCommand } from '../../commands/login-by-phone-otp/login-by-phone-otp.command';
+import { LogoutCommand } from '../../commands/logout/logout.command';
+import { RefreshTokensCommand } from '../../commands/refresh-tokens/refresh-tokens.command';
 import { RegisterOwnerCommand } from '../../commands/register-owner/register-owner.command';
+import { RequestOtpCommand } from '../../commands/request-otp/request-otp.command';
 import {
   HASH_FN,
   INVITATION_REPOSITORY,
+  JWT_ISSUER,
+  OTP_REQUEST_REPOSITORY,
   PASSWORD_HASHER,
+  REFRESH_SESSION_REPOSITORY,
+  SMS_OTP,
   TOKEN_GENERATOR,
   USER_REPOSITORY,
 } from '../../di/tokens';
 import {
   ForbiddenInvitationIssuerError,
+  InvalidCredentialsError,
   InvalidPasswordError,
+  OtpNotFoundError,
+  RefreshTokenReuseError,
+  SessionNotFoundError,
   UserAlreadyExistsError,
 } from '../../errors/application.errors';
 import { IamApplicationModule } from '../../iam-application.module';
 import { GetCurrentUserQuery } from '../../queries/get-current-user/get-current-user.query';
 
+import type { LoginResponseDto } from '../../dto/login-response/login-response.dto';
+import type { IJwtIssuer, JwtPayload } from '../../ports/jwt-issuer/jwt-issuer.port';
 import type { IPasswordHasher } from '../../ports/password-hasher/password-hasher.port';
+import type { ISmsOtpPort } from '../../ports/sms-otp/sms-otp.port';
 import type { ITokenGenerator } from '../../ports/token-generator/token-generator.port';
 import type { TestingModule } from '@nestjs/testing';
 import type { QueryResultRow } from 'pg';
@@ -123,11 +150,48 @@ class FakePasswordHasher implements IPasswordHasher {
 }
 
 class FakeTokenGenerator implements ITokenGenerator {
+  private _refreshCounter = 0;
+
   generateInvitationToken(): { raw: string; hash: string } {
     return {
       hash: hashToken('invite-token'),
       raw: 'invite-token',
     };
+  }
+
+  generateRefreshToken(): { raw: string; hash: string } {
+    const raw = `refresh-token-${String(this._refreshCounter++)}`;
+
+    return {
+      hash: hashToken(raw),
+      raw,
+    };
+  }
+
+  generateOtpCode(): { raw: string; hash: string } {
+    return {
+      hash: hashToken('123456'),
+      raw: '123456',
+    };
+  }
+}
+
+class FakeJwtIssuer implements IJwtIssuer {
+  issueAccessToken(payload: JwtPayload): { token: string; expiresIn: number } {
+    return {
+      expiresIn: 900,
+      token: `access:${payload.sub}`,
+    };
+  }
+}
+
+class FakeSmsOtpPort implements ISmsOtpPort {
+  readonly sent: Array<{ phone: string; code: string }> = [];
+
+  send(phone: string, code: string): Promise<void> {
+    this.sent.push({ code, phone });
+
+    return Promise.resolve();
   }
 }
 
@@ -345,6 +409,189 @@ async function insertOutboxEvents(client: Client, events: readonly DomainEvent[]
   }
 }
 
+class PostgresOtpRequestRepository implements IOtpRequestRepository {
+  constructor(
+    private readonly client: Client,
+    private readonly hashFn: (value: string) => string,
+  ) {}
+
+  async findById(id: OtpRequestId): Promise<OtpRequest | null> {
+    const result = await this.client.query('select * from iam_otp_requests where id = $1', [id]);
+    const row = result.rows[0];
+
+    return row ? this.toDomain(row) : null;
+  }
+
+  async findPendingByPhoneAndPurpose(
+    phone: PhoneNumber,
+    purpose: OtpPurpose,
+  ): Promise<OtpRequest | null> {
+    const result = await this.client.query(
+      `select * from iam_otp_requests where phone = $1 and purpose = $2 and status = 'PENDING' order by issued_at desc limit 1`,
+      [phone.toString(), purpose],
+    );
+    const row = result.rows[0];
+
+    return row ? this.toDomain(row) : null;
+  }
+
+  async save(otpRequest: OtpRequest): Promise<void> {
+    const snapshot = otpRequest.toSnapshot();
+    const events = otpRequest.pullDomainEvents();
+
+    await this.client.query('begin');
+
+    try {
+      await this.client.query(
+        `insert into iam_otp_requests (id, phone, purpose, code_hash, status, attempts_left, expires_at, issued_at, verified_at)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         on conflict (id) do update set
+           status = excluded.status,
+           attempts_left = excluded.attempts_left,
+           verified_at = excluded.verified_at`,
+        [
+          snapshot.id,
+          snapshot.phone,
+          snapshot.purpose,
+          snapshot.codeHash,
+          snapshot.status,
+          snapshot.attemptsLeft,
+          snapshot.expiresAt,
+          snapshot.issuedAt,
+          snapshot.verifiedAt,
+        ],
+      );
+      await insertOutboxEvents(this.client, events);
+      await this.client.query('commit');
+    } catch (error) {
+      await this.client.query('rollback');
+      throw error;
+    }
+  }
+
+  private toDomain(row: Record<string, unknown>): OtpRequest {
+    const hashFn = this.hashFn;
+
+    return OtpRequest.restore(
+      {
+        attemptsLeft: row['attempts_left'] as number,
+        codeHash: row['code_hash'] as string,
+        expiresAt: (row['expires_at'] as Date).toISOString(),
+        id: row['id'] as string,
+        issuedAt: (row['issued_at'] as Date).toISOString(),
+        phone: row['phone'] as string,
+        purpose: row['purpose'] as OtpPurpose,
+        status: row['status'] as OtpRequestStatus,
+        verifiedAt: row['verified_at'] ? (row['verified_at'] as Date).toISOString() : null,
+      },
+      (rawCode, storedHash) => hashFn(rawCode) === storedHash,
+    );
+  }
+}
+
+class PostgresRefreshSessionRepository implements IRefreshSessionRepository {
+  constructor(private readonly client: Client) {}
+
+  async findById(id: SessionId): Promise<RefreshSession | null> {
+    const result = await this.client.query('select * from iam_refresh_sessions where id = $1', [
+      id,
+    ]);
+    const row = result.rows[0];
+
+    return row ? this.toDomain(row) : null;
+  }
+
+  async findByTokenHash(tokenHash: string): Promise<RefreshSession | null> {
+    const result = await this.client.query(
+      'select * from iam_refresh_sessions where token_hash = $1 and status = $2',
+      [tokenHash, RefreshSessionStatus.ACTIVE],
+    );
+    const row = result.rows[0];
+
+    return row ? this.toDomain(row) : null;
+  }
+
+  async findByRotatedTokenHash(tokenHash: string): Promise<RefreshSession | null> {
+    const result = await this.client.query(
+      `select * from iam_refresh_sessions where $1 = any(rotated_token_hashes) and status = $2`,
+      [tokenHash, RefreshSessionStatus.ACTIVE],
+    );
+    const row = result.rows[0];
+
+    return row ? this.toDomain(row) : null;
+  }
+
+  async listActiveByUserId(userId: UserId): Promise<readonly RefreshSession[]> {
+    const result = await this.client.query(
+      'select * from iam_refresh_sessions where user_id = $1 and status = $2',
+      [userId, RefreshSessionStatus.ACTIVE],
+    );
+
+    return result.rows.map((row: Record<string, unknown>) => this.toDomain(row));
+  }
+
+  async save(session: RefreshSession): Promise<void> {
+    const snapshot = session.toSnapshot();
+    const events = session.pullDomainEvents();
+
+    await this.client.query('begin');
+
+    try {
+      await this.client.query(
+        `insert into iam_refresh_sessions (id, user_id, device_fingerprint, token_hash, rotated_token_hashes, rotation_counter, status, issued_at, expires_at, last_rotated_at, revoked_at, revoked_by, compromised_at)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         on conflict (id) do update set
+           token_hash = excluded.token_hash,
+           rotated_token_hashes = excluded.rotated_token_hashes,
+           rotation_counter = excluded.rotation_counter,
+           status = excluded.status,
+           last_rotated_at = excluded.last_rotated_at,
+           revoked_at = excluded.revoked_at,
+           revoked_by = excluded.revoked_by,
+           compromised_at = excluded.compromised_at`,
+        [
+          snapshot.id,
+          snapshot.userId,
+          snapshot.deviceFingerprint,
+          snapshot.tokenHash,
+          snapshot.rotatedTokenHashes,
+          snapshot.rotationCounter,
+          snapshot.status,
+          snapshot.issuedAt,
+          snapshot.expiresAt,
+          snapshot.lastRotatedAt,
+          snapshot.revokedAt,
+          snapshot.revokedBy,
+          snapshot.compromisedAt,
+        ],
+      );
+      await insertOutboxEvents(this.client, events);
+      await this.client.query('commit');
+    } catch (error) {
+      await this.client.query('rollback');
+      throw error;
+    }
+  }
+
+  private toDomain(row: Record<string, unknown>): RefreshSession {
+    return RefreshSession.restore({
+      compromisedAt: row['compromised_at'] ? (row['compromised_at'] as Date).toISOString() : null,
+      deviceFingerprint: row['device_fingerprint'] as string,
+      expiresAt: (row['expires_at'] as Date).toISOString(),
+      id: row['id'] as string,
+      issuedAt: (row['issued_at'] as Date).toISOString(),
+      lastRotatedAt: row['last_rotated_at'] ? (row['last_rotated_at'] as Date).toISOString() : null,
+      revokedAt: row['revoked_at'] ? (row['revoked_at'] as Date).toISOString() : null,
+      revokedBy: (row['revoked_by'] as string | null) ?? null,
+      rotatedTokenHashes: row['rotated_token_hashes'] as string[],
+      rotationCounter: row['rotation_counter'] as number,
+      status: row['status'] as RefreshSessionStatus,
+      tokenHash: row['token_hash'] as string,
+      userId: row['user_id'] as string,
+    });
+  }
+}
+
 async function createSchema(client: Client): Promise<void> {
   await client.query(`
     create table if not exists iam_users (
@@ -371,6 +618,34 @@ async function createSchema(client: Client): Promise<void> {
       invited_by uuid not null
     );
 
+    create table if not exists iam_otp_requests (
+      id uuid primary key,
+      phone text not null,
+      purpose text not null,
+      code_hash text not null,
+      status text not null,
+      attempts_left int not null,
+      expires_at timestamptz not null,
+      issued_at timestamptz not null,
+      verified_at timestamptz
+    );
+
+    create table if not exists iam_refresh_sessions (
+      id uuid primary key,
+      user_id uuid not null,
+      device_fingerprint text not null,
+      token_hash text not null,
+      rotated_token_hashes text[] not null default '{}',
+      rotation_counter int not null default 0,
+      status text not null,
+      issued_at timestamptz not null,
+      expires_at timestamptz not null,
+      last_rotated_at timestamptz,
+      revoked_at timestamptz,
+      revoked_by uuid,
+      compromised_at timestamptz
+    );
+
     create table if not exists outbox_events (
       id text primary key,
       aggregate_id text not null,
@@ -383,7 +658,9 @@ async function createSchema(client: Client): Promise<void> {
 }
 
 async function truncateSchema(client: Client): Promise<void> {
-  await client.query('truncate table outbox_events, iam_invitations, iam_users');
+  await client.query(
+    'truncate table outbox_events, iam_refresh_sessions, iam_otp_requests, iam_invitations, iam_users',
+  );
 }
 
 async function outboxEvents(client: Client): Promise<readonly OutboxRow[]> {
@@ -402,6 +679,9 @@ describe('IamApplicationModule integration', () => {
   let moduleRef: TestingModule;
   let userRepo: PostgresUserRepository;
   let invitationRepo: PostgresInvitationRepository;
+  let otpRepo: PostgresOtpRequestRepository;
+  let sessionRepo: PostgresRefreshSessionRepository;
+  let smsOtp: FakeSmsOtpPort;
   let idGen: QueueIdGenerator;
 
   beforeAll(async () => {
@@ -412,6 +692,7 @@ describe('IamApplicationModule integration', () => {
         POSTGRES_USER: 'iam',
       })
       .withExposedPorts(5432)
+      .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
       .start();
 
     client = new Client({
@@ -436,14 +717,21 @@ describe('IamApplicationModule integration', () => {
     idGen = new QueueIdGenerator();
     userRepo = new PostgresUserRepository(client);
     invitationRepo = new PostgresInvitationRepository(client, hashToken);
+    otpRepo = new PostgresOtpRequestRepository(client, hashToken);
+    sessionRepo = new PostgresRefreshSessionRepository(client);
+    smsOtp = new FakeSmsOtpPort();
 
     moduleRef = await Test.createTestingModule({
       imports: [
         IamApplicationModule.register([
           { provide: USER_REPOSITORY, useValue: userRepo },
           { provide: INVITATION_REPOSITORY, useValue: invitationRepo },
+          { provide: OTP_REQUEST_REPOSITORY, useValue: otpRepo },
+          { provide: REFRESH_SESSION_REPOSITORY, useValue: sessionRepo },
           { provide: PASSWORD_HASHER, useClass: FakePasswordHasher },
           { provide: TOKEN_GENERATOR, useClass: FakeTokenGenerator },
+          { provide: JWT_ISSUER, useClass: FakeJwtIssuer },
+          { provide: SMS_OTP, useValue: smsOtp },
           { provide: CLOCK, useValue: new FixedClock(NOW) },
           { provide: ID_GENERATOR, useValue: idGen },
           { provide: HASH_FN, useValue: hashToken },
@@ -643,5 +931,192 @@ describe('IamApplicationModule integration', () => {
 
     const blocked = await userRepo.findById(MANAGER_USER_ID);
     expect(blocked?.toSnapshot().status).toBe(UserStatus.BLOCKED);
+  });
+
+  describe('Auth flows', () => {
+    const SESSION_ID = '66666666-6666-4666-8666-666666666666';
+    const OTP_ID = '77777777-7777-4777-8777-777777777777';
+
+    async function registerActiveOwner(): Promise<void> {
+      idGen.reset([OWNER_ID]);
+      await commandBus.execute(
+        new RegisterOwnerCommand('owner@example.com', '+79991234567', 'secret', 'Owner User'),
+      );
+      await client.query('truncate table outbox_events');
+    }
+
+    it('login by email returns tokens and creates session', async () => {
+      await registerActiveOwner();
+      idGen.reset([SESSION_ID]);
+
+      const result = await commandBus.execute<LoginByEmailCommand, LoginResponseDto>(
+        new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'),
+      );
+
+      expect(result).toMatchObject({
+        accessToken: `access:${OWNER_ID}`,
+        expiresIn: 900,
+        refreshToken: 'refresh-token-0',
+        user: { fullName: 'Owner User', id: OWNER_ID, role: Role.OWNER },
+      });
+
+      const session = await sessionRepo.findById(SessionId.from(SESSION_ID));
+      expect(session).not.toBeNull();
+      expect(session?.toSnapshot()).toMatchObject({
+        deviceFingerprint: 'device-1',
+        status: RefreshSessionStatus.ACTIVE,
+        tokenHash: hashToken('refresh-token-0'),
+        userId: OWNER_ID,
+      });
+    });
+
+    it('login by email rejects wrong password', async () => {
+      await registerActiveOwner();
+
+      await expect(
+        commandBus.execute(new LoginByEmailCommand('owner@example.com', 'wrong', 'device-1')),
+      ).rejects.toBeInstanceOf(InvalidCredentialsError);
+    });
+
+    it('login by email rejects non-existing user', async () => {
+      await expect(
+        commandBus.execute(new LoginByEmailCommand('no@example.com', 'secret', 'device-1')),
+      ).rejects.toBeInstanceOf(InvalidCredentialsError);
+    });
+
+    it('login by email rejects blocked user', async () => {
+      idGen.reset([OWNER_ID, MANAGER_ID]);
+      await commandBus.execute(
+        new RegisterOwnerCommand('owner@example.com', '+79991234567', 'secret', 'Owner User'),
+      );
+      const manager = User.activateFromInvitation({
+        branchIds: [BranchId.from(BRANCH_ID)],
+        email: Email.from('manager@example.com'),
+        fullName: 'Manager User',
+        idGen,
+        now: NOW,
+        passwordHash: PasswordHash.fromHash('hash:secret'),
+        phone: PhoneNumber.from('+79997654321'),
+        role: Role.MANAGER,
+      });
+      manager.pullDomainEvents();
+      await userRepo.save(manager);
+      await commandBus.execute(new BlockUserCommand(MANAGER_USER_ID, OWNER_USER_ID, 'policy'));
+
+      await expect(
+        commandBus.execute(new LoginByEmailCommand('manager@example.com', 'secret', 'device-1')),
+      ).rejects.toBeInstanceOf(InvalidCredentialsError);
+    });
+
+    it('request OTP sends SMS and persists OTP request', async () => {
+      idGen.reset([OTP_ID]);
+
+      await commandBus.execute(new RequestOtpCommand('+79991234567'));
+
+      expect(smsOtp.sent).toHaveLength(1);
+      expect(smsOtp.sent[0]).toMatchObject({ code: '123456', phone: '+79991234567' });
+
+      const otp = await otpRepo.findById(OtpRequestId.from(OTP_ID));
+      expect(otp).not.toBeNull();
+    });
+
+    it('login by phone OTP verifies code and returns tokens', async () => {
+      await registerActiveOwner();
+      idGen.reset([OTP_ID]);
+      await commandBus.execute(new RequestOtpCommand('+79991234567'));
+      await client.query('truncate table outbox_events');
+
+      idGen.reset([SESSION_ID]);
+      const result = await commandBus.execute<LoginByPhoneOtpCommand, LoginResponseDto>(
+        new LoginByPhoneOtpCommand('+79991234567', '123456', 'device-2'),
+      );
+
+      expect(result).toMatchObject({
+        accessToken: `access:${OWNER_ID}`,
+        refreshToken: expect.stringMatching(/^refresh-token-\d+$/),
+        user: { id: OWNER_ID },
+      });
+    });
+
+    it('login by phone OTP rejects wrong code', async () => {
+      await registerActiveOwner();
+      idGen.reset([OTP_ID]);
+      await commandBus.execute(new RequestOtpCommand('+79991234567'));
+
+      await expect(
+        commandBus.execute(new LoginByPhoneOtpCommand('+79991234567', '000000', 'device-2')),
+      ).rejects.toThrow();
+    });
+
+    it('login by phone OTP rejects when no pending OTP exists', async () => {
+      await expect(
+        commandBus.execute(new LoginByPhoneOtpCommand('+79991234567', '123456', 'device-2')),
+      ).rejects.toBeInstanceOf(OtpNotFoundError);
+    });
+
+    it('logout revokes session', async () => {
+      await registerActiveOwner();
+      idGen.reset([SESSION_ID]);
+      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'));
+
+      await commandBus.execute(new LogoutCommand(OWNER_USER_ID, hashToken('refresh-token-0')));
+
+      const session = await sessionRepo.findById(SessionId.from(SESSION_ID));
+      expect(session?.toSnapshot().status).toBe(RefreshSessionStatus.REVOKED);
+    });
+
+    it('logout rejects when session not found', async () => {
+      await expect(
+        commandBus.execute(new LogoutCommand(OWNER_USER_ID, hashToken('nonexistent'))),
+      ).rejects.toBeInstanceOf(SessionNotFoundError);
+    });
+
+    it('refresh tokens rotates session and returns new tokens', async () => {
+      await registerActiveOwner();
+      idGen.reset([SESSION_ID]);
+      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'));
+
+      const result = await commandBus.execute<RefreshTokensCommand, LoginResponseDto>(
+        new RefreshTokensCommand('refresh-token-0', 'device-1'),
+      );
+
+      expect(result.accessToken).toBe(`access:${OWNER_ID}`);
+      expect(result.refreshToken).toBe('refresh-token-1');
+
+      const session = await sessionRepo.findById(SessionId.from(SESSION_ID));
+      const snapshot = session?.toSnapshot();
+      expect(snapshot?.rotationCounter).toBe(1);
+      expect(snapshot?.rotatedTokenHashes).toContain(hashToken('refresh-token-0'));
+    });
+
+    it('refresh tokens detects reuse and marks session compromised', async () => {
+      await registerActiveOwner();
+      idGen.reset([SESSION_ID]);
+      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'));
+
+      await commandBus.execute(new RefreshTokensCommand('refresh-token-0', 'device-1'));
+
+      await expect(
+        commandBus.execute(new RefreshTokensCommand('refresh-token-0', 'device-1')),
+      ).rejects.toBeInstanceOf(RefreshTokenReuseError);
+
+      const session = await sessionRepo.findById(SessionId.from(SESSION_ID));
+      expect(session?.toSnapshot().status).toBe(RefreshSessionStatus.COMPROMISED);
+    });
+
+    it('refresh tokens rejects expired session', async () => {
+      await registerActiveOwner();
+      idGen.reset([SESSION_ID]);
+      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'));
+
+      await client.query(
+        `update iam_refresh_sessions set expires_at = '2020-01-01T00:00:00.000Z' where id = $1`,
+        [SESSION_ID],
+      );
+
+      await expect(
+        commandBus.execute(new RefreshTokensCommand('refresh-token-0', 'device-1')),
+      ).rejects.toThrow();
+    });
   });
 });

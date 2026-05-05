@@ -3,10 +3,13 @@ import {
   BatchId,
   BranchId,
   ClientId,
+  InvitationId,
   InvalidUuidError,
   OrgId,
+  OtpRequestId,
   OutboxEventId,
   ServiceId,
+  SessionId,
   SkuId,
   UserId,
   WorkOrderId,
@@ -25,6 +28,9 @@ describe('branded ID factories', () => {
     expect(SkuId.from(UUID)).toBe(UUID);
     expect(ServiceId.from(UUID)).toBe(UUID);
     expect(BatchId.from(UUID)).toBe(UUID);
+    expect(InvitationId.from(UUID)).toBe(UUID);
+    expect(OtpRequestId.from(UUID)).toBe(UUID);
+    expect(SessionId.from(UUID)).toBe(UUID);
     expect(OutboxEventId.from(UUID)).toBe(UUID);
   });
 
