@@ -14,7 +14,7 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 export interface AuthenticatedUser {
   readonly id: string;
   readonly role: JwtPayload['role'];
-  readonly branches: readonly string[];
+  readonly branchIds: readonly string[];
 }
 
 interface RequestWithAuth {
@@ -50,7 +50,7 @@ export class AuthGuard implements CanActivate {
       const payload = await this.jwtIssuer.verifyAccessToken(token);
 
       request.user = {
-        branches: payload.branches,
+        branchIds: payload.branches,
         id: payload.sub,
         role: payload.role,
       };

@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOkResponse, ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
@@ -16,9 +17,11 @@ import {
   ChangePasswordCommand,
   GetCurrentUserQuery,
   UserId,
+  appSubject,
   type CurrentUserDto,
 } from '@det/backend/iam/application';
 
+import { AbilityGuard, CheckAbility } from './ability.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import {
   BlockUserRequestDto,
@@ -30,6 +33,7 @@ import type { AuthenticatedUser } from '../guards/auth.guard';
 
 @ApiTags('users')
 @ApiBearerAuth()
+@UseGuards(AbilityGuard)
 @Controller('users')
 export class UsersController {
   constructor(
@@ -38,6 +42,9 @@ export class UsersController {
   ) {}
 
   @Get('me')
+  @CheckAbility((ability, context) =>
+    ability.can('read', appSubject('User', { id: context.user.id })),
+  )
   @ApiOkResponse({ type: CurrentUserResponseDto })
   async me(@CurrentUser() user: AuthenticatedUser): Promise<CurrentUserResponseDto> {
     const result = await this.queryBus.execute<GetCurrentUserQuery, CurrentUserDto>(
@@ -48,6 +55,9 @@ export class UsersController {
   }
 
   @Post('me/password')
+  @CheckAbility((ability, context) =>
+    ability.can('update', appSubject('User', { id: context.user.id })),
+  )
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse()
   async changePassword(
@@ -60,6 +70,9 @@ export class UsersController {
   }
 
   @Post(':id/block')
+  @CheckAbility((ability, context) =>
+    ability.can('manage', appSubject('User', { id: context.params['id'] })),
+  )
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse()
   async blockUser(

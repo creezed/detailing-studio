@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 
+import { AbilityFactory } from './abilities/ability.factory';
 import { AcceptInvitationHandler } from './commands/accept-invitation/accept-invitation.handler';
 import { BlockUserHandler } from './commands/block-user/block-user.handler';
 import { ChangePasswordHandler } from './commands/change-password/change-password.handler';
@@ -32,7 +33,8 @@ const QUERY_HANDLERS = [GetCurrentUserHandler];
 
 @Module({
   imports: [CqrsModule],
-  exports: [CqrsModule],
+  providers: [AbilityFactory],
+  exports: [AbilityFactory, CqrsModule],
 })
 export class IamApplicationModule {
   static register(
@@ -40,11 +42,11 @@ export class IamApplicationModule {
     imports: NonNullable<ModuleMetadata['imports']> = [],
   ): DynamicModule {
     return {
-      exports: [CqrsModule, ...providers],
+      exports: [AbilityFactory, CqrsModule, ...providers],
       global: true,
       imports: [CqrsModule, ...imports],
       module: IamApplicationModule,
-      providers: [...providers, ...COMMAND_HANDLERS, ...QUERY_HANDLERS],
+      providers: [AbilityFactory, ...providers, ...COMMAND_HANDLERS, ...QUERY_HANDLERS],
     };
   }
 }
