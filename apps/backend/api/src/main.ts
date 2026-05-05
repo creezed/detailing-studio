@@ -32,11 +32,19 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
+  const allowedOrigins = configService.get<string>('CORS_ORIGINS', 'http://localhost:4200');
+
+  app.enableCors({
+    credentials: true,
+    origin: allowedOrigins.split(',').map((o) => o.trim()),
+  });
+
   if (configService.get<string>('NODE_ENV', 'development') !== 'production') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Detailing Studio API')
       .setDescription('Detailing Studio backend API')
       .setVersion('0.1.0')
+      .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(app, swaggerConfig);
 

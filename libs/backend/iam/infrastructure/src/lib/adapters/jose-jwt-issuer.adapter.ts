@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SignJWT, importPKCS8, type KeyLike } from 'jose';
+import { SignJWT, importPKCS8, jwtVerify, type KeyLike } from 'jose';
 
 import type { IJwtIssuer, JwtPayload } from '@det/backend/iam/application';
 
@@ -64,6 +64,19 @@ export class JoseJwtIssuerAdapter implements IJwtIssuer {
       .sign(key);
 
     return { expiresIn, token };
+  }
+
+  async verifyAccessToken(token: string): Promise<JwtPayload> {
+    const algorithm = this.config.get<string>('auth.jwtAlgorithm') ?? JWT_ALGORITHM_HS512;
+    const key = await this.getSigningKey(algorithm);
+    const { payload } = await jwtVerify(token, key, { algorithms: [algorithm] });
+    const sub = payload.sub ?? '';
+    const role = (Array.isArray(payload['roles']) ? payload['roles'][0] : '') as JwtPayload['role'];
+    const branches: readonly string[] = Array.isArray(payload['branches'])
+      ? (payload['branches'] as string[])
+      : [];
+
+    return { branches, role, sub };
   }
 
   private getSigningKey(algorithm: string): Promise<JwtSigningKey> {

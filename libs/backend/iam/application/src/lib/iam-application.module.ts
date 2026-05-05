@@ -40,7 +40,8 @@ export class IamApplicationModule {
     imports: NonNullable<ModuleMetadata['imports']> = [],
   ): DynamicModule {
     return {
-      exports: [CqrsModule],
+      exports: [CqrsModule, ...providers],
+      global: true,
       imports: [CqrsModule, ...imports],
       module: IamApplicationModule,
       providers: [...providers, ...COMMAND_HANDLERS, ...QUERY_HANDLERS],

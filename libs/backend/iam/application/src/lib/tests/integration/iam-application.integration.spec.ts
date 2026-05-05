@@ -183,6 +183,12 @@ class FakeJwtIssuer implements IJwtIssuer {
       token: `access:${payload.sub}`,
     });
   }
+
+  verifyAccessToken(token: string): Promise<JwtPayload> {
+    const sub = token.replace('access:', '');
+
+    return Promise.resolve({ branches: [], role: 'OWNER' as JwtPayload['role'], sub });
+  }
 }
 
 class FakeSmsOtpPort implements ISmsOtpPort {
@@ -1059,7 +1065,7 @@ describe('IamApplicationModule integration', () => {
       idGen.reset([SESSION_ID]);
       await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'));
 
-      await commandBus.execute(new LogoutCommand(OWNER_USER_ID, hashToken('refresh-token-0')));
+      await commandBus.execute(new LogoutCommand(OWNER_USER_ID, 'refresh-token-0'));
 
       const session = await sessionRepo.findById(SessionId.from(SESSION_ID));
       expect(session?.toSnapshot().status).toBe(RefreshSessionStatus.REVOKED);
@@ -1067,7 +1073,7 @@ describe('IamApplicationModule integration', () => {
 
     it('logout rejects when session not found', async () => {
       await expect(
-        commandBus.execute(new LogoutCommand(OWNER_USER_ID, hashToken('nonexistent'))),
+        commandBus.execute(new LogoutCommand(OWNER_USER_ID, 'nonexistent')),
       ).rejects.toBeInstanceOf(SessionNotFoundError);
     });
 

@@ -54,6 +54,20 @@
         "command": "set -a; [ ! -f .env ] || . ./.env; set +a; export DATABASE_URL=\"${DATABASE_URL:-postgres://${POSTGRES_USER:-detailing}:${POSTGRES_PASSWORD:-placeholder}@127.0.0.1:${POSTGRES_PORT:-5432}/${DEFAULT_DB:-detailing}}\"; TS_NODE_PROJECT=tsconfig.json pnpm mikro-orm-esm migration:create --config apps/backend/api/src/config/mikro-orm-cli.config.ts",
         "cwd": "."
       }
+    },
+    "generate-contracts": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm nx serve api &",
+          "sleep 3",
+          "curl -s http://localhost:3000/api/docs-json -o /tmp/openapi.json",
+          "pnpm openapi-typescript /tmp/openapi.json -o libs/shared/contracts/src/generated/api.ts",
+          "kill %1 2>/dev/null || true"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
     }
   },
   "tags": ["scope:api", "type:app", "platform:node"]

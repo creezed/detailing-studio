@@ -17,6 +17,14 @@
         "command": "tsc -p libs/backend/iam/interfaces/tsconfig.json --noEmit",
         "cwd": "."
       }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/backend/iam/interfaces/jest.config.ts",
+        "passWithNoTests": false
+      }
     }
   }
 }

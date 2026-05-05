@@ -24,13 +24,13 @@ import { HealthController } from '../health/health.controller';
       driver: PostgreSqlDriver,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
+        autoLoadEntities: true,
         clientUrl: configService.getOrThrow<string>('database.url'),
         connect: false,
         discovery: {
           warnWhenNoEntities: false,
         },
         driver: PostgreSqlDriver,
-        entities: [],
       }),
     }),
     IamInfrastructureModule,

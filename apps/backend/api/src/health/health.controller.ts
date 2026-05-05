@@ -1,11 +1,14 @@
 import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
+import { Public } from '@det/backend/iam/interfaces';
+
 interface HealthResponse {
   readonly status: 'ok';
 }
 
 @ApiTags('health')
+@Public()
 @Controller('health')
 export class HealthController {
   @Get()

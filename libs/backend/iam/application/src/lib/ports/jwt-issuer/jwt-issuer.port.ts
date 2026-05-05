@@ -10,4 +10,5 @@ export interface JwtPayload {
 
 export interface IJwtIssuer {
   issueAccessToken(payload: JwtPayload): Promise<{ token: string; expiresIn: number }>;
+  verifyAccessToken(token: string): Promise<JwtPayload>;
 }
