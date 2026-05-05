@@ -2,7 +2,7 @@ import { DomainEvent } from '@det/backend/shared/ddd';
 import type { DateTime } from '@det/backend/shared/ddd';
 
 import type { SessionId } from './session-id';
-import type { UserId } from './user-id';
+import type { UserId } from '../user/user-id';
 
 const REFRESH_SESSION_AGGREGATE_TYPE = 'RefreshSession';
 

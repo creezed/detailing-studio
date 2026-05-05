@@ -1,6 +1,6 @@
 import type { RefreshSession } from './refresh-session.aggregate';
 import type { SessionId } from './session-id';
-import type { UserId } from './user-id';
+import type { UserId } from '../user/user-id';
 
 export interface IRefreshSessionRepository {
   findById(id: SessionId): Promise<RefreshSession | null>;

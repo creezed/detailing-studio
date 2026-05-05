@@ -1,8 +1,7 @@
 import { AggregateRoot, DateTime } from '@det/backend/shared/ddd';
-import type { IIdGenerator } from '@det/backend/shared/ddd';
+import type { IIdGenerator, PhoneNumber } from '@det/backend/shared/ddd';
 import { BranchId } from '@det/shared/types';
 
-import { Email } from './email.value-object';
 import { InvitationId } from './invitation-id';
 import { InvitationStatus } from './invitation-status';
 import { InvitationToken } from './invitation-token.value-object';
@@ -18,9 +17,11 @@ import {
   InvitationIssued,
   InvitationRevoked,
 } from './invitation.events';
-import { UserId } from './user-id';
+import { Email } from '../shared/email.value-object';
+import { UserId } from '../user/user-id';
 
-import type { Role } from './role';
+import type { PasswordHash } from '../shared/password-hash.value-object';
+import type { Role } from '../shared/role';
 
 const DEFAULT_INVITATION_HOURS = 72;
 
@@ -31,6 +32,7 @@ export interface IssueInvitationProps {
   readonly branchIds: readonly BranchId[];
   readonly expiresAt?: DateTime;
   readonly token: InvitationToken;
+  readonly rawToken: string;
   readonly now: DateTime;
   readonly idGen: IIdGenerator;
 }
@@ -44,6 +46,14 @@ export interface InvitationSnapshot {
   readonly status: InvitationStatus;
   readonly expiresAt: string;
   readonly invitedBy: string;
+}
+
+export interface AcceptInvitationProps {
+  readonly rawToken: string;
+  readonly phone: PhoneNumber;
+  readonly passwordHash: PasswordHash;
+  readonly fullName: string;
+  readonly now: DateTime;
 }
 
 export class Invitation extends AggregateRoot<InvitationId> {
@@ -87,6 +97,7 @@ export class Invitation extends AggregateRoot<InvitationId> {
         invitation._role,
         invitation._invitedBy,
         invitation._status,
+        props.rawToken,
         props.now,
       ),
     );
@@ -107,7 +118,7 @@ export class Invitation extends AggregateRoot<InvitationId> {
     );
   }
 
-  accept(rawToken: string, now: DateTime): void {
+  accept(props: AcceptInvitationProps): void {
     if (this._status === InvitationStatus.ACCEPTED) {
       throw new InvitationAlreadyAcceptedError(this.id);
     }
@@ -116,16 +127,18 @@ export class Invitation extends AggregateRoot<InvitationId> {
       throw new InvitationAlreadyAcceptedError(this.id);
     }
 
-    if (this.isExpired(now)) {
+    if (this.isExpired(props.now)) {
       throw new InvitationExpiredError(this.id);
     }
 
-    if (!this._token.verify(rawToken)) {
+    if (!this._token.verify(props.rawToken)) {
       throw new InvalidInvitationTokenError();
     }
 
     this._status = InvitationStatus.ACCEPTED;
-    this.addEvent(new InvitationAccepted(this.id, now));
+    this.addEvent(
+      new InvitationAccepted(this.id, props.phone, props.passwordHash, props.fullName, props.now),
+    );
   }
 
   revoke(by: UserId, now: DateTime): void {

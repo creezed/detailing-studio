@@ -2,9 +2,6 @@ import { DateTime, PhoneNumber } from '@det/backend/shared/ddd';
 import type { IIdGenerator } from '@det/backend/shared/ddd';
 import { BranchId } from '@det/shared/types';
 
-import { Email } from './email.value-object';
-import { PasswordHash } from './password-hash.value-object';
-import { Role } from './role';
 import { UserId } from './user-id';
 import { UserStatus } from './user-status';
 import { User } from './user.aggregate';
@@ -22,6 +19,9 @@ import {
   UserRegistered,
   UserUnblocked,
 } from './user.events';
+import { Email } from '../shared/email.value-object';
+import { PasswordHash } from '../shared/password-hash.value-object';
+import { Role } from '../shared/role';
 
 class FixedIdGenerator implements IIdGenerator {
   private currentIndex = 0;

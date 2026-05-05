@@ -1,8 +1,7 @@
-import { DateTime } from '@det/backend/shared/ddd';
+import { DateTime, PhoneNumber } from '@det/backend/shared/ddd';
 import type { IIdGenerator } from '@det/backend/shared/ddd';
 import { BranchId } from '@det/shared/types';
 
-import { Email } from './email.value-object';
 import { InvitationStatus } from './invitation-status';
 import { InvitationToken } from './invitation-token.value-object';
 import { Invitation } from './invitation.aggregate';
@@ -12,14 +11,11 @@ import {
   InvitationExpiredError,
   InvalidInvitationTokenError,
 } from './invitation.errors';
-import {
-  InvitationAccepted,
-  InvitationExpired,
-  InvitationIssued,
-  InvitationRevoked,
-} from './invitation.events';
-import { Role } from './role';
-import { UserId } from './user-id';
+import { InvitationExpired, InvitationIssued, InvitationRevoked } from './invitation.events';
+import { Email } from '../shared/email.value-object';
+import { PasswordHash } from '../shared/password-hash.value-object';
+import { Role } from '../shared/role';
+import { UserId } from '../user/user-id';
 
 const INVITATION_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const ISSUER_ID = '11111111-1111-4111-8111-111111111111';
@@ -27,6 +23,7 @@ const BRANCH_ID = '33333333-3333-4333-8333-333333333333';
 const NOW = DateTime.from('2026-01-01T10:00:00.000Z');
 const LATER = DateTime.from('2026-01-02T10:00:00.000Z');
 const MUCH_LATER = DateTime.from('2026-01-05T10:00:00.000Z');
+const PHONE = '+79991234567';
 
 function fixedIdGen(): IIdGenerator {
   return {
@@ -46,9 +43,20 @@ function pendingInvitation(overrides?: { expiresAt?: DateTime }): Invitation {
     idGen: fixedIdGen(),
     issuerId: UserId.from(ISSUER_ID),
     now: NOW,
+    rawToken: 'secret-token',
     role: Role.MASTER,
     token: InvitationToken.fromRaw('secret-token', sha256),
   });
+}
+
+function acceptProps(overrides?: { rawToken?: string; now?: DateTime }) {
+  return {
+    fullName: 'Master User',
+    now: overrides?.now ?? LATER,
+    passwordHash: PasswordHash.fromHash('hash-password'),
+    phone: PhoneNumber.from(PHONE),
+    rawToken: overrides?.rawToken ?? 'secret-token',
+  };
 }
 
 describe('Invitation', () => {
@@ -77,17 +85,21 @@ describe('Invitation', () => {
     const invitation = pendingInvitation();
     invitation.pullDomainEvents();
 
-    invitation.accept('secret-token', LATER);
+    invitation.accept(acceptProps());
 
     expect(invitation.toSnapshot().status).toBe(InvitationStatus.ACCEPTED);
-    expect(invitation.pullDomainEvents()[0]).toBeInstanceOf(InvitationAccepted);
+    expect(invitation.pullDomainEvents()[0]).toMatchObject({
+      eventType: 'InvitationAccepted',
+      fullName: 'Master User',
+      phone: PhoneNumber.from(PHONE),
+    });
   });
 
   it('accept with wrong token throws InvalidInvitationTokenError', () => {
     const invitation = pendingInvitation();
 
     expect(() => {
-      invitation.accept('wrong-token', LATER);
+      invitation.accept(acceptProps({ rawToken: 'wrong-token' }));
     }).toThrow(InvalidInvitationTokenError);
   });
 
@@ -95,16 +107,16 @@ describe('Invitation', () => {
     const invitation = pendingInvitation();
 
     expect(() => {
-      invitation.accept('secret-token', MUCH_LATER);
+      invitation.accept(acceptProps({ now: MUCH_LATER }));
     }).toThrow(InvitationExpiredError);
   });
 
   it('accept already accepted throws InvitationAlreadyAcceptedError', () => {
     const invitation = pendingInvitation();
-    invitation.accept('secret-token', LATER);
+    invitation.accept(acceptProps());
 
     expect(() => {
-      invitation.accept('secret-token', LATER);
+      invitation.accept(acceptProps());
     }).toThrow(InvitationAlreadyAcceptedError);
   });
 
@@ -113,7 +125,7 @@ describe('Invitation', () => {
     invitation.revoke(UserId.from(ISSUER_ID), LATER);
 
     expect(() => {
-      invitation.accept('secret-token', LATER);
+      invitation.accept(acceptProps());
     }).toThrow(InvitationAlreadyAcceptedError);
   });
 
@@ -129,7 +141,7 @@ describe('Invitation', () => {
 
   it('revoke already accepted throws InvitationAlreadyAcceptedError', () => {
     const invitation = pendingInvitation();
-    invitation.accept('secret-token', LATER);
+    invitation.accept(acceptProps());
 
     expect(() => {
       invitation.revoke(UserId.from(ISSUER_ID), LATER);
@@ -167,7 +179,7 @@ describe('Invitation', () => {
 
   it('markExpired does nothing for accepted invitation', () => {
     const invitation = pendingInvitation();
-    invitation.accept('secret-token', LATER);
+    invitation.accept(acceptProps());
     invitation.pullDomainEvents();
 
     invitation.markExpired(MUCH_LATER);

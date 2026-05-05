@@ -1,11 +1,12 @@
 import { DomainEvent } from '@det/backend/shared/ddd';
-import type { DateTime } from '@det/backend/shared/ddd';
+import type { DateTime, PhoneNumber } from '@det/backend/shared/ddd';
 
-import type { Email } from './email.value-object';
 import type { InvitationId } from './invitation-id';
 import type { InvitationStatus } from './invitation-status';
-import type { Role } from './role';
-import type { UserId } from './user-id';
+import type { Email } from '../shared/email.value-object';
+import type { PasswordHash } from '../shared/password-hash.value-object';
+import type { Role } from '../shared/role';
+import type { UserId } from '../user/user-id';
 
 const INVITATION_AGGREGATE_TYPE = 'Invitation';
 
@@ -27,6 +28,7 @@ export class InvitationIssued extends DomainEvent {
     public readonly role: Role,
     public readonly invitedBy: UserId,
     public readonly status: InvitationStatus,
+    public readonly rawToken: string,
     public readonly issuedAt: DateTime,
   ) {
     super(invitationEventProps(invitationId, 'InvitationIssued', issuedAt));
@@ -38,6 +40,9 @@ export class InvitationAccepted extends DomainEvent {
 
   constructor(
     public readonly invitationId: InvitationId,
+    public readonly phone: PhoneNumber,
+    public readonly passwordHash: PasswordHash,
+    public readonly fullName: string,
     public readonly acceptedAt: DateTime,
   ) {
     super(invitationEventProps(invitationId, 'InvitationAccepted', acceptedAt));

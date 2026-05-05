@@ -40,9 +40,18 @@ export class UserNotActiveError extends DomainError {
 
 export class CannotArchiveLastOwnerError extends DomainError {
   readonly code = 'CANNOT_ARCHIVE_LAST_OWNER';
-  readonly httpStatus = 422;
+  readonly httpStatus = 409;
 
   constructor(public readonly userId: UserId) {
     super(`Cannot archive last owner ${userId}`);
+  }
+}
+
+export class CannotBlockLastOwnerError extends DomainError {
+  readonly code = 'CANNOT_BLOCK_LAST_OWNER';
+  readonly httpStatus = 409;
+
+  constructor(public readonly userId: UserId) {
+    super(`Cannot block last owner ${userId}`);
   }
 }

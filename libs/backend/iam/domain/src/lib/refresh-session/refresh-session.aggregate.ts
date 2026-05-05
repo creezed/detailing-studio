@@ -9,7 +9,7 @@ import {
   RefreshSessionRotated,
 } from './refresh-session.events';
 import { SessionId } from './session-id';
-import { UserId } from './user-id';
+import { UserId } from '../user/user-id';
 
 const DEFAULT_REFRESH_SESSION_DAYS = 30;
 

@@ -1,10 +1,10 @@
 import { DomainEvent } from '@det/backend/shared/ddd';
 import type { DateTime } from '@det/backend/shared/ddd';
 
-import type { Email } from './email.value-object';
-import type { Role } from './role';
 import type { UserId } from './user-id';
 import type { UserStatus } from './user-status';
+import type { Email } from '../shared/email.value-object';
+import type { Role } from '../shared/role';
 
 const USER_AGGREGATE_TYPE = 'User';
 

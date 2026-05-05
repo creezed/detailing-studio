@@ -1,6 +1,6 @@
 import { ValueObject } from '@det/backend/shared/ddd';
 
-import { InvalidEmailError } from './user.errors';
+import { InvalidEmailError } from '../user/user.errors';
 
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 

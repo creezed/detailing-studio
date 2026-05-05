@@ -1,1 +1,1 @@
-export * from './lib/iam-infrastructure.module';
+export * from './lib/module/iam-infrastructure.module';

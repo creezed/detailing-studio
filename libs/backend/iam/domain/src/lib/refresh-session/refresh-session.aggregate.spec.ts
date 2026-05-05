@@ -10,7 +10,7 @@ import {
   RefreshSessionRotated,
 } from './refresh-session.events';
 import { SessionId } from './session-id';
-import { UserId } from './user-id';
+import { UserId } from '../user/user-id';
 
 const SESSION_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const USER_ID = '11111111-1111-4111-8111-111111111111';

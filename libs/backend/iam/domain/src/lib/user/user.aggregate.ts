@@ -2,13 +2,11 @@ import { AggregateRoot, DateTime, PhoneNumber } from '@det/backend/shared/ddd';
 import type { IIdGenerator } from '@det/backend/shared/ddd';
 import { BranchId } from '@det/shared/types';
 
-import { Email } from './email.value-object';
-import { PasswordHash } from './password-hash.value-object';
-import { Role } from './role';
 import { UserId } from './user-id';
 import { UserStatus } from './user-status';
 import {
   CannotArchiveLastOwnerError,
+  CannotBlockLastOwnerError,
   InvalidPhoneError,
   UserAlreadyBlockedError,
   UserNotActiveError,
@@ -21,6 +19,9 @@ import {
   UserRegistered,
   UserUnblocked,
 } from './user.events';
+import { Email } from '../shared/email.value-object';
+import { PasswordHash } from '../shared/password-hash.value-object';
+import { Role } from '../shared/role';
 
 export interface RegisterUserProps {
   readonly email: Email | string;
@@ -140,6 +141,14 @@ export class User extends AggregateRoot<UserId> {
   }
 
   block(by: UserId, reason: string, now: DateTime): void {
+    this.blockWithOwnerGuard(by, reason, now, false);
+  }
+
+  blockWithOwnerGuard(by: UserId, reason: string, now: DateTime, isLastOwner: boolean): void {
+    if (this._role === Role.OWNER && isLastOwner) {
+      throw new CannotBlockLastOwnerError(this.id);
+    }
+
     if (this._status === UserStatus.BLOCKED) {
       throw new UserAlreadyBlockedError(this.id);
     }

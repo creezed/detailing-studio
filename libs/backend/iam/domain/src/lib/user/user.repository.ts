@@ -1,8 +1,8 @@
 import type { PhoneNumber } from '@det/backend/shared/ddd';
 
-import type { Email } from './email.value-object';
 import type { UserId } from './user-id';
 import type { User } from './user.aggregate';
+import type { Email } from '../shared/email.value-object';
 
 export interface IUserRepository {
   findById(id: UserId): Promise<User | null>;
