@@ -1,9 +1,9 @@
 import fastifyHelmet from '@fastify/helmet';
-import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n';
 
 import { AppModule } from './app/app.module';
 
@@ -25,12 +25,13 @@ async function bootstrap(): Promise<void> {
   await app.register(fastifyHelmet);
   app.setGlobalPrefix(globalPrefix);
   app.useGlobalPipes(
-    new ValidationPipe({
+    new I18nValidationPipe({
       forbidNonWhitelisted: true,
       transform: true,
       whitelist: true,
     }),
   );
+  app.useGlobalFilters(new I18nValidationExceptionFilter({ detailedErrors: true }));
 
   const allowedOrigins = configService.get<string>('CORS_ORIGINS', 'http://localhost:4200');
 

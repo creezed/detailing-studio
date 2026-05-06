@@ -1,83 +1,84 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class RegisterOwnerRequestDto {
   @ApiProperty({ example: 'owner@studio.com', format: 'email' })
-  @IsEmail()
+  @IsEmail({}, { message: i18nValidationMessage('validation.IS_EMAIL') })
   declare email: string;
 
   @ApiProperty({ example: '+79991234567' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare phone: string;
 
   @ApiProperty({ example: 'Str0ngP@ss', minLength: 8 })
-  @IsString()
-  @MinLength(8)
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @MinLength(8, { message: i18nValidationMessage('validation.MIN_LENGTH') })
   declare password: string;
 
   @ApiProperty({ example: 'Иванов Иван Иванович' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare fullName: string;
 }
 
 export class LoginRequestDto {
   @ApiProperty({ example: 'owner@studio.com', format: 'email' })
-  @IsEmail()
+  @IsEmail({}, { message: i18nValidationMessage('validation.IS_EMAIL') })
   declare email: string;
 
   @ApiProperty({ example: 'Str0ngP@ss' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare password: string;
 
   @ApiProperty({ example: 'browser-fp-xyz' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare deviceFingerprint: string;
 }
 
 export class OtpRequestDto {
   @ApiProperty({ example: '+79991234567' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare phone: string;
 }
 
 export class OtpVerifyRequestDto {
   @ApiProperty({ example: '+79991234567' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare phone: string;
 
   @ApiProperty({ example: '123456' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare code: string;
 
   @ApiProperty({ example: 'browser-fp-xyz' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare deviceFingerprint: string;
 }
 
 export class RefreshRequestDto {
   @ApiProperty({ description: 'Refresh token value' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare refreshToken: string;
 
   @ApiProperty({ example: 'browser-fp-xyz' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare deviceFingerprint: string;
 }
 
 export class LogoutRequestDto {
   @ApiProperty({ description: 'Refresh token to revoke' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
+  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare refreshToken: string;
 }
 

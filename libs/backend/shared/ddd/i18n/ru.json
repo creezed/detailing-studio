@@ -4,5 +4,21 @@
   "INVALID_PHONE_NUMBER": "Некорректный номер телефона",
   "INVALID_QUANTITY": "Некорректное количество",
   "NOT_ENOUGH_FUNDS": "Недостаточно средств",
-  "QUANTITY_UNIT_MISMATCH": "Несовпадение единиц измерения"
+  "QUANTITY_UNIT_MISMATCH": "Несовпадение единиц измерения",
+  "validation": {
+    "IS_NOT_EMPTY": "Поле {property} обязательно для заполнения",
+    "IS_STRING": "Поле {property} должно быть строкой",
+    "IS_EMAIL": "Поле {property} должно быть корректным email",
+    "IS_ENUM": "Поле {property} должно быть одним из допустимых значений: {constraints.0}",
+    "IS_ARRAY": "Поле {property} должно быть массивом",
+    "IS_UUID": "Поле {property} должно быть корректным UUID",
+    "IS_NUMBER": "Поле {property} должно быть числом",
+    "IS_BOOLEAN": "Поле {property} должно быть логическим значением",
+    "IS_DATE_STRING": "Поле {property} должно быть корректной датой",
+    "MIN_LENGTH": "Поле {property} должно содержать не менее {constraints.0} символов",
+    "MAX_LENGTH": "Поле {property} должно содержать не более {constraints.0} символов",
+    "MIN": "Поле {property} должно быть не менее {constraints.0}",
+    "MAX": "Поле {property} должно быть не более {constraints.0}",
+    "MATCHES": "Поле {property} имеет некорректный формат"
+  }
 }

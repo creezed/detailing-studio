@@ -4,5 +4,21 @@
   "INVALID_PHONE_NUMBER": "Invalid phone number",
   "INVALID_QUANTITY": "Invalid quantity",
   "NOT_ENOUGH_FUNDS": "Insufficient funds",
-  "QUANTITY_UNIT_MISMATCH": "Quantity unit mismatch"
+  "QUANTITY_UNIT_MISMATCH": "Quantity unit mismatch",
+  "validation": {
+    "IS_NOT_EMPTY": "{property} is required",
+    "IS_STRING": "{property} must be a string",
+    "IS_EMAIL": "{property} must be a valid email",
+    "IS_ENUM": "{property} must be one of: {constraints.0}",
+    "IS_ARRAY": "{property} must be an array",
+    "IS_UUID": "{property} must be a valid UUID",
+    "IS_NUMBER": "{property} must be a number",
+    "IS_BOOLEAN": "{property} must be a boolean",
+    "IS_DATE_STRING": "{property} must be a valid date",
+    "MIN_LENGTH": "{property} must be at least {constraints.0} characters",
+    "MAX_LENGTH": "{property} must be at most {constraints.0} characters",
+    "MIN": "{property} must be at least {constraints.0}",
+    "MAX": "{property} must be at most {constraints.0}",
+    "MATCHES": "{property} has an invalid format"
+  }
 }
