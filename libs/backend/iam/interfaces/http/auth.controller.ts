@@ -45,11 +45,10 @@ export class AuthController {
     await this.commandBus.execute<RegisterOwnerCommand, { id: UserId }>(
       new RegisterOwnerCommand(dto.email, dto.phone, dto.password, dto.fullName),
     );
-    const result = await this.commandBus.execute<LoginByEmailCommand, AppLoginResponseDto>(
+
+    return this.commandBus.execute<LoginByEmailCommand, AppLoginResponseDto>(
       new LoginByEmailCommand(dto.email, dto.password, REGISTER_OWNER_DEVICE_FINGERPRINT),
     );
-
-    return result as unknown as LoginResponseDto;
   }
 
   @Post('login')
@@ -58,11 +57,9 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: LoginResponseDto })
   async login(@Body() dto: LoginRequestDto): Promise<LoginResponseDto> {
-    const result = await this.commandBus.execute<LoginByEmailCommand, AppLoginResponseDto>(
+    return this.commandBus.execute<LoginByEmailCommand, AppLoginResponseDto>(
       new LoginByEmailCommand(dto.email, dto.password, dto.deviceFingerprint),
     );
-
-    return result as unknown as LoginResponseDto;
   }
 
   @Post('otp/request')
@@ -80,11 +77,9 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: LoginResponseDto })
   async verifyOtp(@Body() dto: OtpVerifyRequestDto): Promise<LoginResponseDto> {
-    const result = await this.commandBus.execute<LoginByPhoneOtpCommand, AppLoginResponseDto>(
+    return this.commandBus.execute<LoginByPhoneOtpCommand, AppLoginResponseDto>(
       new LoginByPhoneOtpCommand(dto.phone, dto.code, dto.deviceFingerprint),
     );
-
-    return result as unknown as LoginResponseDto;
   }
 
   @Post('refresh')
@@ -93,11 +88,9 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: LoginResponseDto })
   async refresh(@Body() dto: RefreshRequestDto): Promise<LoginResponseDto> {
-    const result = await this.commandBus.execute<RefreshTokensCommand, AppLoginResponseDto>(
+    return this.commandBus.execute<RefreshTokensCommand, AppLoginResponseDto>(
       new RefreshTokensCommand(dto.refreshToken, dto.deviceFingerprint),
     );
-
-    return result as unknown as LoginResponseDto;
   }
 
   @Post('logout')

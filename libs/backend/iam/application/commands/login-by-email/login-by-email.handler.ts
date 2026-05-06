@@ -21,6 +21,7 @@ import {
 } from '../../di/tokens';
 import { InvalidCredentialsError } from '../../errors/application.errors';
 import { JWT_ISSUER } from '../../ports/jwt-issuer/jwt-issuer.port';
+import { buildLoginResponse } from '../shared/build-login-response';
 
 import type { LoginResponseDto } from '../../dto/login-response/login-response.dto';
 import type { IJwtIssuer } from '../../ports/jwt-issuer/jwt-issuer.port';
@@ -80,21 +81,10 @@ export class LoginByEmailHandler implements ICommandHandler<LoginByEmailCommand,
 
     await this.sessionRepo.save(session);
 
-    const { token: accessToken, expiresIn } = await this.jwtIssuer.issueAccessToken({
-      branches: [...snapshot.branchIds],
-      role: snapshot.role,
-      sub: snapshot.id,
-    });
-
-    return {
-      accessToken,
-      expiresIn,
+    return buildLoginResponse({
+      jwtIssuer: this.jwtIssuer,
       refreshToken: refreshTokenData.raw,
-      user: {
-        fullName: snapshot.fullName,
-        id: snapshot.id,
-        role: snapshot.role,
-      },
-    };
+      userSnapshot: snapshot,
+    });
   }
 }

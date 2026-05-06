@@ -68,8 +68,9 @@ export class AuthGuard implements CanActivate {
       return null;
     }
 
-    const [type, token] = header.split(' ');
+    const parts = header.split(' ');
+    const [type, token] = parts;
 
-    return type === 'Bearer' && token ? token : null;
+    return parts.length === 2 && type === 'Bearer' && token ? token : null;
   }
 }

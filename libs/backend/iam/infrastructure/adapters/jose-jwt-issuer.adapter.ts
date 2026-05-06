@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SignJWT, importPKCS8, jwtVerify, type KeyLike } from 'jose';
+import { SignJWT, importPKCS8, jwtVerify, type JWTPayload, type KeyLike } from 'jose';
 
 import type { IJwtIssuer, JwtPayload } from '@det/backend/iam/application';
+import { Role } from '@det/backend/iam/domain';
 
 const DEFAULT_ACCESS_TTL_SECONDS = 900;
 const JWT_ALGORITHM_HS512 = 'HS512';
@@ -43,6 +44,45 @@ function parseTtlSeconds(value: string | undefined): number {
   return amount * 24 * 60 * 60;
 }
 
+function isRole(value: unknown): value is Role {
+  switch (value) {
+    case Role.OWNER:
+    case Role.MANAGER:
+    case Role.MASTER:
+    case Role.CLIENT:
+      return true;
+    default:
+      return false;
+  }
+}
+
+function isStringArray(value: unknown): value is readonly string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function parseVerifiedPayload(payload: JWTPayload): JwtPayload {
+  const branches = payload['branches'];
+  const roles = payload['roles'];
+
+  if (typeof payload.sub !== 'string' || payload.sub.length === 0) {
+    throw new Error('Invalid access token payload');
+  }
+
+  if (!Array.isArray(roles) || !isRole(roles[0])) {
+    throw new Error('Invalid access token payload');
+  }
+
+  if (!isStringArray(branches)) {
+    throw new Error('Invalid access token payload');
+  }
+
+  return {
+    branches,
+    role: roles[0],
+    sub: payload.sub,
+  };
+}
+
 @Injectable()
 export class JoseJwtIssuerAdapter implements IJwtIssuer {
   constructor(private readonly config: ConfigService) {}
@@ -70,13 +110,8 @@ export class JoseJwtIssuerAdapter implements IJwtIssuer {
     const algorithm = this.config.get<string>('auth.jwtAlgorithm') ?? JWT_ALGORITHM_HS512;
     const key = await this.getSigningKey(algorithm);
     const { payload } = await jwtVerify(token, key, { algorithms: [algorithm] });
-    const sub = payload.sub ?? '';
-    const role = (Array.isArray(payload['roles']) ? payload['roles'][0] : '') as JwtPayload['role'];
-    const branches: readonly string[] = Array.isArray(payload['branches'])
-      ? (payload['branches'] as string[])
-      : [];
 
-    return { branches, role, sub };
+    return parseVerifiedPayload(payload);
   }
 
   private getSigningKey(algorithm: string): Promise<JwtSigningKey> {

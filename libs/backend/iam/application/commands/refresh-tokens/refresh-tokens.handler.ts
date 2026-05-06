@@ -24,6 +24,7 @@ import {
   SessionNotFoundError,
 } from '../../errors/application.errors';
 import { JWT_ISSUER } from '../../ports/jwt-issuer/jwt-issuer.port';
+import { buildLoginResponse } from '../shared/build-login-response';
 
 import type { LoginResponseDto } from '../../dto/login-response/login-response.dto';
 import type { IJwtIssuer } from '../../ports/jwt-issuer/jwt-issuer.port';
@@ -94,21 +95,10 @@ export class RefreshTokensHandler
       throw new InvalidCredentialsError();
     }
 
-    const { token: accessToken, expiresIn } = await this.jwtIssuer.issueAccessToken({
-      branches: [...snapshot.branchIds],
-      role: snapshot.role,
-      sub: snapshot.id,
-    });
-
-    return {
-      accessToken,
-      expiresIn,
+    return buildLoginResponse({
+      jwtIssuer: this.jwtIssuer,
       refreshToken,
-      user: {
-        fullName: snapshot.fullName,
-        id: snapshot.id,
-        role: snapshot.role,
-      },
-    };
+      userSnapshot: snapshot,
+    });
   }
 }

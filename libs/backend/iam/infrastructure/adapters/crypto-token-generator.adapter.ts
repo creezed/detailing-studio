@@ -1,11 +1,10 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, randomInt } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
 
 import type { ITokenGenerator } from '@det/backend/iam/application';
 
 const TOKEN_BYTES = 32;
-const OTP_BYTES = 4;
 const OTP_MODULO = 1_000_000;
 
 @Injectable()
@@ -19,7 +18,7 @@ export class CryptoTokenGeneratorAdapter implements ITokenGenerator {
   }
 
   generateOtpCode(): { raw: string; hash: string } {
-    const value = randomBytes(OTP_BYTES).readUInt32BE(0) % OTP_MODULO;
+    const value = randomInt(0, OTP_MODULO);
     const raw = value.toString().padStart(6, '0');
 
     return {

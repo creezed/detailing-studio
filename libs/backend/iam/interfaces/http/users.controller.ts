@@ -51,7 +51,7 @@ export class UsersController {
       new GetCurrentUserQuery(UserId.from(user.id)),
     );
 
-    return result as unknown as CurrentUserResponseDto;
+    return result;
   }
 
   @Post('me/password')
