@@ -9,6 +9,15 @@ export class UserAlreadyExistsError extends ApplicationError {
   }
 }
 
+export class PhoneAlreadyExistsError extends ApplicationError {
+  readonly code = 'PHONE_ALREADY_EXISTS';
+  readonly httpStatus = 409;
+
+  constructor(phone: string) {
+    super(`User with phone ${phone} already exists`);
+  }
+}
+
 export class UserNotFoundError extends ApplicationError {
   readonly code = 'USER_NOT_FOUND';
   readonly httpStatus = 404;

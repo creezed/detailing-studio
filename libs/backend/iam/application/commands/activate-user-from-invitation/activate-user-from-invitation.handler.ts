@@ -14,7 +14,11 @@ import { BranchId } from '@det/shared/types';
 
 import { ActivateUserFromInvitationCommand } from './activate-user-from-invitation.command';
 import { INVITATION_REPOSITORY, PASSWORD_HASHER, USER_REPOSITORY } from '../../di/tokens';
-import { InvitationNotFoundError, UserAlreadyExistsError } from '../../errors/application.errors';
+import {
+  InvitationNotFoundError,
+  PhoneAlreadyExistsError,
+  UserAlreadyExistsError,
+} from '../../errors/application.errors';
 
 import type { IPasswordHasher } from '../../ports/password-hasher/password-hasher.port';
 
@@ -45,10 +49,14 @@ export class ActivateUserFromInvitationHandler implements ICommandHandler<
     }
 
     const email = Email.from(snapshot.email);
-    const existingUser = await this.userRepo.existsByEmail(email);
+    const phone = PhoneNumber.from(cmd.phone);
 
-    if (existingUser) {
+    if (await this.userRepo.existsByEmail(email)) {
       throw new UserAlreadyExistsError(snapshot.email);
+    }
+
+    if (await this.userRepo.existsByPhone(phone)) {
+      throw new PhoneAlreadyExistsError(phone.toString());
     }
 
     const passwordHash = await this.passwordHasher.hash(cmd.password);
@@ -61,7 +69,7 @@ export class ActivateUserFromInvitationHandler implements ICommandHandler<
         idGen: this.idGen,
         now: this.clock.now(),
         passwordHash,
-        phone: PhoneNumber.from(cmd.phone),
+        phone,
         role: snapshot.role,
       }),
     );

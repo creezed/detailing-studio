@@ -58,6 +58,7 @@ import {
   InvalidCredentialsError,
   InvalidPasswordError,
   OtpNotFoundError,
+  PhoneAlreadyExistsError,
   RefreshTokenReuseError,
   SessionNotFoundError,
   UserAlreadyExistsError,
@@ -227,6 +228,16 @@ class PostgresUserRepository implements IUserRepository {
     const result = await this.client.query<{ readonly exists: boolean }>(
       'select exists(select 1 from iam_users where email = $1) as exists',
       [email.getValue()],
+    );
+    const row = result.rows[0];
+
+    return row?.exists ?? false;
+  }
+
+  async existsByPhone(phone: PhoneNumber): Promise<boolean> {
+    const result = await this.client.query<{ readonly exists: boolean }>(
+      'select exists(select 1 from iam_users where phone = $1) as exists',
+      [phone.toString()],
     );
     const row = result.rows[0];
 
@@ -794,6 +805,20 @@ describe('IamApplicationModule integration', () => {
         new RegisterOwnerCommand('OWNER@example.com', '+79997654321', 'secret', 'Other Owner'),
       ),
     ).rejects.toBeInstanceOf(UserAlreadyExistsError);
+  });
+
+  it('rejects duplicate owner phone', async () => {
+    idGen.reset([OWNER_ID, MANAGER_ID]);
+
+    await commandBus.execute(
+      new RegisterOwnerCommand('owner@example.com', '+79991234567', 'secret', 'Owner User'),
+    );
+
+    await expect(
+      commandBus.execute(
+        new RegisterOwnerCommand('other@example.com', '+79991234567', 'secret', 'Other Owner'),
+      ),
+    ).rejects.toBeInstanceOf(PhoneAlreadyExistsError);
   });
 
   it('issues invitation by owner and writes outbox event with raw token', async () => {

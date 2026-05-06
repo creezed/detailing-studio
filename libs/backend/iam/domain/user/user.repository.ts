@@ -9,6 +9,7 @@ export interface IUserRepository {
   findByEmail(email: Email): Promise<User | null>;
   findByPhone(phone: PhoneNumber): Promise<User | null>;
   existsByEmail(email: Email): Promise<boolean>;
+  existsByPhone(phone: PhoneNumber): Promise<boolean>;
   countOwners(): Promise<number>;
   save(user: User): Promise<void>;
 }

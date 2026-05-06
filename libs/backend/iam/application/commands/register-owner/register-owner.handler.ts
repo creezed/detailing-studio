@@ -7,7 +7,7 @@ import type { IClock, IIdGenerator } from '@det/backend/shared/ddd';
 
 import { RegisterOwnerCommand } from './register-owner.command';
 import { PASSWORD_HASHER, USER_REPOSITORY } from '../../di/tokens';
-import { UserAlreadyExistsError } from '../../errors/application.errors';
+import { PhoneAlreadyExistsError, UserAlreadyExistsError } from '../../errors/application.errors';
 
 import type { IPasswordHasher } from '../../ports/password-hasher/password-hasher.port';
 
@@ -22,11 +22,14 @@ export class RegisterOwnerHandler implements ICommandHandler<RegisterOwnerComman
 
   async execute(cmd: RegisterOwnerCommand): Promise<{ id: UserId }> {
     const email = Email.from(cmd.email);
+    const phone = PhoneNumber.from(cmd.phone);
 
-    const exists = await this.userRepo.existsByEmail(email);
-
-    if (exists) {
+    if (await this.userRepo.existsByEmail(email)) {
       throw new UserAlreadyExistsError(email.getValue());
+    }
+
+    if (await this.userRepo.existsByPhone(phone)) {
+      throw new PhoneAlreadyExistsError(phone.toString());
     }
 
     const passwordHash = await this.passwordHasher.hash(cmd.password);
@@ -38,7 +41,7 @@ export class RegisterOwnerHandler implements ICommandHandler<RegisterOwnerComman
       idGen: this.idGen,
       now: this.clock.now(),
       passwordHash,
-      phone: PhoneNumber.from(cmd.phone),
+      phone,
       role: Role.OWNER,
     });
 

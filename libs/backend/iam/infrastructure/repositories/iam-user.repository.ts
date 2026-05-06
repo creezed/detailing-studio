@@ -38,6 +38,10 @@ export class IamUserRepository implements IUserRepository {
     return (await this.em.count(IamUserSchema, { email: email.getValue() })) > 0;
   }
 
+  async existsByPhone(phone: PhoneNumber): Promise<boolean> {
+    return (await this.em.count(IamUserSchema, { phone: phone.toString() })) > 0;
+  }
+
   async countOwners(): Promise<number> {
     return this.em.count(IamUserSchema, { roleSet: { $contains: [Role.OWNER] } });
   }
