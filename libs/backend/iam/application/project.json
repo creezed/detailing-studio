@@ -1,7 +1,7 @@
 {
   "name": "iam-application",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/backend/iam/application/src",
+  "sourceRoot": "libs/backend/iam/application",
   "projectType": "library",
   "tags": ["scope:iam", "type:application", "platform:node"],
   "implicitDependencies": ["iam-domain"],
@@ -9,7 +9,7 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/backend/iam/application/src/**/*.ts"]
+        "lintFilePatterns": ["libs/backend/iam/application/**/*.ts"]
       }
     },
     "test": {

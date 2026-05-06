@@ -1,14 +1,14 @@
 {
   "name": "shared-util-pure",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/shared/util-pure/src",
+  "sourceRoot": "libs/shared/util-pure",
   "projectType": "library",
   "tags": ["scope:shared", "type:util", "platform:any"],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/shared/util-pure/src/**/*.ts"]
+        "lintFilePatterns": ["libs/shared/util-pure/**/*.ts"]
       }
     },
     "typecheck": {

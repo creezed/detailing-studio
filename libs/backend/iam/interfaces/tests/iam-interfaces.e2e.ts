@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @nx/enforce-module-boundaries */
+/* eslint-disable @nx/enforce-module-boundaries */
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { ValidationPipe } from '@nestjs/common';
@@ -12,7 +12,7 @@ import { GenericContainer, Wait } from 'testcontainers';
 
 import { IamInfrastructureModule } from '@det/backend/iam/infrastructure';
 
-import { IamInterfacesModule } from '../../index';
+import { IamInterfacesModule } from '../index';
 
 import type { TestingModule } from '@nestjs/testing';
 import type { StartedTestContainer } from 'testcontainers';

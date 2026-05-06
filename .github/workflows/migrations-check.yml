@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'libs/backend/**/migrations/**'
-      - 'libs/backend/**/infrastructure/src/lib/persistence/**'
+      - 'libs/backend/**/infrastructure/persistence/**'
 
 jobs:
   check:

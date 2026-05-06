@@ -1,6 +1,6 @@
 export default {
   collectCoverage: true,
-  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.spec.ts', '!src/index.ts'],
+  collectCoverageFrom: ['**/*.ts', '!**/*.spec.ts', '!index.ts', '!jest.config.ts'],
   coverageThreshold: {
     global: {
       branches: 90,

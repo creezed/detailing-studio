@@ -1,14 +1,14 @@
 {
   "name": "backend-shared-ddd",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/backend/shared/ddd/src",
+  "sourceRoot": "libs/backend/shared/ddd",
   "projectType": "library",
   "tags": ["scope:shared", "type:util", "platform:node"],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/backend/shared/ddd/src/**/*.ts"]
+        "lintFilePatterns": ["libs/backend/shared/ddd/**/*.ts"]
       }
     },
     "typecheck": {

@@ -1,14 +1,14 @@
 {
   "name": "shared-contracts",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/shared/contracts/src",
+  "sourceRoot": "libs/shared/contracts",
   "projectType": "library",
   "tags": ["scope:shared", "type:contracts", "platform:any"],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/shared/contracts/src/**/*.ts"]
+        "lintFilePatterns": ["libs/shared/contracts/**/*.ts"]
       }
     },
     "typecheck": {

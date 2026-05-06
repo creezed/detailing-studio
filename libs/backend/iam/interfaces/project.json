@@ -1,14 +1,14 @@
 {
   "name": "iam-interfaces",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/backend/iam/interfaces/src",
+  "sourceRoot": "libs/backend/iam/interfaces",
   "projectType": "library",
   "tags": ["scope:iam", "type:interfaces", "platform:node"],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/backend/iam/interfaces/src/**/*.ts"]
+        "lintFilePatterns": ["libs/backend/iam/interfaces/**/*.ts"]
       }
     },
     "typecheck": {

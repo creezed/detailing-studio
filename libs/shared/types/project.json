@@ -1,14 +1,14 @@
 {
   "name": "shared-types",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/shared/types/src",
+  "sourceRoot": "libs/shared/types",
   "projectType": "library",
   "tags": ["scope:shared", "type:types", "platform:any"],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/shared/types/src/**/*.ts"]
+        "lintFilePatterns": ["libs/shared/types/**/*.ts"]
       }
     },
     "typecheck": {

@@ -62,7 +62,7 @@
           "pnpm nx serve api &",
           "sleep 3",
           "curl -s http://localhost:3000/api/docs-json -o /tmp/openapi.json",
-          "pnpm openapi-typescript /tmp/openapi.json -o libs/shared/contracts/src/generated/api.ts",
+          "pnpm openapi-typescript /tmp/openapi.json -o libs/shared/contracts/generated/api.ts",
           "kill %1 2>/dev/null || true"
         ],
         "parallel": false,
