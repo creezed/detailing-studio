@@ -1,25 +1,27 @@
 import { type ArgumentsHost, Catch, type ExceptionFilter } from '@nestjs/common';
 import pino from 'pino';
 
-import { DomainError } from '@det/backend/shared/ddd';
+import { ApplicationError, DomainError } from '@det/backend/shared/ddd';
 
 interface HttpResponse {
   status(code: number): {
-    send(body: DomainErrorResponse): void;
+    send(body: ErrorResponse): void;
   };
 }
 
-interface DomainErrorResponse {
+type CatchableError = ApplicationError | DomainError;
+
+interface ErrorResponse {
   readonly error: string;
   readonly message: string;
   readonly statusCode: number;
 }
 
-@Catch(DomainError)
-export class DomainExceptionFilter implements ExceptionFilter<DomainError> {
+@Catch(DomainError, ApplicationError)
+export class DomainExceptionFilter implements ExceptionFilter<CatchableError> {
   private readonly _logger: ReturnType<typeof pino> = pino({ name: 'DomainExceptionFilter' });
 
-  catch(exception: DomainError, host: ArgumentsHost): void {
+  catch(exception: CatchableError, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<HttpResponse>();
 
     this._logger.warn(

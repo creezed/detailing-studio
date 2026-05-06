@@ -1,76 +1,100 @@
-export class UserAlreadyExistsError extends Error {
+import { ApplicationError } from '@det/backend/shared/ddd';
+
+export class UserAlreadyExistsError extends ApplicationError {
+  readonly code = 'USER_ALREADY_EXISTS';
+  readonly httpStatus = 409;
+
   constructor(email: string) {
     super(`User with email ${email} already exists`);
-    this.name = 'UserAlreadyExistsError';
   }
 }
 
-export class UserNotFoundError extends Error {
+export class UserNotFoundError extends ApplicationError {
+  readonly code = 'USER_NOT_FOUND';
+  readonly httpStatus = 404;
+
   constructor(userId: string) {
     super(`User ${userId} not found`);
-    this.name = 'UserNotFoundError';
   }
 }
 
-export class InvitationNotFoundError extends Error {
+export class InvitationNotFoundError extends ApplicationError {
+  readonly code = 'INVITATION_NOT_FOUND';
+  readonly httpStatus = 404;
+
   constructor() {
     super('Invitation not found');
-    this.name = 'InvitationNotFoundError';
   }
 }
 
-export class InvitationAlreadyExistsError extends Error {
+export class InvitationAlreadyExistsError extends ApplicationError {
+  readonly code = 'INVITATION_ALREADY_EXISTS';
+  readonly httpStatus = 409;
+
   constructor(email: string) {
     super(`Pending invitation for email ${email} already exists`);
-    this.name = 'InvitationAlreadyExistsError';
   }
 }
 
-export class InvalidPasswordError extends Error {
+export class InvalidPasswordError extends ApplicationError {
+  readonly code = 'INVALID_PASSWORD';
+  readonly httpStatus = 422;
+
   constructor() {
     super('Password is invalid');
-    this.name = 'InvalidPasswordError';
   }
 }
 
-export class ForbiddenInvitationIssuerError extends Error {
+export class ForbiddenInvitationIssuerError extends ApplicationError {
+  readonly code = 'FORBIDDEN_INVITATION_ISSUER';
+  readonly httpStatus = 403;
+
   constructor() {
     super('Only OWNER or MANAGER can issue invitations');
-    this.name = 'ForbiddenInvitationIssuerError';
   }
 }
 
-export class InvalidCredentialsError extends Error {
+export class InvalidCredentialsError extends ApplicationError {
+  readonly code = 'INVALID_CREDENTIALS';
+  readonly httpStatus = 401;
+
   constructor() {
     super('Invalid credentials');
-    this.name = 'InvalidCredentialsError';
   }
 }
 
-export class RefreshTokenReuseError extends Error {
+export class RefreshTokenReuseError extends ApplicationError {
+  readonly code = 'REFRESH_TOKEN_REUSE';
+  readonly httpStatus = 401;
+
   constructor(public readonly sessionId: string) {
     super(`Refresh token reuse detected for session ${sessionId}`);
-    this.name = 'RefreshTokenReuseError';
   }
 }
 
-export class OtpNotFoundError extends Error {
+export class OtpNotFoundError extends ApplicationError {
+  readonly code = 'OTP_NOT_FOUND';
+  readonly httpStatus = 404;
+
   constructor() {
     super('OTP request not found or expired');
-    this.name = 'OtpNotFoundError';
   }
 }
 
-export class SessionNotFoundError extends Error {
+export class SessionNotFoundError extends ApplicationError {
+  readonly code = 'SESSION_NOT_FOUND';
+  readonly httpStatus = 401;
+
   constructor() {
     super('Refresh session not found');
-    this.name = 'SessionNotFoundError';
   }
 }
 
-export class SessionExpiredError extends Error {
+export class SessionExpiredError extends ApplicationError {
+  readonly code = 'SESSION_EXPIRED';
+  readonly httpStatus = 401;
+
   constructor(public readonly sessionId: string) {
     super(`Refresh session ${sessionId} has expired`);
-    this.name = 'SessionExpiredError';
   }
 }

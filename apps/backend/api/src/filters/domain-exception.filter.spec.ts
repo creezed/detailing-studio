@@ -1,4 +1,4 @@
-import { DomainError } from '@det/backend/shared/ddd';
+import { ApplicationError, DomainError } from '@det/backend/shared/ddd';
 
 import { DomainExceptionFilter } from './domain-exception.filter';
 
@@ -19,6 +19,15 @@ class ConflictDomainError extends DomainError {
 
   constructor() {
     super('Resource already exists');
+  }
+}
+
+class TestApplicationError extends ApplicationError {
+  readonly code = 'USER_NOT_FOUND';
+  readonly httpStatus = 404;
+
+  constructor() {
+    super('User abc not found');
   }
 }
 
@@ -58,6 +67,18 @@ describe('DomainExceptionFilter', () => {
       error: 'ALREADY_EXISTS',
       message: 'Resource already exists',
       statusCode: 409,
+    });
+  });
+
+  it('should handle ApplicationError with proper status and code', () => {
+    const { host, sendMock } = mockArgumentsHost();
+
+    filter.catch(new TestApplicationError(), host);
+
+    expect(sendMock).toHaveBeenCalledWith({
+      error: 'USER_NOT_FOUND',
+      message: 'User abc not found',
+      statusCode: 404,
     });
   });
 });

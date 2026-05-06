@@ -1,4 +1,5 @@
 export * from './aggregate-root';
+export * from './application-error';
 export * from './brand';
 export * from './clock.port';
 export * from './date-time.value-object';
