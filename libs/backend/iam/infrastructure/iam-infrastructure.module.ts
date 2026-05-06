@@ -1,5 +1,6 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module, type OnModuleInit, type Provider } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import {
   CLOCK,
@@ -40,6 +41,7 @@ import { BcryptPasswordHasherAdapter } from './adapters/bcrypt-password-hasher.a
 import { CryptoIdGeneratorAdapter } from './adapters/crypto-id-generator.adapter';
 import { CryptoTokenGeneratorAdapter, sha256Hash } from './adapters/crypto-token-generator.adapter';
 import { JoseJwtIssuerAdapter } from './adapters/jose-jwt-issuer.adapter';
+import { LogSmsOtpStubAdapter } from './adapters/log-sms-otp-stub.adapter';
 import { NodemailerInvitationMailerStubAdapter } from './adapters/nodemailer-invitation-mailer-stub.adapter';
 import { SmsruOtpAdapter } from './adapters/smsru-otp.adapter';
 import { SystemClockAdapter } from './adapters/system-clock.adapter';
@@ -70,6 +72,7 @@ const INFRASTRUCTURE_PROVIDERS: readonly Provider[] = [
   JoseJwtIssuerAdapter,
   NodemailerInvitationMailerStubAdapter,
   SmsruOtpAdapter,
+  LogSmsOtpStubAdapter,
   SystemClockAdapter,
   {
     provide: USER_REPOSITORY,
@@ -101,7 +104,12 @@ const INFRASTRUCTURE_PROVIDERS: readonly Provider[] = [
   },
   {
     provide: SMS_OTP,
-    useExisting: SmsruOtpAdapter,
+    useFactory: (config: ConfigService, smsru: SmsruOtpAdapter, stub: LogSmsOtpStubAdapter) => {
+      const apiKey = config.get<string>('sms.smsRuApiKey') ?? '';
+
+      return apiKey.length > 0 ? smsru : stub;
+    },
+    inject: [ConfigService, SmsruOtpAdapter, LogSmsOtpStubAdapter],
   },
   {
     provide: ID_GENERATOR,
