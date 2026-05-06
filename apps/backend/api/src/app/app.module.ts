@@ -2,6 +2,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_FILTER } from '@nestjs/core';
 
 import { IamInfrastructureModule } from '@det/backend/iam/infrastructure';
 import { IamInterfacesModule } from '@det/backend/iam/interfaces';
@@ -11,6 +12,7 @@ import { databaseConfig } from '../config/database.config';
 import { emailConfig } from '../config/email.config';
 import { minioConfig } from '../config/minio.config';
 import { smsConfig } from '../config/sms.config';
+import { DomainExceptionFilter } from '../filters/domain-exception.filter';
 import { HealthController } from '../health/health.controller';
 
 @Module({
@@ -37,6 +39,6 @@ import { HealthController } from '../health/health.controller';
     IamInterfacesModule,
   ],
   controllers: [HealthController],
-  providers: [],
+  providers: [{ provide: APP_FILTER, useClass: DomainExceptionFilter }],
 })
 export class AppModule {}
