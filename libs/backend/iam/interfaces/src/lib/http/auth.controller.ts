@@ -29,6 +29,7 @@ import {
 import type { AuthenticatedUser } from '../guards/auth.guard';
 
 const AUTH_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
+const REGISTER_OWNER_DEVICE_FINGERPRINT = 'owner-self-signup';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -41,8 +42,11 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({ type: LoginResponseDto })
   async registerOwner(@Body() dto: RegisterOwnerRequestDto): Promise<LoginResponseDto> {
-    const result = await this.commandBus.execute<RegisterOwnerCommand, AppLoginResponseDto>(
+    await this.commandBus.execute<RegisterOwnerCommand, { id: UserId }>(
       new RegisterOwnerCommand(dto.email, dto.phone, dto.password, dto.fullName),
+    );
+    const result = await this.commandBus.execute<LoginByEmailCommand, AppLoginResponseDto>(
+      new LoginByEmailCommand(dto.email, dto.password, REGISTER_OWNER_DEVICE_FINGERPRINT),
     );
 
     return result as unknown as LoginResponseDto;

@@ -65,8 +65,15 @@ export class RefreshTokensHandler
     const compromisedSession = await this.sessionRepo.findByRotatedTokenHash(currentTokenHash);
 
     if (compromisedSession) {
+      const userId = compromisedSession.toSnapshot().userId;
       compromisedSession.markCompromised(now);
       await this.sessionRepo.save(compromisedSession);
+      const activeSessions = await this.sessionRepo.listActiveByUserId(UserId.from(userId));
+
+      for (const sessionToBlock of activeSessions) {
+        sessionToBlock.markCompromised(now);
+        await this.sessionRepo.save(sessionToBlock);
+      }
 
       throw new RefreshTokenReuseError(compromisedSession.id);
     }

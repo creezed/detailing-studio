@@ -5,6 +5,7 @@ import { Throttle } from '@nestjs/throttler';
 
 import {
   AcceptInvitationCommand,
+  ActivateUserFromInvitationCommand,
   IssueInvitationCommand,
   Role,
   UserId,
@@ -51,6 +52,9 @@ export class InvitationsController {
   ): Promise<void> {
     await this.commandBus.execute(
       new AcceptInvitationCommand(token, dto.password, dto.fullName, dto.phone),
+    );
+    await this.commandBus.execute(
+      new ActivateUserFromInvitationCommand(token, dto.password, dto.fullName, dto.phone),
     );
   }
 }

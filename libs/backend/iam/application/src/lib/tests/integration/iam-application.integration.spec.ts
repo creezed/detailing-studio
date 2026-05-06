@@ -32,6 +32,7 @@ import type { DomainEvent, IClock, IIdGenerator } from '@det/backend/shared/ddd'
 import { BranchId } from '@det/shared/types';
 
 import { AcceptInvitationCommand } from '../../commands/accept-invitation/accept-invitation.command';
+import { ActivateUserFromInvitationCommand } from '../../commands/activate-user-from-invitation/activate-user-from-invitation.command';
 import { BlockUserCommand } from '../../commands/block-user/block-user.command';
 import { ChangePasswordCommand } from '../../commands/change-password/change-password.command';
 import { IssueInvitationCommand } from '../../commands/issue-invitation/issue-invitation.command';
@@ -885,6 +886,57 @@ describe('IamApplicationModule integration', () => {
     const events = await outboxEvents(client);
     expect(events).toMatchObject([{ event_type: 'InvitationAccepted' }]);
     expect(events[0]?.payload).toMatchObject({ fullName: 'Master User' });
+  });
+
+  it('activates user from accepted invitation', async () => {
+    idGen.reset([OWNER_ID, INVITATION_ID]);
+    const owner = User.register({
+      branchIds: [],
+      email: Email.from('owner@example.com'),
+      fullName: 'Owner User',
+      idGen,
+      now: NOW,
+      passwordHash: PasswordHash.fromHash('hash:secret'),
+      phone: PhoneNumber.from('+79991234567'),
+      role: Role.OWNER,
+    });
+    owner.pullDomainEvents();
+    await userRepo.save(owner);
+    await commandBus.execute(
+      new IssueInvitationCommand(OWNER_USER_ID, 'master@example.com', Role.MASTER, [
+        BranchId.from(BRANCH_ID),
+      ]),
+    );
+    await commandBus.execute(
+      new AcceptInvitationCommand('invite-token', 'new-secret', 'Master User', '+79997654321'),
+    );
+    await client.query('truncate table outbox_events');
+
+    idGen.reset([MASTER_ID]);
+    await commandBus.execute(
+      new ActivateUserFromInvitationCommand(
+        'invite-token',
+        'new-secret',
+        'Master User',
+        '+79997654321',
+      ),
+    );
+
+    const user = await userRepo.findByEmail(Email.from('master@example.com'));
+    const snapshot = user?.toSnapshot();
+
+    expect(snapshot).toMatchObject({
+      branchIds: [BRANCH_ID],
+      email: 'master@example.com',
+      fullName: 'Master User',
+      id: MASTER_ID,
+      passwordHash: 'hash:new-secret',
+      phone: '+79997654321',
+      role: Role.MASTER,
+      status: UserStatus.ACTIVE,
+    });
+    const events = await outboxEvents(client);
+    expect(events.map((event) => event.event_type)).toEqual(['UserActivated', 'UserRegistered']);
   });
 
   it('changes password after verifying old password', async () => {

@@ -1,6 +1,8 @@
 export { Role, UserId } from '@det/backend/iam/domain';
 
 export * from './lib/abilities/ability.factory';
+export * from './lib/commands/activate-user-from-invitation/activate-user-from-invitation.command';
+export * from './lib/commands/activate-user-from-invitation/activate-user-from-invitation.handler';
 export * from './lib/commands/accept-invitation/accept-invitation.command';
 export * from './lib/commands/accept-invitation/accept-invitation.handler';
 export * from './lib/commands/block-user/block-user.command';

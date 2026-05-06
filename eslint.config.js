@@ -332,7 +332,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.spec.ts', '**/*.spec.tsx'],
+    files: ['**/*.e2e.ts', '**/*.spec.ts', '**/*.spec.tsx'],
     rules: {
       ...Object.fromEntries(Object.keys(unsafeRules).map((ruleName) => [ruleName, 'off'])),
       '@typescript-eslint/no-explicit-any': 'off',

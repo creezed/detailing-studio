@@ -1,6 +1,11 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
 
-import { InvalidCredentialsError } from '@det/backend/iam/application';
+import {
+  InvalidCredentialsError,
+  RefreshTokenReuseError,
+  SessionExpiredError,
+  SessionNotFoundError,
+} from '@det/backend/iam/application';
 
 interface HttpResponse {
   status(code: number): {
@@ -14,15 +19,23 @@ interface HttpErrorResponse {
   readonly statusCode: number;
 }
 
-@Catch(InvalidCredentialsError)
-export class IamApplicationExceptionFilter implements ExceptionFilter<InvalidCredentialsError> {
-  catch(exception: InvalidCredentialsError, host: ArgumentsHost): void {
-    const response = host.switchToHttp().getResponse<HttpResponse>();
+type IamHttpError =
+  | InvalidCredentialsError
+  | RefreshTokenReuseError
+  | SessionExpiredError
+  | SessionNotFoundError;
 
-    response.status(HttpStatus.FORBIDDEN).send({
-      error: 'Forbidden',
+@Catch(InvalidCredentialsError, RefreshTokenReuseError, SessionExpiredError, SessionNotFoundError)
+export class IamApplicationExceptionFilter implements ExceptionFilter<IamHttpError> {
+  catch(exception: IamHttpError, host: ArgumentsHost): void {
+    const response = host.switchToHttp().getResponse<HttpResponse>();
+    const statusCode =
+      exception instanceof InvalidCredentialsError ? HttpStatus.FORBIDDEN : HttpStatus.UNAUTHORIZED;
+
+    response.status(statusCode).send({
+      error: statusCode === HttpStatus.FORBIDDEN ? 'Forbidden' : 'Unauthorized',
       message: exception.message,
-      statusCode: HttpStatus.FORBIDDEN,
+      statusCode,
     });
   }
 }

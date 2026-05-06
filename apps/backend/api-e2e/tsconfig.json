@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "outDir": "../../../dist/out-tsc/apps/backend/api-e2e",
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*.ts"]
+}

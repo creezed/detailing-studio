@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 
 import { AbilityFactory } from './abilities/ability.factory';
 import { AcceptInvitationHandler } from './commands/accept-invitation/accept-invitation.handler';
+import { ActivateUserFromInvitationHandler } from './commands/activate-user-from-invitation/activate-user-from-invitation.handler';
 import { BlockUserHandler } from './commands/block-user/block-user.handler';
 import { ChangePasswordHandler } from './commands/change-password/change-password.handler';
 import { IssueInvitationHandler } from './commands/issue-invitation/issue-invitation.handler';
@@ -18,6 +19,7 @@ import type { DynamicModule, ModuleMetadata, Provider } from '@nestjs/common';
 
 const COMMAND_HANDLERS = [
   AcceptInvitationHandler,
+  ActivateUserFromInvitationHandler,
   BlockUserHandler,
   ChangePasswordHandler,
   IssueInvitationHandler,
