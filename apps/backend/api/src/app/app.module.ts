@@ -1,8 +1,11 @@
+import { join } from 'node:path';
+
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
+import { AcceptLanguageResolver, I18nModule } from 'nestjs-i18n';
 
 import { IamInfrastructureModule } from '@det/backend/iam/infrastructure';
 import { IamInterfacesModule } from '@det/backend/iam/interfaces';
@@ -14,6 +17,7 @@ import { minioConfig } from '../config/minio.config';
 import { smsConfig } from '../config/sms.config';
 import { DomainExceptionFilter } from '../filters/domain-exception.filter';
 import { HealthController } from '../health/health.controller';
+import { MultiPathI18nLoader } from '../i18n/multi-path-i18n.loader';
 
 @Module({
   imports: [
@@ -34,6 +38,17 @@ import { HealthController } from '../health/health.controller';
         },
         driver: PostgreSqlDriver,
       }),
+    }),
+    I18nModule.forRoot({
+      fallbackLanguage: 'ru',
+      loader: MultiPathI18nLoader,
+      loaderOptions: {
+        paths: [
+          join(process.cwd(), 'libs/backend/iam/interfaces/i18n'),
+          join(process.cwd(), 'libs/backend/shared/ddd/i18n'),
+        ],
+      },
+      resolvers: [new AcceptLanguageResolver()],
     }),
     IamInfrastructureModule,
     IamInterfacesModule,

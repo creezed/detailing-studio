@@ -1,0 +1,8 @@
+{
+  "INVALID_DATE_TIME": "Некорректная дата или время",
+  "INVALID_MONEY_AMOUNT": "Некорректная сумма",
+  "INVALID_PHONE_NUMBER": "Некорректный номер телефона",
+  "INVALID_QUANTITY": "Некорректное количество",
+  "NOT_ENOUGH_FUNDS": "Недостаточно средств",
+  "QUANTITY_UNIT_MISMATCH": "Несовпадение единиц измерения"
+}

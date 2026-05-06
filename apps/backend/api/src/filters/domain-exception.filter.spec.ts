@@ -1,8 +1,15 @@
+import { I18nContext } from 'nestjs-i18n';
+
 import { ApplicationError, DomainError } from '@det/backend/shared/ddd';
 
 import { DomainExceptionFilter } from './domain-exception.filter';
 
 import type { ArgumentsHost } from '@nestjs/common';
+
+jest.mock('nestjs-i18n', () => ({
+  ...jest.requireActual('nestjs-i18n'),
+  I18nContext: { current: jest.fn() },
+}));
 
 class TestDomainError extends DomainError {
   readonly code = 'TEST_ERROR';
@@ -10,15 +17,6 @@ class TestDomainError extends DomainError {
 
   constructor() {
     super('Test domain error');
-  }
-}
-
-class ConflictDomainError extends DomainError {
-  readonly code = 'ALREADY_EXISTS';
-  readonly httpStatus = 409;
-
-  constructor() {
-    super('Resource already exists');
   }
 }
 
@@ -31,7 +29,7 @@ class TestApplicationError extends ApplicationError {
   }
 }
 
-function mockArgumentsHost(): { host: ArgumentsHost; sendMock: jest.Mock } {
+function mockHost(): { host: ArgumentsHost; sendMock: jest.Mock } {
   const sendMock = jest.fn();
   const statusMock = jest.fn().mockReturnValue({ send: sendMock });
   const getResponse = jest.fn().mockReturnValue({ status: statusMock });
@@ -43,11 +41,48 @@ function mockArgumentsHost(): { host: ArgumentsHost; sendMock: jest.Mock } {
   return { host, sendMock };
 }
 
+function mockI18n(translations: Record<string, string>, lang = 'ru'): void {
+  (I18nContext.current as jest.Mock).mockReturnValue({
+    lang,
+    translate: (key: string, opts?: { defaultValue?: string }) =>
+      translations[key] ?? opts?.defaultValue ?? key,
+  });
+}
+
 describe('DomainExceptionFilter', () => {
   const filter = new DomainExceptionFilter();
 
-  it('should respond with httpStatus and code from DomainError', () => {
-    const { host, sendMock } = mockArgumentsHost();
+  afterEach(() => jest.clearAllMocks());
+
+  it('should translate error message using I18nContext', () => {
+    mockI18n({ USER_NOT_FOUND: 'Пользователь не найден' }, 'ru');
+    const { host, sendMock } = mockHost();
+
+    filter.catch(new TestApplicationError(), host);
+
+    expect(sendMock).toHaveBeenCalledWith({
+      error: 'USER_NOT_FOUND',
+      message: 'Пользователь не найден',
+      statusCode: 404,
+    });
+  });
+
+  it('should translate to EN locale', () => {
+    mockI18n({ USER_NOT_FOUND: 'User not found' }, 'en');
+    const { host, sendMock } = mockHost();
+
+    filter.catch(new TestApplicationError(), host);
+
+    expect(sendMock).toHaveBeenCalledWith({
+      error: 'USER_NOT_FOUND',
+      message: 'User not found',
+      statusCode: 404,
+    });
+  });
+
+  it('should fall back to original message when code has no translation', () => {
+    mockI18n({}, 'ru');
+    const { host, sendMock } = mockHost();
 
     filter.catch(new TestDomainError(), host);
 
@@ -58,20 +93,9 @@ describe('DomainExceptionFilter', () => {
     });
   });
 
-  it('should use the correct HTTP status code', () => {
-    const { host, sendMock } = mockArgumentsHost();
-
-    filter.catch(new ConflictDomainError(), host);
-
-    expect(sendMock).toHaveBeenCalledWith({
-      error: 'ALREADY_EXISTS',
-      message: 'Resource already exists',
-      statusCode: 409,
-    });
-  });
-
-  it('should handle ApplicationError with proper status and code', () => {
-    const { host, sendMock } = mockArgumentsHost();
+  it('should fall back to original message when I18nContext is unavailable', () => {
+    (I18nContext.current as jest.Mock).mockReturnValue(null);
+    const { host, sendMock } = mockHost();
 
     filter.catch(new TestApplicationError(), host);
 

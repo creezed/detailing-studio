@@ -1,0 +1,8 @@
+{
+  "INVALID_DATE_TIME": "Invalid date or time",
+  "INVALID_MONEY_AMOUNT": "Invalid money amount",
+  "INVALID_PHONE_NUMBER": "Invalid phone number",
+  "INVALID_QUANTITY": "Invalid quantity",
+  "NOT_ENOUGH_FUNDS": "Insufficient funds",
+  "QUANTITY_UNIT_MISMATCH": "Quantity unit mismatch"
+}

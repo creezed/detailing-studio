@@ -1,4 +1,5 @@
 import { type ArgumentsHost, Catch, type ExceptionFilter } from '@nestjs/common';
+import { I18nContext } from 'nestjs-i18n';
 import pino from 'pino';
 
 import { ApplicationError, DomainError } from '@det/backend/shared/ddd';
@@ -23,15 +24,23 @@ export class DomainExceptionFilter implements ExceptionFilter<CatchableError> {
 
   catch(exception: CatchableError, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<HttpResponse>();
+    const i18n = I18nContext.current(host);
+    const translated = i18n?.translate(exception.code, { defaultValue: exception.message });
+    const message = typeof translated === 'string' ? translated : exception.message;
 
     this._logger.warn(
-      { code: exception.code, httpStatus: exception.httpStatus, name: exception.name },
+      {
+        code: exception.code,
+        httpStatus: exception.httpStatus,
+        lang: i18n?.lang,
+        name: exception.name,
+      },
       exception.message,
     );
 
     response.status(exception.httpStatus).send({
       error: exception.code,
-      message: exception.message,
+      message,
       statusCode: exception.httpStatus,
     });
   }
