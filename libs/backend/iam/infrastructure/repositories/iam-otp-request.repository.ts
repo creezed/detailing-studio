@@ -58,7 +58,7 @@ export class IamOtpRequestRepository implements IOtpRequestRepository {
       await this.outbox.append(event, this.em);
     }
 
-    await this.em.persistAndFlush(persisted);
+    await this.em.persist(persisted).flush();
   }
 
   private toDomain(schema: IamOtpRequestSchema): OtpRequest {

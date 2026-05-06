@@ -19,9 +19,10 @@ import { InvitationNotFoundError, UserAlreadyExistsError } from '../../errors/ap
 import type { IPasswordHasher } from '../../ports/password-hasher/password-hasher.port';
 
 @CommandHandler(ActivateUserFromInvitationCommand)
-export class ActivateUserFromInvitationHandler
-  implements ICommandHandler<ActivateUserFromInvitationCommand, void>
-{
+export class ActivateUserFromInvitationHandler implements ICommandHandler<
+  ActivateUserFromInvitationCommand,
+  void
+> {
   constructor(
     @Inject(INVITATION_REPOSITORY) private readonly invitationRepo: IInvitationRepository,
     @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,

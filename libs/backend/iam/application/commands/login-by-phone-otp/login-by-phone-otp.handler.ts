@@ -28,9 +28,10 @@ import type { IJwtIssuer } from '../../ports/jwt-issuer/jwt-issuer.port';
 import type { ITokenGenerator } from '../../ports/token-generator/token-generator.port';
 
 @CommandHandler(LoginByPhoneOtpCommand)
-export class LoginByPhoneOtpHandler
-  implements ICommandHandler<LoginByPhoneOtpCommand, LoginResponseDto>
-{
+export class LoginByPhoneOtpHandler implements ICommandHandler<
+  LoginByPhoneOtpCommand,
+  LoginResponseDto
+> {
   constructor(
     @Inject(OTP_REQUEST_REPOSITORY) private readonly otpRepo: IOtpRequestRepository,
     @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,

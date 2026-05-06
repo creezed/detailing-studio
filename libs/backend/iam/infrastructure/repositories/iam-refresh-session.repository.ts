@@ -65,6 +65,6 @@ export class IamRefreshSessionRepository implements IRefreshSessionRepository {
       await this.outbox.append(event, this.em);
     }
 
-    await this.em.persistAndFlush(persisted);
+    await this.em.persist(persisted).flush();
   }
 }

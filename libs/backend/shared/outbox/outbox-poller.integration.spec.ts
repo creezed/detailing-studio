@@ -44,21 +44,23 @@ async function insertOutboxEvent(orm: MikroORM<PostgreSqlDriver>): Promise<void>
   const event = new TestOutboxEvent();
   const em = orm.em.fork();
 
-  await em.persistAndFlush(
-    em.create(OutboxEventSchema, {
-      aggregateId: event.aggregateId,
-      aggregateType: event.aggregateType,
-      eventType: event.eventType,
-      failedAt: null,
-      id: EVENT_ID,
-      lastError: null,
-      occurredAt: event.occurredAt,
-      payload: event,
-      publishedAt: null,
-      retryAfterAt: null,
-      retryCount: 0,
-    }),
-  );
+  await em
+    .persist(
+      em.create(OutboxEventSchema, {
+        aggregateId: event.aggregateId,
+        aggregateType: event.aggregateType,
+        eventType: event.eventType,
+        failedAt: null,
+        id: EVENT_ID,
+        lastError: null,
+        occurredAt: event.occurredAt,
+        payload: event,
+        publishedAt: null,
+        retryAfterAt: null,
+        retryCount: 0,
+      }),
+    )
+    .flush();
 }
 
 function registry(): EventTypeRegistry {

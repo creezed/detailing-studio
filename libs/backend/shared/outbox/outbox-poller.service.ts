@@ -46,7 +46,7 @@ const OUTBOX_POLLER_JOB_ID = 'outbox-poller.repeatable';
 
 @Injectable()
 export class OutboxPollerService implements OnApplicationShutdown, OnModuleInit {
-  private readonly logger = pino({ name: 'OutboxPollerService' });
+  private readonly logger: ReturnType<typeof pino> = pino({ name: 'OutboxPollerService' });
   private activeBatch: Promise<void> | null = null;
   private queue: Queue | null = null;
   private shuttingDown = false;

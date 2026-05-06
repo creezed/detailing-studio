@@ -26,9 +26,10 @@ import {
 import type { ITokenGenerator } from '../../ports/token-generator/token-generator.port';
 
 @CommandHandler(IssueInvitationCommand)
-export class IssueInvitationHandler
-  implements ICommandHandler<IssueInvitationCommand, { id: InvitationId }>
-{
+export class IssueInvitationHandler implements ICommandHandler<
+  IssueInvitationCommand,
+  { id: InvitationId }
+> {
   constructor(
     @Inject(INVITATION_REPOSITORY) private readonly invitationRepo: IInvitationRepository,
     @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,

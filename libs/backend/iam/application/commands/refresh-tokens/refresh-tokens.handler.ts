@@ -31,9 +31,10 @@ import type { IJwtIssuer } from '../../ports/jwt-issuer/jwt-issuer.port';
 import type { ITokenGenerator } from '../../ports/token-generator/token-generator.port';
 
 @CommandHandler(RefreshTokensCommand)
-export class RefreshTokensHandler
-  implements ICommandHandler<RefreshTokensCommand, LoginResponseDto>
-{
+export class RefreshTokensHandler implements ICommandHandler<
+  RefreshTokensCommand,
+  LoginResponseDto
+> {
   constructor(
     @Inject(REFRESH_SESSION_REPOSITORY)
     private readonly sessionRepo: IRefreshSessionRepository,

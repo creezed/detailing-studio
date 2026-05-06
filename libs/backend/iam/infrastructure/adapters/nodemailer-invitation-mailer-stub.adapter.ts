@@ -3,7 +3,9 @@ import pino from 'pino';
 
 @Injectable()
 export class NodemailerInvitationMailerStubAdapter {
-  private readonly logger = pino({ name: 'NodemailerInvitationMailerStubAdapter' });
+  private readonly logger: ReturnType<typeof pino> = pino({
+    name: 'NodemailerInvitationMailerStubAdapter',
+  });
 
   sendInvitation(email: string, rawToken: string): Promise<void> {
     this.logger.info({ email, rawToken }, 'Invitation email stub');

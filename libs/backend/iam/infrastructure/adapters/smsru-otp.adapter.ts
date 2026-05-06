@@ -13,7 +13,7 @@ export class NotImplementedYetError extends Error {
 
 @Injectable()
 export class SmsruOtpAdapter implements ISmsOtpPort {
-  private readonly logger = pino({ name: 'SmsruOtpAdapter' });
+  private readonly logger: ReturnType<typeof pino> = pino({ name: 'SmsruOtpAdapter' });
 
   constructor(private readonly config: ConfigService) {}
 

@@ -3,6 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/backend/api-e2e/src",
   "projectType": "application",
+  "tags": ["scope:api", "type:e2e", "platform:node"],
   "targets": {
     "e2e": {
       "executor": "@nx/jest:jest",
@@ -27,6 +28,5 @@
         "cwd": "."
       }
     }
-  },
-  "tags": ["scope:api", "type:e2e", "platform:node"]
+  }
 }
