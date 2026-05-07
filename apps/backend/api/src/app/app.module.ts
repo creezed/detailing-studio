@@ -4,7 +4,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AcceptLanguageResolver, I18nModule } from 'nestjs-i18n';
 
 import { IamInfrastructureModule } from '@det/backend/iam/infrastructure';
@@ -18,6 +18,7 @@ import { smsConfig } from '../config/sms.config';
 import { DomainExceptionFilter } from '../filters/domain-exception.filter';
 import { HealthController } from '../health/health.controller';
 import { MultiPathI18nLoader } from '../i18n/multi-path-i18n.loader';
+import { TransactionalInterceptor } from '../interceptors/transactional.interceptor';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { MultiPathI18nLoader } from '../i18n/multi-path-i18n.loader';
           warnWhenNoEntities: false,
         },
         driver: PostgreSqlDriver,
+        registerRequestContext: true,
       }),
     }),
     I18nModule.forRoot({
@@ -54,6 +56,9 @@ import { MultiPathI18nLoader } from '../i18n/multi-path-i18n.loader';
     IamInterfacesModule,
   ],
   controllers: [HealthController],
-  providers: [{ provide: APP_FILTER, useClass: DomainExceptionFilter }],
+  providers: [
+    { provide: APP_FILTER, useClass: DomainExceptionFilter },
+    { provide: APP_INTERCEPTOR, useClass: TransactionalInterceptor },
+  ],
 })
 export class AppModule {}
