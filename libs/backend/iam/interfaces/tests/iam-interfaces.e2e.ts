@@ -1,12 +1,22 @@
 /* eslint-disable @nx/enforce-module-boundaries */
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { PostgreSqlDriver } from '@mikro-orm/postgresql';
-import { type ArgumentsHost, Catch, type ExceptionFilter, ValidationPipe } from '@nestjs/common';
+import { EntityManager, PostgreSqlDriver } from '@mikro-orm/postgresql';
+import {
+  type ArgumentsHost,
+  Catch,
+  type ExceptionFilter,
+  Injectable,
+  ValidationPipe,
+  type CallHandler,
+  type ExecutionContext,
+  type NestInterceptor,
+} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
 import { Client } from 'pg';
+import { from, lastValueFrom, type Observable } from 'rxjs';
 import request from 'supertest';
 import { GenericContainer, Wait } from 'testcontainers';
 
@@ -45,6 +55,25 @@ class TestApplicationExceptionFilter implements ExceptionFilter<ApplicationError
       message: exception.message,
       statusCode: exception.httpStatus,
     });
+  }
+}
+
+@Injectable()
+class TestTransactionalInterceptor implements NestInterceptor {
+  constructor(private readonly em: EntityManager) {}
+
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    if (context.getType() === 'http') {
+      const req = context.switchToHttp().getRequest<{ method: string }>();
+
+      if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+        return next.handle();
+      }
+    }
+
+    return from(
+      this.em.transactional(() => lastValueFrom(next.handle(), { defaultValue: undefined })),
+    );
   }
 }
 
@@ -91,6 +120,7 @@ describe('IAM Interfaces e2e', () => {
           clientUrl: databaseUrl,
           discovery: { warnWhenNoEntities: false },
           driver: PostgreSqlDriver,
+          registerRequestContext: true,
         }),
         IamInfrastructureModule,
         IamInterfacesModule,
@@ -103,6 +133,7 @@ describe('IAM Interfaces e2e', () => {
       new ValidationPipe({ forbidNonWhitelisted: true, transform: true, whitelist: true }),
     );
     app.useGlobalFilters(new TestApplicationExceptionFilter());
+    app.useGlobalInterceptors(new TestTransactionalInterceptor(moduleRef.get(EntityManager)));
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   }, TEST_TIMEOUT);
