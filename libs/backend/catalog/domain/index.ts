@@ -1,0 +1,1 @@
+// Catalog domain — public API

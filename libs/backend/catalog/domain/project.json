@@ -1,0 +1,22 @@
+{
+  "name": "catalog-domain",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/catalog/domain",
+  "projectType": "library",
+  "tags": ["scope:catalog", "type:domain", "platform:node"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/backend/catalog/domain/**/*.ts"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/backend/catalog/domain/tsconfig.json --noEmit",
+        "cwd": "."
+      }
+    }
+  }
+}

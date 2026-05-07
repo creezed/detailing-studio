@@ -1,0 +1,22 @@
+{
+  "name": "catalog-infrastructure",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/catalog/infrastructure",
+  "projectType": "library",
+  "tags": ["scope:catalog", "type:infrastructure", "platform:node"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/backend/catalog/infrastructure/**/*.ts"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/backend/catalog/infrastructure/tsconfig.json --noEmit",
+        "cwd": "."
+      }
+    }
+  }
+}

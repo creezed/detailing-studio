@@ -17,6 +17,10 @@
     "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
     "paths": {
+      "@det/backend/catalog/application": ["libs/backend/catalog/application/index.ts"],
+      "@det/backend/catalog/domain": ["libs/backend/catalog/domain/index.ts"],
+      "@det/backend/catalog/infrastructure": ["libs/backend/catalog/infrastructure/index.ts"],
+      "@det/backend/catalog/interfaces": ["libs/backend/catalog/interfaces/index.ts"],
       "@det/backend/iam/application": ["libs/backend/iam/application/index.ts"],
       "@det/backend/iam/domain": ["libs/backend/iam/domain/index.ts"],
       "@det/backend/iam/infrastructure": ["libs/backend/iam/infrastructure/index.ts"],
