@@ -71,7 +71,6 @@ export class LoginByPhoneOtpHandler implements ICommandHandler<
     const refreshTokenData = this.tokenGen.generateRefreshToken();
 
     const session = RefreshSession.issue({
-      deviceFingerprint: cmd.deviceFingerprint,
       idGen: this.idGen,
       now,
       tokenHash: refreshTokenData.hash,

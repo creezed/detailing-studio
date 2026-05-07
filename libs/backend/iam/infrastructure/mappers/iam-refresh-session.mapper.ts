@@ -5,7 +5,6 @@ import { IamRefreshSessionSchema } from '../persistence/iam-refresh-session.sche
 export function mapIamRefreshSessionToDomain(schema: IamRefreshSessionSchema): RefreshSession {
   return RefreshSession.restore({
     compromisedAt: schema.compromisedAt?.toISOString() ?? null,
-    deviceFingerprint: schema.deviceFingerprint ?? '',
     expiresAt: schema.expiresAt.toISOString(),
     id: schema.id,
     issuedAt: schema.issuedAt.toISOString(),
@@ -28,7 +27,6 @@ export function mapIamRefreshSessionToPersistence(
   const snapshot = domain.toSnapshot();
 
   schema.compromisedAt = snapshot.compromisedAt === null ? null : new Date(snapshot.compromisedAt);
-  schema.deviceFingerprint = snapshot.deviceFingerprint;
   schema.expiresAt = new Date(snapshot.expiresAt);
   schema.id = snapshot.id;
   schema.issuedAt = new Date(snapshot.issuedAt);

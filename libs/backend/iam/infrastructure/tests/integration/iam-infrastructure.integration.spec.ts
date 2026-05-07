@@ -105,7 +105,6 @@ function otpRequest(): OtpRequest {
 
 function refreshSession(): RefreshSession {
   return RefreshSession.issue({
-    deviceFingerprint: 'device-1',
     expiresAt: EXPIRES_AT,
     idGen: new QueueIdGenerator([SESSION_ID]),
     now: NOW,

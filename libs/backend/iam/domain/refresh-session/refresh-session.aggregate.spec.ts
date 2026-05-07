@@ -27,7 +27,6 @@ function fixedIdGen(): IIdGenerator {
 
 function activeSession(overrides?: { expiresAt?: DateTime }): RefreshSession {
   return RefreshSession.issue({
-    deviceFingerprint: 'device-1',
     expiresAt: overrides?.expiresAt,
     idGen: fixedIdGen(),
     now: NOW,
@@ -41,7 +40,6 @@ describe('RefreshSession', () => {
     const session = activeSession();
 
     expect(session.toSnapshot()).toMatchObject({
-      deviceFingerprint: 'device-1',
       expiresAt: DateTime.from('2026-01-31T10:00:00.000Z').iso(),
       id: SESSION_ID,
       issuedAt: NOW.iso(),
@@ -157,7 +155,6 @@ describe('RefreshSession', () => {
   it('restore recreates refresh session without domain events', () => {
     const session = RefreshSession.restore({
       compromisedAt: null,
-      deviceFingerprint: 'device-1',
       expiresAt: AFTER_DEFAULT_EXPIRY.iso(),
       id: SESSION_ID,
       issuedAt: NOW.iso(),

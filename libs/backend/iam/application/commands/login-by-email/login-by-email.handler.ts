@@ -72,7 +72,6 @@ export class LoginByEmailHandler implements ICommandHandler<LoginByEmailCommand,
     const refreshTokenData = this.tokenGen.generateRefreshToken();
 
     const session = RefreshSession.issue({
-      deviceFingerprint: cmd.deviceFingerprint,
       idGen: this.idGen,
       now,
       tokenHash: refreshTokenData.hash,

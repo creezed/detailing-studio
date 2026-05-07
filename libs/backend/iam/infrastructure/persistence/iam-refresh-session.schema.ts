@@ -10,9 +10,6 @@ export class IamRefreshSessionSchema {
   @Property({ fieldName: 'user_id', type: 'uuid' })
   declare userId: string;
 
-  @Property({ fieldName: 'device_fingerprint', nullable: true, type: 'text' })
-  declare deviceFingerprint: string | null;
-
   @Property({ fieldName: 'token_hash', type: 'text' })
   declare tokenHash: string;
 

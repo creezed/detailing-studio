@@ -29,7 +29,6 @@ import {
 import type { AuthenticatedUser } from '../guards/auth.guard';
 
 const AUTH_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
-const REGISTER_OWNER_DEVICE_FINGERPRINT = 'owner-self-signup';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -47,7 +46,7 @@ export class AuthController {
     );
 
     return this.commandBus.execute<LoginByEmailCommand, AppLoginResponseDto>(
-      new LoginByEmailCommand(dto.email, dto.password, REGISTER_OWNER_DEVICE_FINGERPRINT),
+      new LoginByEmailCommand(dto.email, dto.password),
     );
   }
 
@@ -58,7 +57,7 @@ export class AuthController {
   @ApiOkResponse({ type: LoginResponseDto })
   async login(@Body() dto: LoginRequestDto): Promise<LoginResponseDto> {
     return this.commandBus.execute<LoginByEmailCommand, AppLoginResponseDto>(
-      new LoginByEmailCommand(dto.email, dto.password, dto.deviceFingerprint),
+      new LoginByEmailCommand(dto.email, dto.password),
     );
   }
 
@@ -78,7 +77,7 @@ export class AuthController {
   @ApiOkResponse({ type: LoginResponseDto })
   async verifyOtp(@Body() dto: OtpVerifyRequestDto): Promise<LoginResponseDto> {
     return this.commandBus.execute<LoginByPhoneOtpCommand, AppLoginResponseDto>(
-      new LoginByPhoneOtpCommand(dto.phone, dto.code, dto.deviceFingerprint),
+      new LoginByPhoneOtpCommand(dto.phone, dto.code),
     );
   }
 
@@ -89,7 +88,7 @@ export class AuthController {
   @ApiOkResponse({ type: LoginResponseDto })
   async refresh(@Body() dto: RefreshRequestDto): Promise<LoginResponseDto> {
     return this.commandBus.execute<RefreshTokensCommand, AppLoginResponseDto>(
-      new RefreshTokensCommand(dto.refreshToken, dto.deviceFingerprint),
+      new RefreshTokensCommand(dto.refreshToken),
     );
   }
 
