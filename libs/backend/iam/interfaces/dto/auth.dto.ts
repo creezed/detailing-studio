@@ -32,11 +32,6 @@ export class LoginRequestDto {
   @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
   @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare password: string;
-
-  @ApiProperty({ example: 'browser-fp-xyz' })
-  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
-  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
-  declare deviceFingerprint: string;
 }
 
 export class OtpRequestDto {
@@ -56,11 +51,6 @@ export class OtpVerifyRequestDto {
   @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
   @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare code: string;
-
-  @ApiProperty({ example: 'browser-fp-xyz' })
-  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
-  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
-  declare deviceFingerprint: string;
 }
 
 export class RefreshRequestDto {
@@ -68,11 +58,6 @@ export class RefreshRequestDto {
   @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
   @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
   declare refreshToken: string;
-
-  @ApiProperty({ example: 'browser-fp-xyz' })
-  @IsString({ message: i18nValidationMessage('validation.IS_STRING') })
-  @IsNotEmpty({ message: i18nValidationMessage('validation.IS_NOT_EMPTY') })
-  declare deviceFingerprint: string;
 }
 
 export class LogoutRequestDto {

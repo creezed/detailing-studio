@@ -556,8 +556,8 @@ class PostgresRefreshSessionRepository implements IRefreshSessionRepository {
 
     try {
       await this.client.query(
-        `insert into iam_refresh_sessions (id, user_id, device_fingerprint, token_hash, rotated_token_hashes, rotation_counter, status, issued_at, expires_at, last_rotated_at, revoked_at, revoked_by, compromised_at)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        `insert into iam_refresh_sessions (id, user_id, token_hash, rotated_token_hashes, rotation_counter, status, issued_at, expires_at, last_rotated_at, revoked_at, revoked_by, compromised_at)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          on conflict (id) do update set
            token_hash = excluded.token_hash,
            rotated_token_hashes = excluded.rotated_token_hashes,
@@ -570,7 +570,6 @@ class PostgresRefreshSessionRepository implements IRefreshSessionRepository {
         [
           snapshot.id,
           snapshot.userId,
-          snapshot.deviceFingerprint,
           snapshot.tokenHash,
           snapshot.rotatedTokenHashes,
           snapshot.rotationCounter,
@@ -594,7 +593,6 @@ class PostgresRefreshSessionRepository implements IRefreshSessionRepository {
   private toDomain(row: Record<string, unknown>): RefreshSession {
     return RefreshSession.restore({
       compromisedAt: row['compromised_at'] ? (row['compromised_at'] as Date).toISOString() : null,
-      deviceFingerprint: row['device_fingerprint'] as string,
       expiresAt: (row['expires_at'] as Date).toISOString(),
       id: row['id'] as string,
       issuedAt: (row['issued_at'] as Date).toISOString(),
@@ -651,7 +649,6 @@ async function createSchema(client: Client): Promise<void> {
     create table if not exists iam_refresh_sessions (
       id uuid primary key,
       user_id uuid not null,
-      device_fingerprint text not null,
       token_hash text not null,
       rotated_token_hashes text[] not null default '{}',
       rotation_counter int not null default 0,
@@ -1033,7 +1030,7 @@ describe('IamApplicationModule integration', () => {
       idGen.reset([SESSION_ID]);
 
       const result = await commandBus.execute<LoginByEmailCommand, LoginResponseDto>(
-        new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'),
+        new LoginByEmailCommand('owner@example.com', 'secret'),
       );
 
       expect(result).toMatchObject({
@@ -1046,7 +1043,6 @@ describe('IamApplicationModule integration', () => {
       const session = await sessionRepo.findById(SessionId.from(SESSION_ID));
       expect(session).not.toBeNull();
       expect(session?.toSnapshot()).toMatchObject({
-        deviceFingerprint: 'device-1',
         status: RefreshSessionStatus.ACTIVE,
         tokenHash: hashToken('refresh-token-0'),
         userId: OWNER_ID,
@@ -1057,13 +1053,13 @@ describe('IamApplicationModule integration', () => {
       await registerActiveOwner();
 
       await expect(
-        commandBus.execute(new LoginByEmailCommand('owner@example.com', 'wrong', 'device-1')),
+        commandBus.execute(new LoginByEmailCommand('owner@example.com', 'wrong')),
       ).rejects.toBeInstanceOf(InvalidCredentialsError);
     });
 
     it('login by email rejects non-existing user', async () => {
       await expect(
-        commandBus.execute(new LoginByEmailCommand('no@example.com', 'secret', 'device-1')),
+        commandBus.execute(new LoginByEmailCommand('no@example.com', 'secret')),
       ).rejects.toBeInstanceOf(InvalidCredentialsError);
     });
 
@@ -1087,7 +1083,7 @@ describe('IamApplicationModule integration', () => {
       await commandBus.execute(new BlockUserCommand(MANAGER_USER_ID, OWNER_USER_ID, 'policy'));
 
       await expect(
-        commandBus.execute(new LoginByEmailCommand('manager@example.com', 'secret', 'device-1')),
+        commandBus.execute(new LoginByEmailCommand('manager@example.com', 'secret')),
       ).rejects.toBeInstanceOf(InvalidCredentialsError);
     });
 
@@ -1111,7 +1107,7 @@ describe('IamApplicationModule integration', () => {
 
       idGen.reset([SESSION_ID]);
       const result = await commandBus.execute<LoginByPhoneOtpCommand, LoginResponseDto>(
-        new LoginByPhoneOtpCommand('+79991234567', '123456', 'device-2'),
+        new LoginByPhoneOtpCommand('+79991234567', '123456'),
       );
 
       expect(result).toMatchObject({
@@ -1127,20 +1123,20 @@ describe('IamApplicationModule integration', () => {
       await commandBus.execute(new RequestOtpCommand('+79991234567'));
 
       await expect(
-        commandBus.execute(new LoginByPhoneOtpCommand('+79991234567', '000000', 'device-2')),
+        commandBus.execute(new LoginByPhoneOtpCommand('+79991234567', '000000')),
       ).rejects.toThrow();
     });
 
     it('login by phone OTP rejects when no pending OTP exists', async () => {
       await expect(
-        commandBus.execute(new LoginByPhoneOtpCommand('+79991234567', '123456', 'device-2')),
+        commandBus.execute(new LoginByPhoneOtpCommand('+79991234567', '123456')),
       ).rejects.toBeInstanceOf(OtpNotFoundError);
     });
 
     it('logout revokes session', async () => {
       await registerActiveOwner();
       idGen.reset([SESSION_ID]);
-      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'));
+      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret'));
 
       await commandBus.execute(new LogoutCommand(OWNER_USER_ID, 'refresh-token-0'));
 
@@ -1157,10 +1153,10 @@ describe('IamApplicationModule integration', () => {
     it('refresh tokens rotates session and returns new tokens', async () => {
       await registerActiveOwner();
       idGen.reset([SESSION_ID]);
-      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'));
+      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret'));
 
       const result = await commandBus.execute<RefreshTokensCommand, LoginResponseDto>(
-        new RefreshTokensCommand('refresh-token-0', 'device-1'),
+        new RefreshTokensCommand('refresh-token-0'),
       );
 
       expect(result.accessToken).toBe(`access:${OWNER_ID}`);
@@ -1175,12 +1171,12 @@ describe('IamApplicationModule integration', () => {
     it('refresh tokens detects reuse and marks session compromised', async () => {
       await registerActiveOwner();
       idGen.reset([SESSION_ID]);
-      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'));
+      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret'));
 
-      await commandBus.execute(new RefreshTokensCommand('refresh-token-0', 'device-1'));
+      await commandBus.execute(new RefreshTokensCommand('refresh-token-0'));
 
       await expect(
-        commandBus.execute(new RefreshTokensCommand('refresh-token-0', 'device-1')),
+        commandBus.execute(new RefreshTokensCommand('refresh-token-0')),
       ).rejects.toBeInstanceOf(RefreshTokenReuseError);
 
       const session = await sessionRepo.findById(SessionId.from(SESSION_ID));
@@ -1190,7 +1186,7 @@ describe('IamApplicationModule integration', () => {
     it('refresh tokens rejects expired session', async () => {
       await registerActiveOwner();
       idGen.reset([SESSION_ID]);
-      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret', 'device-1'));
+      await commandBus.execute(new LoginByEmailCommand('owner@example.com', 'secret'));
 
       await client.query(
         `update iam_refresh_sessions set expires_at = '2020-01-01T00:00:00.000Z' where id = $1`,
@@ -1198,7 +1194,7 @@ describe('IamApplicationModule integration', () => {
       );
 
       await expect(
-        commandBus.execute(new RefreshTokensCommand('refresh-token-0', 'device-1')),
+        commandBus.execute(new RefreshTokensCommand('refresh-token-0')),
       ).rejects.toThrow();
     });
   });

@@ -82,7 +82,6 @@ export class Migration20260505220000 extends Migration {
     this.addSql(`create table if not exists "iam_refresh_session" (
       "id" uuid not null,
       "user_id" uuid not null,
-      "device_fingerprint" text null,
       "token_hash" text not null,
       "rotated_token_hashes" jsonb not null default '[]'::jsonb,
       "rotation_counter" int not null default 0,

@@ -15,7 +15,6 @@ const DEFAULT_REFRESH_SESSION_DAYS = 30;
 
 export interface IssueRefreshSessionProps {
   readonly userId: UserId;
-  readonly deviceFingerprint: string;
   readonly expiresAt?: DateTime;
   readonly tokenHash: string;
   readonly idGen: IIdGenerator;
@@ -25,7 +24,6 @@ export interface IssueRefreshSessionProps {
 export interface RefreshSessionSnapshot {
   readonly id: string;
   readonly userId: string;
-  readonly deviceFingerprint: string;
   readonly tokenHash: string;
   readonly rotatedTokenHashes: readonly string[];
   readonly rotationCounter: number;
@@ -42,7 +40,6 @@ export class RefreshSession extends AggregateRoot<SessionId> {
   private constructor(
     private readonly _id: SessionId,
     private readonly _userId: UserId,
-    private readonly _deviceFingerprint: string,
     private _tokenHash: string,
     private readonly _rotatedTokenHashes: string[],
     private _rotationCounter: number,
@@ -71,7 +68,6 @@ export class RefreshSession extends AggregateRoot<SessionId> {
     const session = new RefreshSession(
       SessionId.generate(props.idGen),
       props.userId,
-      props.deviceFingerprint,
       props.tokenHash,
       [],
       0,
@@ -93,7 +89,6 @@ export class RefreshSession extends AggregateRoot<SessionId> {
     return new RefreshSession(
       SessionId.from(snapshot.id),
       UserId.from(snapshot.userId),
-      snapshot.deviceFingerprint,
       snapshot.tokenHash,
       [...snapshot.rotatedTokenHashes],
       snapshot.rotationCounter,
@@ -152,7 +147,6 @@ export class RefreshSession extends AggregateRoot<SessionId> {
   toSnapshot(): RefreshSessionSnapshot {
     return {
       compromisedAt: this._compromisedAt?.iso() ?? null,
-      deviceFingerprint: this._deviceFingerprint,
       expiresAt: this._expiresAt.iso(),
       id: this.id,
       issuedAt: this._issuedAt.iso(),

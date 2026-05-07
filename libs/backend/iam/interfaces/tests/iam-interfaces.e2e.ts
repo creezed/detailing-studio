@@ -1,7 +1,7 @@
 /* eslint-disable @nx/enforce-module-boundaries */
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
-import { ValidationPipe } from '@nestjs/common';
+import { type ArgumentsHost, Catch, type ExceptionFilter, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
@@ -11,6 +11,7 @@ import request from 'supertest';
 import { GenericContainer, Wait } from 'testcontainers';
 
 import { IamInfrastructureModule } from '@det/backend/iam/infrastructure';
+import { ApplicationError } from '@det/backend/shared/ddd';
 
 import { IamInterfacesModule } from '../index';
 
@@ -23,6 +24,29 @@ const TEST_TIMEOUT = 60_000;
 const BRANCH_ID = '11111111-1111-4111-8111-111111111101';
 const MANAGER_ID = '11111111-1111-4111-8111-111111111201';
 const TARGET_USER_ID = '11111111-1111-4111-8111-111111111202';
+
+interface ErrorResponse {
+  readonly error: string;
+  readonly message: string;
+  readonly statusCode: number;
+}
+
+interface HttpResponse {
+  status(code: number): {
+    send(body: ErrorResponse): void;
+  };
+}
+
+@Catch(ApplicationError)
+class TestApplicationExceptionFilter implements ExceptionFilter<ApplicationError> {
+  catch(exception: ApplicationError, host: ArgumentsHost): void {
+    host.switchToHttp().getResponse<HttpResponse>().status(exception.httpStatus).send({
+      error: exception.code,
+      message: exception.message,
+      statusCode: exception.httpStatus,
+    });
+  }
+}
 
 describe('IAM Interfaces e2e', () => {
   let app: NestFastifyApplication;
@@ -78,6 +102,7 @@ describe('IAM Interfaces e2e', () => {
     app.useGlobalPipes(
       new ValidationPipe({ forbidNonWhitelisted: true, transform: true, whitelist: true }),
     );
+    app.useGlobalFilters(new TestApplicationExceptionFilter());
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   }, TEST_TIMEOUT);
@@ -108,7 +133,6 @@ describe('IAM Interfaces e2e', () => {
       const loginRes = await request(app.getHttpServer())
         .post('/api/auth/login')
         .send({
-          deviceFingerprint: 'fp-1',
           email: 'owner-profile@studio.test',
           password: 'Str0ngP@ss',
         })
@@ -147,11 +171,10 @@ describe('IAM Interfaces e2e', () => {
     await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({
-        deviceFingerprint: 'fp-2',
         email: 'blocked-owner@studio.test',
         password: 'Str0ngP@ss',
       })
-      .expect(403);
+      .expect(401);
   });
 
   it('manager cannot block another user', async () => {
@@ -168,7 +191,6 @@ describe('IAM Interfaces e2e', () => {
     const loginRes = await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({
-        deviceFingerprint: 'fp-manager',
         email: 'manager-block@studio.test',
         password: 'Str0ngP@ss',
       })
@@ -254,7 +276,6 @@ async function runMigrations(client: Client): Promise<void> {
     CREATE TABLE IF NOT EXISTS "iam_refresh_session" (
       "id" uuid NOT NULL,
       "user_id" uuid NOT NULL,
-      "device_fingerprint" text NULL,
       "token_hash" text NOT NULL,
       "rotated_token_hashes" jsonb NOT NULL DEFAULT '[]'::jsonb,
       "rotation_counter" int NOT NULL DEFAULT 0,

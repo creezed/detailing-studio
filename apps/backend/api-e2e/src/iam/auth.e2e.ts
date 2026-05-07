@@ -49,6 +49,7 @@ interface SessionStatusRow extends QueryResultRow {
 }
 
 interface ApiErrorResponse {
+  readonly error: string;
   readonly statusCode: number;
   readonly message: string;
 }
@@ -284,7 +285,6 @@ describe('Backend API IAM auth e2e', () => {
         await supertest(api.baseUrl)
           .post('/api/auth/login')
           .send({
-            deviceFingerprint: 'manager-browser',
             email: 'manager-accepted@studio.test',
             password: 'Str0ngP@ss',
           })
@@ -325,7 +325,6 @@ describe('Backend API IAM auth e2e', () => {
           .post('/api/auth/otp/verify')
           .send({
             code,
-            deviceFingerprint: 'otp-browser',
             phone: '+79990000004',
           })
           .expect(200)
@@ -346,7 +345,6 @@ describe('Backend API IAM auth e2e', () => {
         await supertest(api.baseUrl)
           .post('/api/auth/login')
           .send({
-            deviceFingerprint: 'refresh-browser-2',
             email: 'owner-refresh@studio.test',
             password: 'Str0ngP@ss',
           })
@@ -358,16 +356,16 @@ describe('Backend API IAM auth e2e', () => {
 
     await supertest(api.baseUrl)
       .post('/api/auth/refresh')
-      .send({ deviceFingerprint: 'refresh-browser-1', refreshToken: owner.refreshToken })
+      .send({ refreshToken: owner.refreshToken })
       .expect(200);
 
     const reuseResponse = await supertest(api.baseUrl)
       .post('/api/auth/refresh')
-      .send({ deviceFingerprint: 'refresh-browser-1', refreshToken: owner.refreshToken })
+      .send({ refreshToken: owner.refreshToken })
       .expect(401);
     const reuseBody = apiErrorResponseFrom(reuseResponse.body);
 
-    expect(reuseBody.message).toContain('Refresh token reuse detected');
+    expect(reuseBody.error).toBe('REFRESH_TOKEN_REUSE');
     await expectSessionStatuses(owner.user.id, ['COMPROMISED', 'COMPROMISED']);
   });
 
@@ -380,11 +378,10 @@ describe('Backend API IAM auth e2e', () => {
     await supertest(api.baseUrl)
       .post('/api/auth/login')
       .send({
-        deviceFingerprint: 'blocked-browser',
         email: 'blocked-owner@studio.test',
         password: 'Str0ngP@ss',
       })
-      .expect(403);
+      .expect(401);
   });
 
   function registerOwner(email: string, phone: string): Promise<request.Response> {
@@ -482,7 +479,6 @@ async function runMigrations(client: Client): Promise<void> {
     create table if not exists "iam_refresh_session" (
       "id" uuid not null,
       "user_id" uuid not null,
-      "device_fingerprint" text null,
       "token_hash" text not null,
       "rotated_token_hashes" jsonb not null default '[]'::jsonb,
       "rotation_counter" int not null default 0,
@@ -576,6 +572,7 @@ function isCurrentUserResponse(value: unknown): value is CurrentUserResponse {
 function isApiErrorResponse(value: unknown): value is ApiErrorResponse {
   return (
     isRecord(value) &&
+    typeof value['error'] === 'string' &&
     typeof value['statusCode'] === 'number' &&
     typeof value['message'] === 'string'
   );
@@ -589,7 +586,11 @@ function findOtpCodeInLogs(logLines: readonly string[], phone: string): string {
       continue;
     }
 
-    if (parsed['msg'] === 'SMS OTP dev stub' && parsed['phone'] === phone) {
+    if (
+      typeof parsed['msg'] === 'string' &&
+      parsed['msg'].includes('OTP code') &&
+      parsed['phone'] === phone
+    ) {
       return stringProperty(parsed, 'code');
     }
   }
