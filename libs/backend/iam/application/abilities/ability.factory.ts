@@ -13,6 +13,8 @@ export type AppSubjectName =
   | 'Appointment'
   | 'WorkOrder'
   | 'Client'
+  | 'Service'
+  | 'ServiceCategory'
   | 'Sku'
   | 'Receipt'
   | 'Stock'
@@ -65,6 +67,8 @@ export class AbilityFactory {
       can('manage', 'Appointment', { branchId: { $in: branchIds } });
       can('manage', 'Client', { branchId: { $in: branchIds } });
       can('manage', 'Receipt', { branchId: { $in: branchIds } });
+      can('read', 'Service');
+      can('read', 'ServiceCategory');
       can('invite', 'User', { role: Role.MASTER });
       can('create', 'Invitation', { role: Role.MASTER });
       cannot('read', 'all', ['cost', 'averageCost', 'unitCost']);
@@ -73,10 +77,14 @@ export class AbilityFactory {
     if (user.role === Role.MASTER) {
       can('read', 'Appointment', { masterId: user.id });
       can('update', 'WorkOrder', { masterId: user.id });
+      can('read', 'Service');
+      can('read', 'ServiceCategory');
     }
 
     if (user.role === Role.CLIENT) {
       can('manage', 'Appointment', { clientId: user.id });
+      can('read', 'Service');
+      can('read', 'ServiceCategory');
     }
 
     return build();

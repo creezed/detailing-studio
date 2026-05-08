@@ -1,3 +1,5 @@
+export { ServiceCategoryId, ServiceId, PricingType } from '@det/backend/catalog/domain';
+export type { ServicePricing, MaterialNorm, BodyType } from '@det/backend/catalog/domain';
 export * from './catalog-application.module';
 export * from './commands/change-service-price/change-service-price.command';
 export * from './commands/change-service-price/change-service-price.handler';

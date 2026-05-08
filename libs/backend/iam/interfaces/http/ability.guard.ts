@@ -3,28 +3,17 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
-  SetMetadata,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import { AbilityFactory, type AppAbility } from '@det/backend/iam/application';
+import { AbilityFactory } from '@det/backend/iam/application';
+import type { Role } from '@det/backend/iam/application';
+import { CHECK_ABILITY_KEY } from '@det/backend/shared/auth';
+import type { AbilityChecker, AuthenticatedUser } from '@det/backend/shared/auth';
 
-import type { AuthenticatedUser } from '../guards/auth.guard';
-
-export const CHECK_ABILITY_KEY = Symbol('CHECK_ABILITY_KEY');
-
-export interface AbilityGuardContext {
-  readonly body: unknown;
-  readonly params: Readonly<Record<string, string>>;
-  readonly query: Readonly<Record<string, unknown>>;
-  readonly user: AuthenticatedUser;
-}
-
-export type AbilityCallback = (ability: AppAbility, context: AbilityGuardContext) => boolean;
-
-export const CheckAbility = (callback: AbilityCallback): MethodDecorator & ClassDecorator =>
-  SetMetadata(CHECK_ABILITY_KEY, callback);
+export { CheckAbility } from '@det/backend/shared/auth';
+export type { AbilityChecker, AbilityGuardContext } from '@det/backend/shared/auth';
 
 interface RequestWithAbilityContext {
   readonly body?: unknown;
@@ -41,7 +30,7 @@ export class AbilityGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const callback = this.reflector.getAllAndOverride<AbilityCallback | undefined>(
+    const callback = this.reflector.getAllAndOverride<AbilityChecker | undefined>(
       CHECK_ABILITY_KEY,
       [context.getHandler(), context.getClass()],
     );
@@ -59,7 +48,7 @@ export class AbilityGuard implements CanActivate {
     const ability = this.abilityFactory.createForUser({
       branchIds: request.user.branchIds,
       id: request.user.id,
-      role: request.user.role,
+      role: request.user.role as Role,
     });
     const allowed = callback(ability, {
       body: request.body,

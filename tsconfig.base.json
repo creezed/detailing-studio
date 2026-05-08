@@ -25,6 +25,7 @@
       "@det/backend/iam/domain": ["libs/backend/iam/domain/index.ts"],
       "@det/backend/iam/infrastructure": ["libs/backend/iam/infrastructure/index.ts"],
       "@det/backend/iam/interfaces": ["libs/backend/iam/interfaces/index.ts"],
+      "@det/backend/shared/auth": ["libs/backend/shared/auth/index.ts"],
       "@det/backend/shared/ddd": ["libs/backend/shared/ddd/index.ts"],
       "@det/backend/shared/outbox": ["libs/backend/shared/outbox/index.ts"],
       "@det/frontend/shared/data-access": ["libs/frontend/shared/data-access/index.ts"],

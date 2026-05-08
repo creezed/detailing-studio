@@ -7,15 +7,12 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import { JWT_ISSUER, type IJwtIssuer, type JwtPayload } from '@det/backend/iam/application';
+import { JWT_ISSUER } from '@det/backend/iam/application';
+import type { IJwtIssuer } from '@det/backend/iam/application';
+import { IS_PUBLIC_KEY } from '@det/backend/shared/auth';
+import type { AuthenticatedUser } from '@det/backend/shared/auth';
 
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-
-export interface AuthenticatedUser {
-  readonly id: string;
-  readonly role: JwtPayload['role'];
-  readonly branchIds: readonly string[];
-}
+export type { AuthenticatedUser };
 
 interface RequestWithAuth {
   headers: { authorization?: string };
