@@ -2,32 +2,41 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   push:
     branches: [main]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build:
+  # ──────────────────────────────────────────────
+  # Job 1: Lint → Typecheck → Test → Build
+  # ──────────────────────────────────────────────
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: detailing
-          POSTGRES_USER: app
-          POSTGRES_PASSWORD: ci-password
+          POSTGRES_DB: detailing_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U test -d detailing_test"
           --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
+          --health-timeout 3s
+          --health-retries 20
 
       redis:
         image: redis:7-alpine
@@ -36,13 +45,15 @@ jobs:
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
+          --health-timeout 3s
+          --health-retries 10
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - uses: nrwl/nx-set-shas@v4
 
       - uses: pnpm/action-setup@v4
 
@@ -71,20 +82,95 @@ jobs:
             echo "args=--all" >> "$GITHUB_OUTPUT"
           else
             echo "cmd=affected" >> "$GITHUB_OUTPUT"
-            echo "args=--base=origin/main --head=HEAD" >> "$GITHUB_OUTPUT"
+            echo "args=" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Lint
-        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} --target=lint --parallel=3 ${{ steps.nx.outputs.args }}
+      - name: Lint (includes enforce-module-boundaries)
+        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} -t lint --parallel=3 ${{ steps.nx.outputs.args }}
 
-      - name: TypeCheck
-        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} --target=typecheck ${{ steps.nx.outputs.args }}
+      - name: Typecheck
+        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} -t typecheck ${{ steps.nx.outputs.args }}
 
       - name: Test
-        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} --target=test --parallel=3 ${{ steps.nx.outputs.args }}
+        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} -t test --parallel=3 --ci --code-coverage ${{ steps.nx.outputs.args }}
         env:
-          POSTGRES_PASSWORD: ci-password
+          TEST_DATABASE_URL: postgres://test:test@localhost:5432/detailing_test
+          POSTGRES_PASSWORD: test
           REDIS_PASSWORD: ''
 
+      - name: Check coverage threshold (≥ 80%)
+        run: node scripts/check-coverage.mjs
+
       - name: Build
-        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} --target=build ${{ steps.nx.outputs.args }}
+        run: pnpm exec nx ${{ steps.nx.outputs.cmd }} -t build ${{ steps.nx.outputs.args }}
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  # ──────────────────────────────────────────────
+  # Job 2: Docker build & push (main only)
+  # ──────────────────────────────────────────────
+  docker:
+    name: Docker Build & Push
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_PREFIX: ${{ github.repository }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build API
+        run: pnpm exec nx build api
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - name: Build & push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./apps/backend/api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
