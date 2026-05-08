@@ -11,6 +11,14 @@
         "lintFilePatterns": ["libs/backend/catalog/domain/**/*.ts"]
       }
     },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/catalog/domain"],
+      "options": {
+        "jestConfig": "libs/backend/catalog/domain/jest.config.ts",
+        "passWithNoTests": false
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {

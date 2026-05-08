@@ -1,0 +1,10 @@
+export enum BodyType {
+  SEDAN = 'SEDAN',
+  HATCHBACK = 'HATCHBACK',
+  CROSSOVER = 'CROSSOVER',
+  SUV = 'SUV',
+  MINIVAN = 'MINIVAN',
+  PICKUP = 'PICKUP',
+  COUPE = 'COUPE',
+  OTHER = 'OTHER',
+}

@@ -66,6 +66,13 @@ export const SkuId = {
   },
 };
 
+export type ServiceCategoryId = Brand<string, 'ServiceCategoryId'>;
+export const ServiceCategoryId = {
+  from(value: string): ServiceCategoryId {
+    return fromUuid<'ServiceCategoryId'>(value);
+  },
+};
+
 export type ServiceId = Brand<string, 'ServiceId'>;
 export const ServiceId = {
   from(value: string): ServiceId {
