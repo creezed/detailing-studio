@@ -1,7 +1,5 @@
-/**
- * Reads coverage/*/coverage-summary.json files produced by Jest
- * and fails CI if any project's statement coverage is below the threshold.
- */
+// Reads coverage/<project>/coverage-summary.json files produced by Jest
+// and fails CI if any project's statement coverage is below the threshold.
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
