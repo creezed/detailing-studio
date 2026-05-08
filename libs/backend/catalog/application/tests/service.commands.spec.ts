@@ -6,7 +6,7 @@ import type {
   ServiceCategoryId,
   ServicePricing,
 } from '@det/backend/catalog/domain';
-import { DateTime, Money } from '@det/backend/shared/ddd';
+import { DateTime, Money, UnitOfMeasure } from '@det/backend/shared/ddd';
 import type { IClock, IIdGenerator } from '@det/backend/shared/ddd';
 
 import { ChangeServicePriceCommand } from '../commands/change-service-price/change-service-price.command';
@@ -190,7 +190,9 @@ describe('SetServiceMaterialNormsHandler', () => {
 
     const handler = new SetServiceMaterialNormsHandler(repo, mockClock());
     const serviceId = ServiceId.from(SERVICE_ID);
-    const norms: MaterialNorm[] = [{ amount: 50, skuId: 'sku-1' as MaterialNorm['skuId'] }];
+    const norms: MaterialNorm[] = [
+      { amount: 50, skuId: 'sku-1' as MaterialNorm['skuId'], unit: UnitOfMeasure.ML },
+    ];
 
     await handler.execute(new SetServiceMaterialNormsCommand(serviceId, norms));
 

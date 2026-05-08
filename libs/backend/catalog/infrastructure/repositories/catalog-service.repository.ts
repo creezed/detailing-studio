@@ -1,3 +1,4 @@
+import { EntityManager } from '@mikro-orm/postgresql';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { CLOCK, ID_GENERATOR } from '@det/backend/catalog/application';
@@ -17,7 +18,6 @@ import {
 import { CatalogServiceSchema } from '../persistence/catalog-service.schema';
 
 import type { FilterQuery } from '@mikro-orm/core';
-import type { EntityManager } from '@mikro-orm/postgresql';
 
 @Injectable()
 export class CatalogServiceRepository implements IServiceRepository {
