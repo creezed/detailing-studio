@@ -7,10 +7,9 @@ export default {
     '!catalog-application.module.ts',
     '!di/tokens.ts',
   ],
-  // TODO(catalog): raise back to 90 after covering event/query handlers
   coverageThreshold: {
     global: {
-      statements: 65,
+      statements: 90,
     },
   },
   displayName: 'catalog-application',
