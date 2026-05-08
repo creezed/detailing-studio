@@ -590,6 +590,15 @@ class PostgresRefreshSessionRepository implements IRefreshSessionRepository {
     }
   }
 
+  async compromiseAllByUserId(userId: UserId, now: DateTime): Promise<void> {
+    const sessions = await this.listActiveByUserId(userId);
+
+    for (const session of sessions) {
+      session.markCompromised(now);
+      await this.save(session);
+    }
+  }
+
   private toDomain(row: Record<string, unknown>): RefreshSession {
     return RefreshSession.restore({
       compromisedAt: row['compromised_at'] ? (row['compromised_at'] as Date).toISOString() : null,

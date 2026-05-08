@@ -336,8 +336,7 @@ describe('Backend API IAM auth e2e', () => {
     expect(verifyBody.user.role).toBe('OWNER');
   });
 
-  // TODO(iam): fix refresh-token reuse detection — sessions are not marked COMPROMISED
-  it.skip('detects refresh-token reuse and compromises all user sessions', async () => {
+  it('detects refresh-token reuse and compromises all user sessions', async () => {
     const owner = loginResponseFrom(
       (await registerOwner('owner-refresh@studio.test', '+79990000005')).body,
     );

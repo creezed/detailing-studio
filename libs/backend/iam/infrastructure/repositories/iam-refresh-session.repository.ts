@@ -8,6 +8,7 @@ import type {
   SessionId,
   UserId,
 } from '@det/backend/iam/domain';
+import type { DateTime } from '@det/backend/shared/ddd';
 import { OutboxService } from '@det/backend/shared/outbox';
 
 import {
@@ -66,5 +67,29 @@ export class IamRefreshSessionRepository implements IRefreshSessionRepository {
     }
 
     await this.em.persist(persisted).flush();
+  }
+
+  async compromiseAllByUserId(userId: UserId, now: DateTime): Promise<void> {
+    const fork = this.em.fork();
+
+    await fork.transactional(async (txEm) => {
+      const schemas = await txEm.find(IamRefreshSessionSchema, {
+        status: RefreshSessionStatus.ACTIVE,
+        userId,
+      });
+
+      for (const schema of schemas) {
+        const session = mapIamRefreshSessionToDomain(schema);
+        session.markCompromised(now);
+        const persisted = mapIamRefreshSessionToPersistence(session, schema);
+        const events = session.pullDomainEvents();
+
+        for (const event of events) {
+          await this.outbox.append(event, txEm);
+        }
+
+        txEm.persist(persisted);
+      }
+    });
   }
 }

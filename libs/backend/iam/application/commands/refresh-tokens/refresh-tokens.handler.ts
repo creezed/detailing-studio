@@ -68,14 +68,7 @@ export class RefreshTokensHandler implements ICommandHandler<
 
     if (compromisedSession) {
       const userId = compromisedSession.toSnapshot().userId;
-      compromisedSession.markCompromised(now);
-      await this.sessionRepo.save(compromisedSession);
-      const activeSessions = await this.sessionRepo.listActiveByUserId(UserId.from(userId));
-
-      for (const sessionToBlock of activeSessions) {
-        sessionToBlock.markCompromised(now);
-        await this.sessionRepo.save(sessionToBlock);
-      }
+      await this.sessionRepo.compromiseAllByUserId(UserId.from(userId), now);
 
       throw new RefreshTokenReuseError(compromisedSession.id);
     }
