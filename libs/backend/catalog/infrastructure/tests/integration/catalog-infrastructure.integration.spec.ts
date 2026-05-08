@@ -12,8 +12,8 @@ import {
   ServiceId,
 } from '@det/backend/catalog/domain';
 import type { MaterialNorm } from '@det/backend/catalog/domain';
-import { DateTime, Money } from '@det/backend/shared/ddd';
-import type { IIdGenerator } from '@det/backend/shared/ddd';
+import { DateTime, Money, UnitOfMeasure } from '@det/backend/shared/ddd';
+import type { IClock, IIdGenerator } from '@det/backend/shared/ddd';
 import { OutboxEventSchema, OutboxService } from '@det/backend/shared/outbox';
 import { SkuId } from '@det/shared/types';
 
@@ -84,10 +84,12 @@ function complexService(): Service {
         [BodyType.SUV, 1.5],
       ]),
       skuId: SkuId.from(SKU_ID_1),
+      unit: UnitOfMeasure.ML,
     },
     {
       amount: 50,
       skuId: SkuId.from(SKU_ID_2),
+      unit: UnitOfMeasure.G,
     },
   ];
 
@@ -115,8 +117,11 @@ function categoryRepo(em: EntityManager): CatalogServiceCategoryRepository {
   return new CatalogServiceCategoryRepository(em, new OutboxService());
 }
 
+const FIXED_CLOCK: IClock = { now: () => NOW };
+const FIXED_ID_GEN: IIdGenerator = { generate: () => crypto.randomUUID() };
+
 function serviceRepo(em: EntityManager): CatalogServiceRepository {
-  return new CatalogServiceRepository(em, new OutboxService());
+  return new CatalogServiceRepository(em, new OutboxService(), FIXED_ID_GEN, FIXED_CLOCK);
 }
 
 async function outboxCount(em: EntityManager): Promise<number> {
@@ -184,7 +189,7 @@ describe('Catalog infrastructure repositories', () => {
     await categoryRepo(em).save(cat);
 
     em.clear();
-    const list = await categoryRepo(em).findAll();
+    const list = await categoryRepo(em).findAll(true);
 
     expect(list).toHaveLength(1);
     expect(list[0]?.toSnapshot()).toEqual(cat.toSnapshot());
