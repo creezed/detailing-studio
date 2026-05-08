@@ -1,0 +1,23 @@
+export default {
+  collectCoverageFrom: [
+    '**/*.ts',
+    '!**/*.spec.ts',
+    '!index.ts',
+    '!jest.config.ts',
+    '!catalog-application.module.ts',
+    '!di/tokens.ts',
+  ],
+  coverageThreshold: {
+    global: {
+      statements: 90,
+    },
+  },
+  displayName: 'catalog-application',
+  preset: '../../../../jest.preset.cjs',
+  testEnvironment: 'node',
+  transform: {
+    '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
+  },
+  moduleFileExtensions: ['ts', 'js', 'html'],
+  coverageDirectory: '../../../../coverage/libs/backend/catalog/application',
+};
