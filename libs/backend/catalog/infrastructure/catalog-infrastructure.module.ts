@@ -5,6 +5,7 @@ import {
   CLOCK,
   CatalogApplicationModule,
   ID_GENERATOR,
+  PRICE_HISTORY_PORT,
   SERVICE_CATEGORY_REPOSITORY,
   SERVICE_REPOSITORY,
 } from '@det/backend/catalog/application';
@@ -19,6 +20,7 @@ import {
 import { EventTypeRegistry, OutboxModule } from '@det/backend/shared/outbox';
 
 import { CryptoIdGeneratorAdapter } from './adapters/crypto-id-generator.adapter';
+import { PriceHistoryPortAdapter } from './adapters/price-history-port.adapter';
 import { SystemClockAdapter } from './adapters/system-clock.adapter';
 import { CatalogMaterialNormSchema } from './persistence/catalog-material-norm.schema';
 import { CatalogServiceCategorySchema } from './persistence/catalog-service-category.schema';
@@ -40,6 +42,7 @@ const INFRASTRUCTURE_PROVIDERS: readonly Provider[] = [
   CatalogServiceCategoryRepository,
   CatalogServiceRepository,
   CryptoIdGeneratorAdapter,
+  PriceHistoryPortAdapter,
   SystemClockAdapter,
   {
     provide: SERVICE_CATEGORY_REPOSITORY,
@@ -56,6 +59,10 @@ const INFRASTRUCTURE_PROVIDERS: readonly Provider[] = [
   {
     provide: CLOCK,
     useExisting: SystemClockAdapter,
+  },
+  {
+    provide: PRICE_HISTORY_PORT,
+    useExisting: PriceHistoryPortAdapter,
   },
 ];
 

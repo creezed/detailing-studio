@@ -57,6 +57,7 @@ export interface ServicePricingSnapshot {
 export interface MaterialNormSnapshot {
   readonly skuId: string;
   readonly amount: number;
+  readonly unit: string;
   readonly bodyTypeCoefficients?: ReadonlyArray<{
     readonly bodyType: string;
     readonly coefficient: number;
@@ -232,10 +233,12 @@ export class Service extends AggregateRoot<ServiceId> {
     const snapshot: {
       skuId: string;
       amount: number;
+      unit: string;
       bodyTypeCoefficients?: Array<{ bodyType: string; coefficient: number }>;
     } = {
       amount: norm.amount,
       skuId: norm.skuId,
+      unit: norm.unit,
     };
 
     if (norm.bodyTypeCoefficients && norm.bodyTypeCoefficients.size > 0) {
@@ -269,11 +272,16 @@ export class Service extends AggregateRoot<ServiceId> {
 
   private static restoreNorms(snapshots: readonly MaterialNormSnapshot[]): MaterialNorm[] {
     return snapshots.map((s) => {
-      const norm: { skuId: string; amount: number; bodyTypeCoefficients?: Map<BodyType, number> } =
-        {
-          amount: s.amount,
-          skuId: s.skuId,
-        };
+      const norm: {
+        skuId: string;
+        amount: number;
+        unit: string;
+        bodyTypeCoefficients?: Map<BodyType, number>;
+      } = {
+        amount: s.amount,
+        skuId: s.skuId,
+        unit: s.unit,
+      };
 
       if (s.bodyTypeCoefficients && s.bodyTypeCoefficients.length > 0) {
         norm.bodyTypeCoefficients = new Map(

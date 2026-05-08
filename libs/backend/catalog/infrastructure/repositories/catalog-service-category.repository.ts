@@ -27,10 +27,10 @@ export class CatalogServiceCategoryRepository implements IServiceCategoryReposit
     return schema ? mapCatalogServiceCategoryToDomain(schema) : null;
   }
 
-  async findAll(): Promise<ServiceCategory[]> {
+  async findAll(includeInactive: boolean): Promise<ServiceCategory[]> {
     const schemas = await this.em.find(
       CatalogServiceCategorySchema,
-      {},
+      includeInactive ? {} : { isActive: true },
       { orderBy: { displayOrder: 'ASC' } },
     );
 

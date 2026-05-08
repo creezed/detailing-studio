@@ -63,6 +63,15 @@ export class BodyTypeCoefficientDto {
   declare coefficient: number;
 }
 
+export enum UnitOfMeasureEnum {
+  G = 'G',
+  KG = 'KG',
+  L = 'L',
+  M = 'M',
+  ML = 'ML',
+  PCS = 'PCS',
+}
+
 export class MaterialNormDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
@@ -72,6 +81,10 @@ export class MaterialNormDto {
   @IsNumber()
   @Min(0)
   declare amount: number;
+
+  @ApiProperty({ enum: UnitOfMeasureEnum, example: 'ML' })
+  @IsEnum(UnitOfMeasureEnum)
+  declare unit: UnitOfMeasureEnum;
 
   @ApiPropertyOptional({ type: [BodyTypeCoefficientDto] })
   @IsOptional()

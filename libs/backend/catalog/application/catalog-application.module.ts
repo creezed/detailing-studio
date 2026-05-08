@@ -9,6 +9,7 @@ import { DeactivateServiceCategoryHandler } from './commands/deactivate-service-
 import { SetServiceMaterialNormsHandler } from './commands/set-service-material-norms/set-service-material-norms.handler';
 import { UpdateServiceHandler } from './commands/update-service/update-service.handler';
 import { UpdateServiceCategoryHandler } from './commands/update-service-category/update-service-category.handler';
+import { ServicePriceChangedHandler } from './event-handlers/service-price-changed.handler';
 import { GetClientServiceCatalogHandler } from './queries/get-client-service-catalog/get-client-service-catalog.handler';
 import { GetServiceByIdHandler } from './queries/get-service-by-id/get-service-by-id.handler';
 import { GetServicePriceHistoryHandler } from './queries/get-service-price-history/get-service-price-history.handler';
@@ -36,6 +37,8 @@ const QUERY_HANDLERS = [
   ListServicesHandler,
 ];
 
+const EVENT_HANDLERS = [ServicePriceChangedHandler];
+
 @Module({
   imports: [CqrsModule],
   exports: [CqrsModule],
@@ -50,7 +53,7 @@ export class CatalogApplicationModule {
       global: false,
       imports: [CqrsModule, ...imports],
       module: CatalogApplicationModule,
-      providers: [...providers, ...COMMAND_HANDLERS, ...QUERY_HANDLERS],
+      providers: [...providers, ...COMMAND_HANDLERS, ...QUERY_HANDLERS, ...EVENT_HANDLERS],
     };
   }
 }

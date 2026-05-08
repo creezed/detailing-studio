@@ -4,5 +4,7 @@
   "SERVICE_ALREADY_DEACTIVATED": "Услуга уже деактивирована",
   "SERVICE_CATEGORY_ALREADY_DEACTIVATED": "Категория услуг уже деактивирована",
   "SERVICE_CATEGORY_NOT_FOUND": "Категория услуг не найдена",
+  "INVALID_SERVICE_CATEGORY_ICON": "Иконка категории услуг не может быть пустой",
+  "INVALID_SERVICE_CATEGORY_NAME": "Название категории услуг не может быть пустым",
   "SERVICE_NOT_FOUND": "Услуга не найдена"
 }

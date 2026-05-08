@@ -2,7 +2,11 @@ import { AggregateRoot } from '@det/backend/shared/ddd';
 import type { DateTime, IIdGenerator } from '@det/backend/shared/ddd';
 
 import { ServiceCategoryId } from './service-category-id';
-import { ServiceCategoryAlreadyDeactivatedError } from './service-category.errors';
+import {
+  InvalidServiceCategoryIconError,
+  InvalidServiceCategoryNameError,
+  ServiceCategoryAlreadyDeactivatedError,
+} from './service-category.errors';
 import { ServiceCategoryCreated, ServiceCategoryDeactivated } from './service-category.events';
 
 export interface CreateServiceCategoryProps {
@@ -37,6 +41,14 @@ export class ServiceCategory extends AggregateRoot<ServiceCategoryId> {
   }
 
   static create(props: CreateServiceCategoryProps): ServiceCategory {
+    if (!props.name.trim()) {
+      throw new InvalidServiceCategoryNameError();
+    }
+
+    if (!props.icon.trim()) {
+      throw new InvalidServiceCategoryIconError();
+    }
+
     const category = new ServiceCategory(
       ServiceCategoryId.generate(props.idGen),
       props.name,
@@ -62,11 +74,21 @@ export class ServiceCategory extends AggregateRoot<ServiceCategoryId> {
 
   rename(newName: string): void {
     this.ensureActive();
+
+    if (!newName.trim()) {
+      throw new InvalidServiceCategoryNameError();
+    }
+
     this._name = newName;
   }
 
   changeIcon(newIcon: string): void {
     this.ensureActive();
+
+    if (!newIcon.trim()) {
+      throw new InvalidServiceCategoryIconError();
+    }
+
     this._icon = newIcon;
   }
 

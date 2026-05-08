@@ -1,5 +1,6 @@
 import { PricingType } from '@det/backend/catalog/application';
 import type { BodyType, MaterialNorm, ServicePricing } from '@det/backend/catalog/application';
+import type { UnitOfMeasure } from '@det/backend/shared/ddd';
 import { Money } from '@det/backend/shared/ddd';
 import { SkuId } from '@det/shared/types';
 
@@ -40,6 +41,7 @@ export function toDomainMaterialNorms(dtos: readonly MaterialNormDto[]): Materia
     const norm: MaterialNorm = {
       amount: dto.amount,
       skuId: SkuId.from(dto.skuId),
+      unit: dto.unit as string as UnitOfMeasure,
     };
 
     if (dto.bodyTypeCoefficients && dto.bodyTypeCoefficients.length > 0) {

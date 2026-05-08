@@ -4,6 +4,7 @@ import type {
   ServicePricingSnapshot,
   ServiceSnapshot,
 } from '@det/backend/catalog/domain';
+import type { IIdGenerator } from '@det/backend/shared/ddd';
 
 import { CatalogMaterialNormSchema } from '../persistence/catalog-material-norm.schema';
 import { CatalogServiceCategorySchema } from '../persistence/catalog-service-category.schema';
@@ -36,6 +37,8 @@ export function mapCatalogServiceToPersistence(
   domain: Service,
   existing: CatalogServiceSchema | null,
   em: EntityManager,
+  idGen: IIdGenerator,
+  now: Date,
 ): CatalogServiceSchema {
   const schema = existing ?? new CatalogServiceSchema();
   const snapshot = domain.toSnapshot();
@@ -50,12 +53,12 @@ export function mapCatalogServiceToPersistence(
   schema.isActive = snapshot.isActive;
   schema.displayOrder = snapshot.displayOrder;
   if (!existing) {
-    schema.createdAt = new Date();
+    schema.createdAt = now;
   }
-  schema.updatedAt = new Date();
+  schema.updatedAt = now;
 
   syncPricingEntries(schema, snapshot.pricing);
-  syncMaterialNorms(schema, snapshot.materialNorms);
+  syncMaterialNorms(schema, snapshot.materialNorms, idGen);
 
   return schema;
 }
@@ -83,10 +86,12 @@ function buildMaterialNormSnapshot(n: CatalogMaterialNormSchema): MaterialNormSn
   const snapshot: {
     skuId: string;
     amount: number;
+    unit: string;
     bodyTypeCoefficients?: Array<{ bodyType: string; coefficient: number }>;
   } = {
     amount: n.amount,
     skuId: n.skuId,
+    unit: n.unit,
   };
 
   if (n.bodyTypeCoefficients) {
@@ -116,16 +121,17 @@ function syncPricingEntries(schema: CatalogServiceSchema, pricing: ServicePricin
 function syncMaterialNorms(
   schema: CatalogServiceSchema,
   norms: readonly MaterialNormSnapshot[],
+  idGen: IIdGenerator,
 ): void {
   schema.materialNorms.removeAll();
 
   for (const norm of norms) {
     const n = new CatalogMaterialNormSchema();
-    n.id = crypto.randomUUID();
+    n.id = idGen.generate();
     n.service = schema;
     n.skuId = norm.skuId;
     n.amount = norm.amount;
-    n.unit = 'PCS';
+    n.unit = norm.unit;
     n.bodyTypeCoefficients = norm.bodyTypeCoefficients
       ? Object.fromEntries(norm.bodyTypeCoefficients.map((c) => [c.bodyType, c.coefficient]))
       : null;

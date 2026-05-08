@@ -1,4 +1,4 @@
-import { DateTime, Money } from '@det/backend/shared/ddd';
+import { DateTime, Money, UnitOfMeasure } from '@det/backend/shared/ddd';
 import type { IIdGenerator } from '@det/backend/shared/ddd';
 import { ServiceCategoryId, SkuId } from '@det/shared/types';
 
@@ -62,8 +62,8 @@ function byBodyTypePricing(prices: Array<[BodyType, number]>): ServicePricing {
 
 function sampleNorms(): MaterialNorm[] {
   return [
-    { amount: 50, skuId: SkuId.from(SKU_ID_1) },
-    { amount: 100, skuId: SkuId.from(SKU_ID_2) },
+    { amount: 50, skuId: SkuId.from(SKU_ID_1), unit: UnitOfMeasure.ML },
+    { amount: 100, skuId: SkuId.from(SKU_ID_2), unit: UnitOfMeasure.G },
   ];
 }
 
@@ -339,6 +339,7 @@ describe('Service', () => {
           amount: 50,
           bodyTypeCoefficients: new Map([[BodyType.SUV, 1.5]]),
           skuId: SkuId.from(SKU_ID_1),
+          unit: UnitOfMeasure.ML,
         },
       ];
       const service = activeService({ materialNorms: norms });

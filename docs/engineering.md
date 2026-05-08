@@ -2432,13 +2432,14 @@ export class WorkOrderRepositoryImpl implements IWorkOrderRepository {
   async save(workOrder: WorkOrder): Promise<void> {
     const existing = await this.em.findOne(WorkOrderSchema, { id: workOrder.id.toString() }, { populate: ['consumptionLines', 'photos'] });
     const persisted = WorkOrderMapper.toPersistence(workOrder, existing);
-    await this.em.persistAndFlush(persisted);
 
-    // outbox: события агрегата сохраняются в той же транзакции
+    // outbox: события агрегата добавляются ДО flush, чтобы попасть в ту же транзакцию
     const events = workOrder.pullDomainEvents();
     for (const event of events) {
       await this.outbox.append(event, this.em);
     }
+
+    await this.em.persist(persisted).flush();
   }
 }
 ```

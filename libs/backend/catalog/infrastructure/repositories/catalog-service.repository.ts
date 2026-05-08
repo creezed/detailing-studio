@@ -1,12 +1,13 @@
-import { EntityManager } from '@mikro-orm/postgresql';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
+import { CLOCK, ID_GENERATOR } from '@det/backend/catalog/application';
 import type {
   IServiceRepository,
   Service,
   ServiceCategoryId,
   ServiceId,
 } from '@det/backend/catalog/domain';
+import type { IClock, IIdGenerator } from '@det/backend/shared/ddd';
 import { OutboxService } from '@det/backend/shared/outbox';
 
 import {
@@ -16,12 +17,15 @@ import {
 import { CatalogServiceSchema } from '../persistence/catalog-service.schema';
 
 import type { FilterQuery } from '@mikro-orm/core';
+import type { EntityManager } from '@mikro-orm/postgresql';
 
 @Injectable()
 export class CatalogServiceRepository implements IServiceRepository {
   constructor(
     private readonly em: EntityManager,
     private readonly outbox: OutboxService,
+    @Inject(ID_GENERATOR) private readonly idGen: IIdGenerator,
+    @Inject(CLOCK) private readonly clock: IClock,
   ) {}
 
   async findById(id: ServiceId): Promise<Service | null> {
@@ -62,7 +66,8 @@ export class CatalogServiceRepository implements IServiceRepository {
       { id: service.id },
       { populate: ['pricingEntries', 'materialNorms'] },
     );
-    const persisted = mapCatalogServiceToPersistence(service, existing, this.em);
+    const now = this.clock.now().toDate();
+    const persisted = mapCatalogServiceToPersistence(service, existing, this.em, this.idGen, now);
     const events = service.pullDomainEvents();
 
     for (const event of events) {

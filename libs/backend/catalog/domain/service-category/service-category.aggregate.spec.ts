@@ -2,7 +2,11 @@ import { DateTime } from '@det/backend/shared/ddd';
 import type { IIdGenerator } from '@det/backend/shared/ddd';
 
 import { ServiceCategory } from './service-category.aggregate';
-import { ServiceCategoryAlreadyDeactivatedError } from './service-category.errors';
+import {
+  InvalidServiceCategoryIconError,
+  InvalidServiceCategoryNameError,
+  ServiceCategoryAlreadyDeactivatedError,
+} from './service-category.errors';
 import { ServiceCategoryCreated, ServiceCategoryDeactivated } from './service-category.events';
 
 class FixedIdGenerator implements IIdGenerator {
@@ -86,6 +90,22 @@ describe('ServiceCategory', () => {
         category.rename('New');
       }).toThrow(ServiceCategoryAlreadyDeactivatedError);
     });
+
+    it('throws on empty name', () => {
+      const category = activeCategory();
+
+      expect(() => {
+        category.rename('');
+      }).toThrow(InvalidServiceCategoryNameError);
+    });
+
+    it('throws on whitespace-only name', () => {
+      const category = activeCategory();
+
+      expect(() => {
+        category.rename('   ');
+      }).toThrow(InvalidServiceCategoryNameError);
+    });
   });
 
   describe('changeIcon', () => {
@@ -103,6 +123,14 @@ describe('ServiceCategory', () => {
       expect(() => {
         category.changeIcon('x');
       }).toThrow(ServiceCategoryAlreadyDeactivatedError);
+    });
+
+    it('throws on empty icon', () => {
+      const category = activeCategory();
+
+      expect(() => {
+        category.changeIcon('');
+      }).toThrow(InvalidServiceCategoryIconError);
     });
   });
 
