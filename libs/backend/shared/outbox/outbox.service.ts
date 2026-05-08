@@ -8,6 +8,16 @@ import { OutboxEventSchema } from './outbox-event.schema';
 
 import type { EntityManager } from '@mikro-orm/postgresql';
 
+function toSerializablePayload(value: unknown): unknown {
+  return JSON.parse(
+    JSON.stringify(value, (_key, v: unknown) => {
+      if (typeof v === 'bigint') return v.toString();
+      if (v instanceof Map) return Object.fromEntries(v) as unknown;
+      return v;
+    }),
+  ) as unknown;
+}
+
 function stableEventUuid(eventId: string): string {
   const hash = createHash('sha256').update(eventId).digest('hex');
 
@@ -26,7 +36,7 @@ export class OutboxService {
         id: stableEventUuid(event.eventId),
         lastError: null,
         occurredAt: event.occurredAt,
-        payload: event,
+        payload: toSerializablePayload(event),
         publishedAt: null,
         retryAfterAt: null,
         retryCount: 0,
