@@ -7,6 +7,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AcceptLanguageResolver, I18nModule } from 'nestjs-i18n';
 
+import { CatalogInfrastructureModule } from '@det/backend/catalog/infrastructure';
+import { CatalogInterfacesModule } from '@det/backend/catalog/interfaces';
 import { IamInfrastructureModule } from '@det/backend/iam/infrastructure';
 import { IamInterfacesModule } from '@det/backend/iam/interfaces';
 
@@ -52,6 +54,8 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
       },
       resolvers: [new AcceptLanguageResolver()],
     }),
+    CatalogInfrastructureModule,
+    CatalogInterfacesModule,
     IamInfrastructureModule,
     IamInterfacesModule,
   ],

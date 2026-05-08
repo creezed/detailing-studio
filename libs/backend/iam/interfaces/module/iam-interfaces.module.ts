@@ -15,6 +15,7 @@ import { UsersController } from '../http/users.controller';
     AbilityGuard,
     AuthGuard,
     { provide: APP_GUARD, useExisting: AuthGuard },
+    { provide: APP_GUARD, useExisting: AbilityGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })

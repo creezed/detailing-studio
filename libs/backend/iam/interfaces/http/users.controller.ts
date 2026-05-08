@@ -7,7 +7,6 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOkResponse, ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
@@ -21,7 +20,7 @@ import {
   type CurrentUserDto,
 } from '@det/backend/iam/application';
 
-import { AbilityGuard, CheckAbility } from './ability.guard';
+import { CheckAbility } from './ability.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import {
   BlockUserRequestDto,
@@ -33,7 +32,6 @@ import type { AuthenticatedUser } from '../guards/auth.guard';
 
 @ApiTags('users')
 @ApiBearerAuth()
-@UseGuards(AbilityGuard)
 @Controller('users')
 export class UsersController {
   constructor(

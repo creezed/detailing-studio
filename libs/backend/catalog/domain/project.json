@@ -1,0 +1,30 @@
+{
+  "name": "catalog-domain",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/catalog/domain",
+  "projectType": "library",
+  "tags": ["scope:catalog", "type:domain", "platform:node"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/backend/catalog/domain/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/catalog/domain"],
+      "options": {
+        "jestConfig": "libs/backend/catalog/domain/jest.config.ts",
+        "passWithNoTests": false
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/backend/catalog/domain/tsconfig.json --noEmit",
+        "cwd": "."
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "INVALID_DURATION": "Invalid service duration",
+  "INVALID_PRICING": "Invalid pricing configuration",
+  "SERVICE_ALREADY_DEACTIVATED": "Service is already deactivated",
+  "SERVICE_CATEGORY_ALREADY_DEACTIVATED": "Service category is already deactivated",
+  "SERVICE_CATEGORY_NOT_FOUND": "Service category not found",
+  "INVALID_SERVICE_CATEGORY_ICON": "Service category icon must not be empty",
+  "INVALID_SERVICE_CATEGORY_NAME": "Service category name must not be empty",
+  "SERVICE_NOT_FOUND": "Service not found"
+}
