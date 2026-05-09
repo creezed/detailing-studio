@@ -62,6 +62,25 @@
         "cwd": "."
       }
     },
+    "seed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "set -a; [ ! -f .env ] || . ./.env; set +a; export DATABASE_URL=\"${DATABASE_URL:-postgres://${POSTGRES_USER:-detailing}:${POSTGRES_PASSWORD:-placeholder}@127.0.0.1:${POSTGRES_PORT:-5432}/${DEFAULT_DB:-detailing}}\"; TS_NODE_PROJECT=tsconfig.json pnpm mikro-orm-esm seeder:run --config apps/backend/api/src/config/mikro-orm-cli.config.ts",
+        "cwd": "."
+      }
+    },
+    "seed:fresh": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm nx run api:migration:down",
+          "pnpm nx run api:migration:up",
+          "pnpm nx run api:seed"
+        ],
+        "parallel": false,
+        "cwd": "."
+      }
+    },
     "generate-contracts": {
       "executor": "nx:run-commands",
       "options": {
