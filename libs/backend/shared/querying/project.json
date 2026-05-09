@@ -5,6 +5,15 @@
   "projectType": "library",
   "tags": ["scope:shared", "type:util", "platform:node"],
   "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "main": "libs/backend/shared/querying/index.ts",
+        "outputPath": "dist/libs/backend/shared/querying",
+        "tsConfig": "libs/backend/shared/querying/tsconfig.lib.json"
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {

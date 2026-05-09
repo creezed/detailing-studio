@@ -1,13 +1,16 @@
 # @det/backend/shared/querying
 
-Универсальный backend-пакет для пагинации, сортировки и динамической фильтрации CRUD/read-запросов в NestJS + MikroORM + CQRS.
+Универсальный backend-пакет для пагинации, сортировки и динамической фильтрации CRUD/read-запросов в NestJS + CQRS.
+
+Пакет спроектирован как ORM-agnostic core + адаптеры конкретных ORM. Сейчас реализована интеграция с MikroORM.
 
 Пакет решает четыре задачи:
 
 - Единый DTO-контракт для query params: `DynamicQueryDto`.
 - Единый DTO ответа: `PaginatedResponseDto<T>`.
-- Безопасный whitelist полей до построения MikroORM query object.
-- Трансляция компактного URL-синтаксиса в `{ where: FilterQuery<T>, options: FindOptions<T> }` для `em.findAndCount(...)`.
+- Безопасный whitelist полей до построения ORM query object.
+- Трансляция компактного URL-синтаксиса в ORM-neutral AST.
+- Компиляция AST в `{ where: FilterQuery<T>, options: FindOptions<T> }` для MikroORM `em.findAndCount(...)`.
 
 ## Установка в проекте
 
@@ -15,8 +18,9 @@
 
 ```ts
 import {
+  DynamicQueryAstParser,
   DynamicQueryDto,
-  DynamicQueryParser,
+  MikroOrmDynamicQueryCompiler,
   createPaginatedResponse,
 } from '@det/backend/shared/querying';
 ```
@@ -26,6 +30,31 @@ import {
 ```json
 ["scope:shared", "type:util", "platform:node"]
 ```
+
+Пакет buildable:
+
+```bash
+pnpm exec nx build backend-shared-querying
+```
+
+## Архитектура
+
+```text
+libs/backend/shared/querying/
+├── core/        # AST, parser, errors, adapter/compiler contracts
+├── dto/         # NestJS/class-validator DTO
+├── mikro-orm/   # MikroORM adapter/compiler
+├── index.ts     # public API
+└── README.md
+```
+
+Ответственности:
+
+- `DynamicQueryAstParser` парсит query params в ORM-neutral AST.
+- `DynamicQueryOrmAdapter<TAst, TResult>` задаёт контракт ORM adapter.
+- `MikroOrmDynamicQueryAdapter<T>` компилирует AST в MikroORM `where/options`.
+- `MikroOrmDynamicQueryCompiler<T>` объединяет AST parser + MikroORM adapter.
+- `DynamicQueryParser` оставлен как compatibility alias на `DynamicQueryAstParser`; для MikroORM используйте `MikroOrmDynamicQueryCompiler`.
 
 ## DTO запроса
 
@@ -168,7 +197,7 @@ const parserConfig = {
 
 - Поля проходят regex-проверку: только `camelCase`, `snake_case`, цифры после первого символа и вложенность через `.`.
 - Запрещены `$where`, SQL fragments, скобки, кавычки, пробелы и произвольные operators в имени поля.
-- Значения не конкатенируются в SQL. Parser строит только MikroORM object query.
+- Значения не конкатенируются в SQL. Parser строит AST, а ORM adapter строит безопасный object query.
 - Можно отключить сортировку или фильтрацию для поля.
 - Можно ограничить набор operators для поля.
 
@@ -182,6 +211,38 @@ const parserConfig = {
     createdAt: { filterable: true, sortable: true, type: 'date' },
   },
 };
+```
+
+## Custom filters
+
+Custom filter нужен, когда одно поле API должно превращаться в сложное ORM-условие: поиск по нескольким колонкам, full-text, JSONB, tenant-aware condition и т.д.
+
+В whitelist поле помечается именем custom filter:
+
+```ts
+const queryConfig = {
+  allowedFields: {
+    search: { customFilter: 'clientSearch', type: 'string' },
+  },
+};
+```
+
+Для MikroORM custom filters регистрируются в adapter/compiler:
+
+```ts
+const dynamicQueryCompiler = new MikroOrmDynamicQueryCompiler<ClientSchema>(
+  new DynamicQueryAstParser(),
+  new MikroOrmDynamicQueryAdapter<ClientSchema>({
+    customFilters: {
+      clientSearch: ({ condition }) => ({
+        $or: [
+          { fullName: { $ilike: `%${String(condition.value)}%` } },
+          { phone: { $ilike: `%${String(condition.value)}%` } },
+        ],
+      }),
+    },
+  }),
+);
 ```
 
 ## Интеграция в NestJS Controller
@@ -210,19 +271,24 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import {
-  DynamicQueryParser,
+  DynamicQueryAstParser,
+  MikroOrmDynamicQueryAdapter,
+  MikroOrmDynamicQueryCompiler,
   PaginatedResponseDto,
   createPaginatedResponse,
 } from '@det/backend/shared/querying';
 
 @QueryHandler(ListClientsQuery)
 export class ListClientsHandler implements IQueryHandler<ListClientsQuery> {
-  private readonly parser = new DynamicQueryParser();
+  private readonly dynamicQueryCompiler = new MikroOrmDynamicQueryCompiler<ClientSchema>(
+    new DynamicQueryAstParser(),
+    new MikroOrmDynamicQueryAdapter<ClientSchema>(),
+  );
 
   constructor(private readonly em: EntityManager) {}
 
   async execute(query: ListClientsQuery): Promise<PaginatedResponseDto<ClientDto>> {
-    const parsed = this.parser.parse<ClientSchema>(query.dynamicQuery, {
+    const parsed = this.dynamicQueryCompiler.compile(query.dynamicQuery, {
       allowedFields: {
         fullName: { type: 'string' },
         phone: { type: 'string' },
@@ -247,7 +313,22 @@ export class ListClientsHandler implements IQueryHandler<ListClientsQuery> {
 }
 ```
 
-## Пример результата parser
+## Добавление новой ORM
+
+Для новой ORM не нужно менять `DynamicQueryAstParser` или DTO. Нужно добавить adapter/compiler:
+
+```ts
+export class PrismaDynamicQueryAdapter implements DynamicQueryOrmAdapter<
+  DynamicQueryAst,
+  PrismaQueryResult
+> {
+  compile(ast: DynamicQueryAst): PrismaQueryResult {
+    // map ast.filter and ast.sorts to Prisma where/orderBy/take/skip
+  }
+}
+```
+
+## Пример результата MikroORM compiler
 
 Запрос:
 
