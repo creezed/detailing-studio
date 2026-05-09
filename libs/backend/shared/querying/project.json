@@ -1,0 +1,39 @@
+{
+  "name": "backend-shared-querying",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/shared/querying",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:util", "platform:node"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "main": "libs/backend/shared/querying/index.ts",
+        "outputPath": "dist/libs/backend/shared/querying",
+        "tsConfig": "libs/backend/shared/querying/tsconfig.lib.json"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/backend/shared/querying/**/*.ts"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/backend/shared/querying/tsconfig.json --noEmit",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/backend/shared/querying/jest.config.ts",
+        "passWithNoTests": false
+      }
+    }
+  }
+}

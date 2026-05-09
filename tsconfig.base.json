@@ -28,6 +28,7 @@
       "@det/backend/shared/auth": ["libs/backend/shared/auth/index.ts"],
       "@det/backend/shared/ddd": ["libs/backend/shared/ddd/index.ts"],
       "@det/backend/shared/outbox": ["libs/backend/shared/outbox/index.ts"],
+      "@det/backend/shared/querying": ["libs/backend/shared/querying/index.ts"],
       "@det/frontend/shared/data-access": ["libs/frontend/shared/data-access/index.ts"],
       "@det/frontend/shared/ui": ["libs/frontend/shared/ui/index.ts"],
       "@det/shared/contracts": ["libs/shared/contracts/index.ts"],

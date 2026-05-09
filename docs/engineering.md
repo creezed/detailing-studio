@@ -1206,9 +1206,9 @@ export class MikroUnitOfWork implements UnitOfWork {
 - **Аутентификация:** Bearer JWT в заголовке `Authorization: Bearer <token>`. Refresh — через httpOnly cookie + endpoint `POST /auth/refresh`.
 - **Content-Type:** `application/json` (UTF-8). Загрузка файлов — `multipart/form-data`.
 - **Идемпотентность:** для критических POST (создание заказа, оплата) принимается заголовок `Idempotency-Key`.
-- **Пагинация:** cursor-based. Параметры `?cursor=<opaque>&limit=20`. Ответ содержит `nextCursor`.
-- **Сортировка:** `?sort=<field>:asc|desc`, поддерживается комбинация `?sort=createdAt:desc,name:asc`.
-- **Фильтрация:** через query параметры с явной семантикой (`?status=CONFIRMED&masterId=...`). Сложные фильтры — через POST `/list` (если нужно).
+- **Пагинация:** offset-based через `DynamicQueryDto` (`?page=1&pageSize=25`). Ответ — `PaginatedResponseDto<T>` (items, totalCount, totalPages, page, pageSize).
+- **Сортировка:** `?sorts=<field>,-<field>` (`-` = desc). Пример: `?sorts=-createdAt,client.name`.
+- **Фильтрация:** через `DynamicQuery` DSL в параметре `?filters=`. Операторы: `==`, `!=`, `>`, `<`, `>=`, `<=`, `@=` (contains), `_=` (starts with), `^=` (ends with), `!@=` (not contains), `*=` (in), `!*=` (not in). AND через `,`, OR через `|`. Пример: `?filters=status*=ACTIVE,PENDING|client.name@=Иван`. Подробности — § 6.10.
 - **Ошибки:** RFC 7807 Problem Details:
   ```json
   {
@@ -2171,6 +2171,7 @@ detailing-studio/
 │   │   │   ├── outbox/                   # Outbox table + Service + Poller
 │   │   │   ├── auth/                     # AuthGuard, CASL infra, JWT helpers
 │   │   │   ├── http/                     # GlobalExceptionFilter, ProblemDetails
+│   │   │   ├── querying/                 # DynamicQuery: фильтры, сортировка, пагинация для list-эндпоинтов
 │   │   │   └── testing/                  # TestModuleBuilder, fixtures
 │   │   ├── iam/{domain,application,infrastructure,interfaces}/
 │   │   ├── catalog/...
@@ -2657,6 +2658,101 @@ export const UserId = {
 ```
 
 Это позволяет компилятору ловить ошибки типа «передал ClientId туда, где ожидается AppointmentId».
+
+### 6.10 Dynamic Querying (`libs/backend/shared/querying`)
+
+Библиотека для декларативных list-эндпоинтов с фильтрацией, сортировкой и пагинацией. Архитектура: **Core AST + ORM Adapter**.
+
+**Структура:**
+
+```
+libs/backend/shared/querying/
+├── core/                          # ORM-агностичное ядро
+│   ├── dynamic-query-ast.parser.ts  # Парсер строки фильтров → AST
+│   ├── dynamic-query.types.ts       # AST-типы, конфиг, операторы
+│   ├── dynamic-query.errors.ts      # Иерархия ошибок
+│   ├── dynamic-query-compiler.ts    # Базовый интерфейс компилятора
+│   └── orm-adapter.ts               # Интерфейс ORM-адаптера
+├── mikro-orm/                     # MikroORM-адаптер
+│   ├── mikro-orm-dynamic-query.adapter.ts   # AST → FilterQuery + FindOptions
+│   └── mikro-orm-dynamic-query.compiler.ts  # Parser + Adapter = Compiler
+├── dto/                           # NestJS DTO
+│   ├── dynamic-query.dto.ts         # DynamicQueryDto (page, pageSize, sorts, filters)
+│   └── paginated-response.dto.ts    # PaginatedResponseDto + createPaginatedResponse()
+└── index.ts                       # Public API
+```
+
+**Операторы фильтрации:**
+
+| Оператор | Значение | Пример |
+|----------|----------|--------|
+| `==` | Equals | `status==ACTIVE` |
+| `!=` | Not equals | `status!=DELETED` |
+| `>`, `<`, `>=`, `<=` | Сравнение | `age>=18` |
+| `@=` | Contains (ilike) | `name@=Иван` |
+| `_=` | Starts with | `name_=Ив` |
+| `^=` | Ends with | `name^=ов` |
+| `!@=` | Not contains | `name!@=bot` |
+| `*=` | In | `status*=ACTIVE,PENDING` |
+| `!*=` | Not in | `id!*=a,b` |
+
+**Логические операции:** `,` = AND, `|` = OR. Пример: `status==ACTIVE,age>18|isActive==true`.
+
+**Конфигурация полей:**
+
+```ts
+const config: DynamicQueryParserConfig = {
+  allowedFields: {
+    status: { type: 'string' },
+    age: { type: 'number' },
+    'client.name': { type: 'string', path: 'client.name' },
+    id: { type: 'string', operators: ['==', '!='] },
+    search: { type: 'string', customFilter: 'fullTextSearch' },
+    relevance: { sortable: true, customSort: 'byRelevance' },
+  },
+  maxPageSize: 100,
+  defaultPageSize: 25,
+  defaultSorts: '-createdAt',
+  maxFilterLength: 2000,
+  maxConditions: 20,
+  maxSorts: 10,
+};
+```
+
+**Иерархия ошибок:**
+
+| Ошибка | Контекст | Когда |
+|--------|----------|-------|
+| `DynamicQueryError` | `code` | Базовый класс |
+| `DynamicQueryFieldError` | `field`, `reason` | Поле не в whitelist / не filterable / не sortable / unsafe path |
+| `DynamicQueryOperatorError` | `field`, `operator` | Запрещённый оператор для поля |
+| `DynamicQueryValueError` | `rawValue`, `expectedType` | Ошибка приведения типа |
+| `DynamicQueryPaginationError` | `parameter`, `value` | page/pageSize невалидны |
+| `DynamicQueryCustomFilterError` | `filterName` | Незарегистрированный custom filter |
+| `DynamicQueryLimitError` | `limitName`, `limit` | Превышение safety-лимита |
+
+**Использование в контроллере:**
+
+```ts
+@Controller('clients')
+export class ClientController {
+  constructor(
+    private readonly queryBus: QueryBus,
+    private readonly compiler: MikroOrmDynamicQueryCompiler<ClientSchema>,
+  ) {}
+
+  @Get()
+  list(@Query() dto: DynamicQueryDto) {
+    const { where, options, page, pageSize } = this.compiler.compile(dto, config);
+    return this.queryBus.execute(new ListClientsQuery(where, options, page, pageSize));
+  }
+}
+```
+
+**Расширяемость:**
+- **Custom filters** — для полей, которые маппятся нестандартно (полнотекстовый поиск, агрегации).
+- **Custom sorts** — для вычисляемых полей (релевантность, расстояние).
+- **ORM-адаптеры** — ядро ORM-агностично; `MikroOrmDynamicQueryAdapter` — первая реализация.
 
 ---
 
