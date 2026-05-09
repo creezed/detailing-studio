@@ -1,4 +1,11 @@
-import { DynamicQueryParseError } from './dynamic-query.errors';
+import {
+  DynamicQueryFieldError,
+  DynamicQueryLimitError,
+  DynamicQueryOperatorError,
+  DynamicQueryPaginationError,
+  DynamicQueryParseError,
+  DynamicQueryValueError,
+} from './dynamic-query.errors';
 import {
   DEFAULT_DYNAMIC_QUERY_PAGE,
   DEFAULT_DYNAMIC_QUERY_PAGE_SIZE,
@@ -48,6 +55,12 @@ const OPERATOR_DEFINITIONS: readonly OperatorDefinition[] = [
 
 const SAFE_FIELD_PATH_PATTERN = /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/;
 const NUMBER_PATTERN = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/;
+const ESCAPE_CHAR = '\\';
+const NULL_LITERAL = 'null';
+
+const DEFAULT_MAX_FILTER_LENGTH = 2000;
+const DEFAULT_MAX_CONDITIONS = 20;
+const DEFAULT_MAX_SORTS = 10;
 
 export class DynamicQueryAstParser {
   parse(query: DynamicQueryRequest, config: DynamicQueryParserConfig): DynamicQueryAst {
@@ -63,12 +76,15 @@ export class DynamicQueryAstParser {
       maxPageSize,
     );
 
-    return {
-      filter: this.parseFilters(query.filters, config),
-      page,
-      pageSize,
-      sorts: this.parseSorts(query.sorts ?? config.defaultSorts, config),
-    };
+    this.validateFilterLength(query.filters, config);
+
+    const filter = this.parseFilters(query.filters, config);
+    const sorts = this.parseSorts(query.sorts ?? config.defaultSorts, config);
+
+    this.validateConditionCount(filter, config);
+    this.validateSortCount(sorts, config);
+
+    return { filter, page, pageSize, sorts };
   }
 
   private ensureOperatorAllowed(
@@ -77,7 +93,9 @@ export class DynamicQueryAstParser {
     config: DynamicQueryFieldConfig,
   ): void {
     if (config.operators && !config.operators.includes(operator)) {
-      throw new DynamicQueryParseError(
+      throw new DynamicQueryOperatorError(
+        field,
+        operator,
         `Operator "${operator}" is not allowed for field "${field}".`,
       );
     }
@@ -85,7 +103,7 @@ export class DynamicQueryAstParser {
 
   private ensureSafeFieldPath(field: string): void {
     if (!SAFE_FIELD_PATH_PATTERN.test(field)) {
-      throw new DynamicQueryParseError(`Field "${field}" is not allowed.`);
+      throw new DynamicQueryFieldError(field, 'unsafe_path', `Field "${field}" is not allowed.`);
     }
   }
 
@@ -109,7 +127,9 @@ export class DynamicQueryAstParser {
     const pageSize = this.normalizePositiveInteger(value, defaultValue, 'pageSize');
 
     if (pageSize > maxPageSize) {
-      throw new DynamicQueryParseError(
+      throw new DynamicQueryPaginationError(
+        'pageSize',
+        pageSize,
         `pageSize must be less than or equal to ${String(maxPageSize)}.`,
       );
     }
@@ -125,7 +145,11 @@ export class DynamicQueryAstParser {
     const normalized = value ?? defaultValue;
 
     if (!Number.isInteger(normalized) || normalized < 1) {
-      throw new DynamicQueryParseError(`${field} must be a positive integer.`);
+      throw new DynamicQueryPaginationError(
+        field,
+        normalized,
+        `${field} must be a positive integer.`,
+      );
     }
 
     return normalized;
@@ -233,7 +257,11 @@ export class DynamicQueryAstParser {
     const values = splitTopLevel(normalized, ',').map((value) => value.trim());
 
     if (values.length === 0 || values.some((value) => value.length === 0)) {
-      throw new DynamicQueryParseError('Array filter value must contain at least one item.');
+      throw new DynamicQueryValueError(
+        rawValue,
+        type,
+        'Array filter value must contain at least one item.',
+      );
     }
 
     return values.map((value) => this.parseScalarValue(value, type));
@@ -243,8 +271,12 @@ export class DynamicQueryAstParser {
     const normalized = rawValue.trim();
     const lower = normalized.toLowerCase();
 
-    if (lower === 'null') {
+    if (lower === NULL_LITERAL) {
       return null;
+    }
+
+    if (lower === ESCAPE_CHAR + NULL_LITERAL) {
+      return NULL_LITERAL;
     }
 
     if (type === 'string') {
@@ -307,15 +339,23 @@ export class DynamicQueryAstParser {
     const fieldConfig = config.allowedFields[field];
 
     if (!fieldConfig) {
-      throw new DynamicQueryParseError(`Field "${field}" is not whitelisted.`);
+      throw new DynamicQueryFieldError(
+        field,
+        'not_whitelisted',
+        `Field "${field}" is not whitelisted.`,
+      );
     }
 
     if (usage === 'filter' && fieldConfig.filterable === false) {
-      throw new DynamicQueryParseError(`Field "${field}" is not filterable.`);
+      throw new DynamicQueryFieldError(
+        field,
+        'not_filterable',
+        `Field "${field}" is not filterable.`,
+      );
     }
 
     if (usage === 'sort' && fieldConfig.sortable === false) {
-      throw new DynamicQueryParseError(`Field "${field}" is not sortable.`);
+      throw new DynamicQueryFieldError(field, 'not_sortable', `Field "${field}" is not sortable.`);
     }
 
     const path = fieldConfig.path ?? field;
@@ -325,6 +365,7 @@ export class DynamicQueryAstParser {
       config: fieldConfig,
       field: {
         customFilter: fieldConfig.customFilter,
+        customSort: fieldConfig.customSort,
         key: field,
         path,
         type: fieldConfig.type ?? 'auto',
@@ -336,10 +377,60 @@ export class DynamicQueryAstParser {
     const resolved = maxPageSize ?? DYNAMIC_QUERY_MAX_PAGE_SIZE;
 
     if (!Number.isInteger(resolved) || resolved < 1) {
-      throw new DynamicQueryParseError('maxPageSize must be a positive integer.');
+      throw new DynamicQueryPaginationError(
+        'maxPageSize',
+        resolved,
+        'maxPageSize must be a positive integer.',
+      );
     }
 
     return resolved;
+  }
+
+  private validateConditionCount(
+    filter: DynamicQueryFilterNode | null,
+    config: DynamicQueryParserConfig,
+  ): void {
+    const maxConditions = config.maxConditions ?? DEFAULT_MAX_CONDITIONS;
+    const count = countConditions(filter);
+
+    if (count > maxConditions) {
+      throw new DynamicQueryLimitError(
+        'maxConditions',
+        maxConditions,
+        `Filter contains ${String(count)} conditions, maximum allowed is ${String(maxConditions)}.`,
+      );
+    }
+  }
+
+  private validateFilterLength(
+    filters: string | undefined,
+    config: DynamicQueryParserConfig,
+  ): void {
+    const maxLength = config.maxFilterLength ?? DEFAULT_MAX_FILTER_LENGTH;
+
+    if (filters && filters.length > maxLength) {
+      throw new DynamicQueryLimitError(
+        'maxFilterLength',
+        maxLength,
+        `Filter string length ${String(filters.length)} exceeds maximum of ${String(maxLength)}.`,
+      );
+    }
+  }
+
+  private validateSortCount(
+    sorts: readonly DynamicQuerySortNode[],
+    config: DynamicQueryParserConfig,
+  ): void {
+    const maxSorts = config.maxSorts ?? DEFAULT_MAX_SORTS;
+
+    if (sorts.length > maxSorts) {
+      throw new DynamicQueryLimitError(
+        'maxSorts',
+        maxSorts,
+        `Sort contains ${String(sorts.length)} fields, maximum allowed is ${String(maxSorts)}.`,
+      );
+    }
   }
 
   private splitAndExpressions(group: string): readonly string[] {
@@ -368,6 +459,18 @@ export class DynamicQueryAstParser {
   }
 }
 
+function countConditions(filter: DynamicQueryFilterNode | null): number {
+  if (filter === null) {
+    return 0;
+  }
+
+  if (filter.kind === 'condition') {
+    return 1;
+  }
+
+  return filter.children.reduce((sum, child) => sum + countConditions(child), 0);
+}
+
 function parseBooleanValue(value: string): boolean {
   const lower = value.toLowerCase();
 
@@ -379,14 +482,14 @@ function parseBooleanValue(value: string): boolean {
     return false;
   }
 
-  throw new DynamicQueryParseError(`Value "${value}" is not a boolean.`);
+  throw new DynamicQueryValueError(value, 'boolean', `Value "${value}" is not a boolean.`);
 }
 
 function parseDateValue(value: string): Date {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    throw new DynamicQueryParseError(`Value "${value}" is not a valid date.`);
+    throw new DynamicQueryValueError(value, 'date', `Value "${value}" is not a valid date.`);
   }
 
   return date;
@@ -394,13 +497,13 @@ function parseDateValue(value: string): Date {
 
 function parseNumberValue(value: string): number {
   if (!NUMBER_PATTERN.test(value)) {
-    throw new DynamicQueryParseError(`Value "${value}" is not a number.`);
+    throw new DynamicQueryValueError(value, 'number', `Value "${value}" is not a number.`);
   }
 
   const parsed = Number(value);
 
   if (!Number.isFinite(parsed)) {
-    throw new DynamicQueryParseError(`Value "${value}" is not a finite number.`);
+    throw new DynamicQueryValueError(value, 'number', `Value "${value}" is not a finite number.`);
   }
 
   return parsed;

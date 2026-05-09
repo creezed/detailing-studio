@@ -26,6 +26,7 @@ export type DynamicQueryConditionValue =
 
 export interface DynamicQueryFieldConfig {
   readonly customFilter?: string;
+  readonly customSort?: string;
   readonly filterable?: boolean;
   readonly operators?: readonly DynamicQueryOperator[];
   readonly path?: string;
@@ -38,7 +39,10 @@ export interface DynamicQueryParserConfig {
   readonly defaultPage?: number;
   readonly defaultPageSize?: number;
   readonly defaultSorts?: string;
+  readonly maxConditions?: number;
+  readonly maxFilterLength?: number;
   readonly maxPageSize?: number;
+  readonly maxSorts?: number;
 }
 
 export interface DynamicQueryRequest {
@@ -50,6 +54,7 @@ export interface DynamicQueryRequest {
 
 export interface DynamicQueryResolvedField {
   readonly customFilter?: string;
+  readonly customSort?: string;
   readonly key: string;
   readonly path: string;
   readonly type: DynamicQueryValueType;

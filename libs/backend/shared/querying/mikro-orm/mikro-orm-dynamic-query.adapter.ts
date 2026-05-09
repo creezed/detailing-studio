@@ -1,6 +1,9 @@
 import { QueryOrder } from '@mikro-orm/core';
 
-import { DynamicQueryParseError } from '../core/dynamic-query.errors';
+import {
+  DynamicQueryCustomFilterError,
+  DynamicQueryParseError,
+} from '../core/dynamic-query.errors';
 
 import type {
   DynamicQueryAst,
@@ -8,6 +11,7 @@ import type {
   DynamicQueryConditionValue,
   DynamicQueryFilterNode,
   DynamicQueryOperator,
+  DynamicQueryResolvedField,
   DynamicQueryScalarValue,
   DynamicQuerySortNode,
 } from '../core/dynamic-query.types';
@@ -29,8 +33,16 @@ export type MikroOrmCustomFilter = (
   context: MikroOrmCustomFilterContext,
 ) => Record<string, unknown>;
 
+export interface MikroOrmCustomSortContext {
+  readonly direction: 'asc' | 'desc';
+  readonly field: DynamicQueryResolvedField;
+}
+
+export type MikroOrmCustomSort = (context: MikroOrmCustomSortContext) => Record<string, unknown>;
+
 export interface MikroOrmDynamicQueryAdapterConfig {
   readonly customFilters?: Readonly<Record<string, MikroOrmCustomFilter>>;
+  readonly customSorts?: Readonly<Record<string, MikroOrmCustomSort>>;
 }
 
 export class MikroOrmDynamicQueryAdapter<T extends object> implements DynamicQueryOrmAdapter<
@@ -72,7 +84,8 @@ export class MikroOrmDynamicQueryAdapter<T extends object> implements DynamicQue
       const customFilter = this.config.customFilters?.[condition.field.customFilter];
 
       if (!customFilter) {
-        throw new DynamicQueryParseError(
+        throw new DynamicQueryCustomFilterError(
+          condition.field.customFilter,
           `Custom filter "${condition.field.customFilter}" is not registered.`,
         );
       }
@@ -102,12 +115,24 @@ export class MikroOrmDynamicQueryAdapter<T extends object> implements DynamicQue
   }
 
   private compileSorts(sorts: readonly DynamicQuerySortNode[]): readonly Record<string, unknown>[] {
-    return sorts.map((sort) =>
-      buildPathObject(
+    return sorts.map((sort) => {
+      if (sort.field.customSort) {
+        const customSort = this.config.customSorts?.[sort.field.customSort];
+
+        if (!customSort) {
+          throw new DynamicQueryParseError(
+            `Custom sort "${sort.field.customSort}" is not registered.`,
+          );
+        }
+
+        return customSort({ direction: sort.direction, field: sort.field });
+      }
+
+      return buildPathObject(
         sort.field.path,
         sort.direction === 'desc' ? QueryOrder.DESC : QueryOrder.ASC,
-      ),
-    );
+      );
+    });
   }
 
   private toMikroCondition(condition: DynamicQueryConditionNode): unknown {
