@@ -7,13 +7,17 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["apps/backend/api/src/**/*.ts"]
+        "lintFilePatterns": [
+          "apps/backend/api/src/**/*.ts"
+        ]
       }
     },
     "serve": {
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "buildTarget": "api:build",
         "runBuildTargetDependencies": false
@@ -29,7 +33,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "apps/backend/api/jest.config.ts"
       }
@@ -37,7 +43,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p apps/backend/api/tsconfig.json --noEmit",
+        "command": "tsc -b apps/backend/api/tsconfig.json --pretty false",
         "cwd": "."
       }
     },
@@ -96,5 +102,9 @@
       }
     }
   },
-  "tags": ["scope:api", "type:app", "platform:node"]
+  "tags": [
+    "scope:api",
+    "type:app",
+    "platform:node"
+  ]
 }

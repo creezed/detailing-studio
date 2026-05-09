@@ -4,7 +4,7 @@ import {
   CatalogServiceCategorySchema,
   CatalogServicePricingSchema,
   CatalogServiceSchema,
-} from '@det/backend/catalog/infrastructure';
+} from '@det/backend-catalog-infrastructure';
 
 import { CATEGORIES, SERVICES } from './data/catalog.data';
 import { seederLog } from './helpers/seeder-logger';

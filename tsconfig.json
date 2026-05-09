@@ -1,5 +1,58 @@
 {
   "extends": "./tsconfig.base.json",
   "files": [],
-  "include": []
+  "include": [],
+  "references": [
+    {
+      "path": "./apps/backend/api/tsconfig.json"
+    },
+    {
+      "path": "./apps/backend/api-e2e/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/catalog/application/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/catalog/domain/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/catalog/infrastructure/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/catalog/interfaces/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/iam/application/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/iam/domain/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/iam/infrastructure/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/iam/interfaces/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/shared/auth/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/shared/ddd/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/shared/outbox/tsconfig.json"
+    },
+    {
+      "path": "./libs/backend/shared/querying/tsconfig.json"
+    },
+    {
+      "path": "./libs/shared/contracts/tsconfig.json"
+    },
+    {
+      "path": "./libs/shared/types/tsconfig.json"
+    },
+    {
+      "path": "./libs/shared/util-pure/tsconfig.json"
+    }
+  ]
 }

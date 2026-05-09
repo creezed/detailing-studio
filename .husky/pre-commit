@@ -1,1 +1,1 @@
-pnpm exec nx affected --target=lint,typecheck --uncommitted --parallel=3
+pnpm exec nx affected --targets=lint,typecheck --uncommitted --parallel=3

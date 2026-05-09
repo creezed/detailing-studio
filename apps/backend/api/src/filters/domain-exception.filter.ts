@@ -2,7 +2,7 @@ import { type ArgumentsHost, Catch, type ExceptionFilter } from '@nestjs/common'
 import { I18nContext } from 'nestjs-i18n';
 import pino from 'pino';
 
-import { ApplicationError, DomainError } from '@det/backend/shared/ddd';
+import { ApplicationError, DomainError } from '@det/backend-shared-ddd';
 
 interface HttpResponse {
   status(code: number): {

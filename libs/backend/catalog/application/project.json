@@ -1,20 +1,27 @@
 {
   "name": "catalog-application",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/backend/catalog/application",
+  "sourceRoot": "libs/backend/catalog/application/src",
   "projectType": "library",
-  "tags": ["scope:catalog", "type:application", "platform:node"],
-  "implicitDependencies": ["catalog-domain"],
+  "tags": [
+    "scope:catalog",
+    "type:application",
+    "platform:node"
+  ],
+  "implicitDependencies": [
+    "catalog-domain"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/backend/catalog/application/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/backend/catalog/application/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/backend/catalog/application"],
       "options": {
         "jestConfig": "libs/backend/catalog/application/jest.config.ts",
         "passWithNoTests": false
@@ -23,7 +30,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/backend/catalog/application/tsconfig.json --noEmit",
+        "command": "tsc -b libs/backend/catalog/application/tsconfig.json --pretty false",
         "cwd": "."
       }
     }

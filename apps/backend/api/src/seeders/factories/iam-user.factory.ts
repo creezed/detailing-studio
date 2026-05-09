@@ -1,8 +1,8 @@
 import { fakerRU } from '@faker-js/faker';
 import { Factory } from '@mikro-orm/seeder';
 
-import { Role, UserStatus } from '@det/backend/iam/domain';
-import { IamUserSchema } from '@det/backend/iam/infrastructure';
+import { Role, UserStatus } from '@det/backend-iam-domain';
+import { IamUserSchema } from '@det/backend-iam-infrastructure';
 
 import type { Faker } from '@faker-js/faker';
 

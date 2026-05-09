@@ -1,7 +1,7 @@
 import { Seeder } from '@mikro-orm/seeder';
 
-import { Role } from '@det/backend/iam/domain';
-import { IamUserSchema } from '@det/backend/iam/infrastructure';
+import { Role } from '@det/backend-iam-domain';
+import { IamUserSchema } from '@det/backend-iam-infrastructure';
 
 import { BRANCH_IDS } from './data/catalog.data';
 import { ClientFactory } from './factories/client.factory';

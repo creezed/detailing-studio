@@ -7,10 +7,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AcceptLanguageResolver, I18nModule } from 'nestjs-i18n';
 
-import { CatalogInfrastructureModule } from '@det/backend/catalog/infrastructure';
-import { CatalogInterfacesModule } from '@det/backend/catalog/interfaces';
-import { IamInfrastructureModule } from '@det/backend/iam/infrastructure';
-import { IamInterfacesModule } from '@det/backend/iam/interfaces';
+import { CatalogInfrastructureModule } from '@det/backend-catalog-infrastructure';
+import { CatalogInterfacesModule } from '@det/backend-catalog-interfaces';
+import { IamInfrastructureModule } from '@det/backend-iam-infrastructure';
+import { IamInterfacesModule } from '@det/backend-iam-interfaces';
 
 import { authConfig } from '../config/auth.config';
 import { databaseConfig } from '../config/database.config';

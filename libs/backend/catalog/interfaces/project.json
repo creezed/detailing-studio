@@ -1,26 +1,31 @@
 {
   "name": "catalog-interfaces",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/backend/catalog/interfaces",
+  "sourceRoot": "libs/backend/catalog/interfaces/src",
   "projectType": "library",
-  "tags": ["scope:catalog", "type:interfaces", "platform:node"],
+  "tags": [
+    "scope:catalog",
+    "type:interfaces",
+    "platform:node"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/backend/catalog/interfaces/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/backend/catalog/interfaces/**/*.ts"
+        ]
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/backend/catalog/interfaces/tsconfig.json --noEmit",
+        "command": "tsc -b libs/backend/catalog/interfaces/tsconfig.json --pretty false",
         "cwd": "."
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "libs/backend/catalog/interfaces/jest.config.ts",
         "passWithNoTests": false

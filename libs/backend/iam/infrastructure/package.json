@@ -1,0 +1,21 @@
+{
+  "name": "@det/backend-iam-infrastructure",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@det/backend-iam-application": "workspace:*",
+    "@det/backend-iam-domain": "workspace:*",
+    "@det/backend-shared-ddd": "workspace:*",
+    "@det/backend-shared-outbox": "workspace:*",
+    "@det/shared-types": "workspace:*"
+  }
+}

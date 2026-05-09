@@ -2,10 +2,10 @@ export default {
   collectCoverageFrom: [
     '**/*.ts',
     '!**/*.spec.ts',
-    '!index.ts',
+    '!**/index.ts',
     '!jest.config.ts',
-    '!catalog-application.module.ts',
-    '!di/tokens.ts',
+    '!**/catalog-application.module.ts',
+    '!**/di/tokens.ts',
   ],
   coverageThreshold: {
     global: {
