@@ -2121,14 +2121,44 @@ CREATE INDEX idx_notification_pending ON ntf_notification(status, created_at) WH
 - **Запрет на data-миграции в schema-миграциях** — отдельные seed-скрипты.
 - Каждая миграция должна быть **обратимой** (метод `down()`); миграции «без даунгрейда» проходят ревью отдельно.
 
-### 5.5 Soft delete
+### 5.5 Database seeders
+
+Seeders живут в `apps/backend/api/src/seeders/` и используют официальный `@mikro-orm/seeder`.
+
+**Назначение:**
+- начальные данные для локальной разработки;
+- демо-данные для пилотных запусков;
+- объёмные данные для ручного нагрузочного тестирования.
+
+**Правила:**
+- `DatabaseSeeder` — единственная точка входа, вызывает дочерние сидеры в FK-safe порядке: IAM → Catalog → CRM → Inventory → Scheduling → WorkOrder.
+- Каждый дочерний сидер идемпотентен: перед вставкой проверяет наличие данных и безопасен для повторного запуска.
+- Большие наборы данных вставляются батчами по 500-1000 записей.
+- После каждого батча обязательно выполняется `em.flush()` и `em.clear()`, чтобы не держать весь Identity Map в памяти.
+- Реалистичные демо-данные генерируются через `@faker-js/faker` с русской локалью (`fakerRU`): ФИО, адреса, телефоны E.164, госномера.
+- Seeders используют persistence-схемы (`*Schema`) и не вызывают domain/use-case логику.
+
+**Команды:**
+
+```bash
+pnpm nx run api:migration:up
+pnpm nx run api:seed
+pnpm nx run api:seed:fresh
+```
+
+**MikroORM config:**
+- `extensions: [Migrator, SeedManager]`;
+- `seeder.defaultSeeder = 'DatabaseSeeder'`;
+- `seeder.pathTs = 'apps/backend/api/src/seeders'`.
+
+### 5.6 Soft delete
 
 - В справочниках (sku, supplier, service, branch) используем флаг `is_active`. «Удаление» = `is_active = false`.
 - В client используем `status = 'ANONYMIZED'` с очисткой ПДн.
 - В user — `status = 'DEACTIVATED'`.
 - Жёсткое удаление: outbox-события (после публикации > 7 дней), notification (после доставки > 90 дней) — выполняется retention-job'ом.
 
-### 5.6 Изоляция транзакций
+### 5.7 Изоляция транзакций
 
 - По умолчанию `READ COMMITTED`.
 - Для критических операций (бронирование слота, списание со склада) используется **оптимистичная блокировка** через колонку `version` (MikroORM `@Version()`).

@@ -11,6 +11,9 @@ importers:
       '@casl/ability':
         specifier: 6.8.1
         version: 6.8.1
+      '@faker-js/faker':
+        specifier: 10.4.0
+        version: 10.4.0
       '@fastify/cors':
         specifier: 11.2.0
         version: 11.2.0
@@ -33,6 +36,9 @@ importers:
         specifier: 6.1.2
         version: 6.1.2(@mikro-orm/core@6.6.14)(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
       '@mikro-orm/postgresql':
+        specifier: 6.6.14
+        version: 6.6.14(@mikro-orm/core@6.6.14)
+      '@mikro-orm/seeder':
         specifier: 6.6.14
         version: 6.6.14(@mikro-orm/core@6.6.14)
       '@nestjs/common':
@@ -1008,6 +1014,10 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@faker-js/faker@10.4.0':
+    resolution: {integrity: sha512-sDBWI3yLy8EcDzgobvJTWq1MJYzAkQdpjXuPukga9wXonhpMRvd1Izuo2Qgwey2OiEoRIBr35RMU9HJRoOHzpw==}
+    engines: {node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10'}
+
   '@fastify/accept-negotiator@1.1.0':
     resolution: {integrity: sha512-OIHZrb2ImZ7XG85HXOONLcJWGosv7sIvM2ifAPQVhg9Lv7qdmMBNVaai4QTdyuaqbKM5eO6sLSQOYI7wEQeCJQ==}
     engines: {node: '>=14'}
@@ -1401,6 +1411,12 @@ packages:
 
   '@mikro-orm/postgresql@6.6.14':
     resolution: {integrity: sha512-hgyxpuTaXK0nYhhkmPkz8lx1nzhsqtOQuqQ+oabtyEKuqzPeANRJaV2TczIFYMIczyxKWOylV7g//13qrwqmNQ==}
+    engines: {node: '>= 18.12.0'}
+    peerDependencies:
+      '@mikro-orm/core': ^6.0.0
+
+  '@mikro-orm/seeder@6.6.14':
+    resolution: {integrity: sha512-IXEVTo+n/jY5+c1lPeJTRg6Tqedq97bnlVpBPIlCk64Zii3Gypka5poNCzbAKlrem2Ddw58A97TXp6zWNRzGdw==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
@@ -8214,6 +8230,8 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
+  '@faker-js/faker@10.4.0': {}
+
   '@fastify/accept-negotiator@1.1.0': {}
 
   '@fastify/ajv-compiler@3.6.0':
@@ -8802,6 +8820,12 @@ snapshots:
       - sqlite3
       - supports-color
       - tedious
+
+  '@mikro-orm/seeder@6.6.14(@mikro-orm/core@6.6.14)':
+    dependencies:
+      '@mikro-orm/core': 6.6.14
+      fs-extra: 11.3.3
+      globby: 11.1.0
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
     optional: true
