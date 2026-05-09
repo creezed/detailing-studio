@@ -1,8 +1,5 @@
-import type { ServiceCategoryId } from '@det/backend/catalog/domain';
+import type { DynamicQueryRequest } from '@det/backend/shared/querying';
 
 export class ListServicesQuery {
-  constructor(
-    public readonly categoryId?: ServiceCategoryId,
-    public readonly isActive?: boolean,
-  ) {}
+  constructor(public readonly dynamicQuery: DynamicQueryRequest) {}
 }

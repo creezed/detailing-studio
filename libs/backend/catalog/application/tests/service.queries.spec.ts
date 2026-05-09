@@ -13,10 +13,12 @@ import { GetServiceByIdHandler } from '../queries/get-service-by-id/get-service-
 import { GetServiceByIdQuery } from '../queries/get-service-by-id/get-service-by-id.query';
 import { GetServicePriceHistoryHandler } from '../queries/get-service-price-history/get-service-price-history.handler';
 import { GetServicePriceHistoryQuery } from '../queries/get-service-price-history/get-service-price-history.query';
+import { GetServiceQueryCapabilitiesHandler } from '../queries/get-service-query-capabilities/get-service-query-capabilities.handler';
 import { ListServicesHandler } from '../queries/list-services/list-services.handler';
 import { ListServicesQuery } from '../queries/list-services/list-services.query';
 
 import type { IPriceHistoryPort, PriceHistoryEntry } from '../ports/price-history.port';
+import type { IServiceReadPort } from '../ports/service-read.port';
 
 const SERVICE_ID = '22222222-2222-4222-8222-222222222222';
 const CATEGORY_ID = '11111111-1111-4111-8111-111111111111' as ServiceCategoryId;
@@ -35,6 +37,18 @@ function mockPriceHistoryPort(): jest.Mocked<IPriceHistoryPort> {
     // eslint-disable-next-line unicorn/no-useless-undefined
     append: jest.fn().mockResolvedValue(undefined),
     findByServiceId: jest.fn().mockResolvedValue([]),
+  };
+}
+
+function mockServiceReadPort(): jest.Mocked<IServiceReadPort> {
+  return {
+    list: jest.fn().mockResolvedValue({
+      items: [],
+      page: 1,
+      pageSize: 25,
+      totalCount: 0,
+      totalPages: 0,
+    }),
   };
 }
 
@@ -80,29 +94,59 @@ describe('GetServiceByIdHandler', () => {
 });
 
 describe('ListServicesHandler', () => {
-  it('returns list of service dtos', async () => {
-    const repo = mockRepo();
-    const service = existingService();
-    repo.findAll.mockResolvedValue([service]);
-
-    const handler = new ListServicesHandler(repo);
-    const result = await handler.execute(new ListServicesQuery(CATEGORY_ID, true));
-
-    expect(result).toHaveLength(1);
-    expect(result[0]?.id).toBe(SERVICE_ID);
-    expect(repo.findAll).toHaveBeenCalledWith({
-      categoryId: CATEGORY_ID,
-      isActive: true,
+  it('returns paginated service dtos', async () => {
+    const readPort = mockServiceReadPort();
+    const query = { filters: 'categoryId==11111111-1111-4111-8111-111111111111,isActive==true' };
+    readPort.list.mockResolvedValue({
+      items: [
+        {
+          categoryId: CATEGORY_ID,
+          description: 'Test desc',
+          displayOrder: 1,
+          durationMinutes: 60,
+          id: SERVICE_ID,
+          isActive: true,
+          materialNorms: [],
+          name: 'Полировка кузова',
+          pricing: { fixedPriceCents: '300000', type: PricingType.FIXED },
+          version: 1,
+        },
+      ],
+      page: 1,
+      pageSize: 25,
+      totalCount: 1,
+      totalPages: 1,
     });
+
+    const handler = new ListServicesHandler(readPort);
+    const result = await handler.execute(new ListServicesQuery(query));
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(SERVICE_ID);
+    expect(readPort.list).toHaveBeenCalledWith(query);
   });
 
-  it('returns empty array when no services', async () => {
-    const repo = mockRepo();
-    const handler = new ListServicesHandler(repo);
+  it('returns empty paginated response when no services', async () => {
+    const readPort = mockServiceReadPort();
+    const query = {};
+    const handler = new ListServicesHandler(readPort);
 
-    const result = await handler.execute(new ListServicesQuery());
+    const result = await handler.execute(new ListServicesQuery(query));
 
-    expect(result).toEqual([]);
+    expect(result.items).toEqual([]);
+    expect(result.totalCount).toBe(0);
+    expect(readPort.list).toHaveBeenCalledWith(query);
+  });
+});
+
+describe('GetServiceQueryCapabilitiesHandler', () => {
+  it('returns service query capabilities', async () => {
+    const handler = new GetServiceQueryCapabilitiesHandler();
+    const result = await handler.execute();
+
+    expect(result.defaultPageSize).toBe(25);
+    expect(result.filters.some((filter) => filter.field === 'name')).toBe(true);
+    expect(result.sorts.some((sort) => sort.field === 'displayOrder')).toBe(true);
   });
 });
 

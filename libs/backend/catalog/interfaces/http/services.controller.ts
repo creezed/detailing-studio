@@ -28,23 +28,24 @@ import {
   GetClientServiceCatalogQuery,
   GetServiceByIdQuery,
   GetServicePriceHistoryQuery,
+  GetServiceQueryCapabilitiesQuery,
   ListServicesQuery,
+  type QueryCapabilitiesDto,
+  type ServiceCatalogItemDto,
   ServiceCategoryId,
   ServiceId,
+  type ServiceDto,
+  type ServicePriceHistoryDto,
   SetServiceMaterialNormsCommand,
   UpdateServiceCommand,
 } from '@det/backend/catalog/application';
-import type {
-  ServiceCatalogItemDto,
-  ServiceDto,
-  ServicePriceHistoryDto,
-} from '@det/backend/catalog/application';
 import { CheckAbility, Public } from '@det/backend/shared/auth';
+import { DynamicQueryDto } from '@det/backend/shared/querying';
+import type { PaginatedResponseDto } from '@det/backend/shared/querying';
 
 import {
   ChangeServicePriceRequestDto,
   CreateServiceRequestDto,
-  ListServicesQueryDto,
   ServiceCreatedResponseDto,
   SetMaterialNormsRequestDto,
   UpdateServiceRequestDto,
@@ -63,13 +64,20 @@ export class ServicesController {
   @Get()
   @CheckAbility((ab) => ab.can('read', 'Service'))
   @ApiOperation({ summary: 'List services' })
-  @ApiOkResponse({ description: 'List of services' })
-  async list(@Query() q: ListServicesQueryDto): Promise<ServiceDto[]> {
-    return this.queryBus.execute<ListServicesQuery, ServiceDto[]>(
-      new ListServicesQuery(
-        q.categoryId ? ServiceCategoryId.from(q.categoryId) : undefined,
-        q.isActive,
-      ),
+  @ApiOkResponse({ description: 'Paginated list of services' })
+  async list(@Query() query: DynamicQueryDto): Promise<PaginatedResponseDto<ServiceDto>> {
+    return this.queryBus.execute<ListServicesQuery, PaginatedResponseDto<ServiceDto>>(
+      new ListServicesQuery(query),
+    );
+  }
+
+  @Get('query-capabilities')
+  @CheckAbility((ab) => ab.can('read', 'Service'))
+  @ApiOperation({ summary: 'Get service query capabilities' })
+  @ApiOkResponse({ description: 'Available service filters and sorts' })
+  async queryCapabilities(): Promise<QueryCapabilitiesDto> {
+    return this.queryBus.execute<GetServiceQueryCapabilitiesQuery, QueryCapabilitiesDto>(
+      new GetServiceQueryCapabilitiesQuery(),
     );
   }
 

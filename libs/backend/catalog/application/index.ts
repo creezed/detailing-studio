@@ -10,13 +10,17 @@ export * from './commands/set-service-material-norms/set-service-material-norms.
 export * from './commands/update-service/update-service.command';
 export * from './commands/update-service-category/update-service-category.command';
 export * from './di/tokens';
+export * from './dto/query-capabilities.dto';
 export * from './dto/service-category.dto';
 export * from './dto/service.dto';
 export * from './errors/application.errors';
 export * from './ports/price-history.port';
+export * from './ports/service-read.port';
+export * from './querying/service-querying.config';
 export * from './queries/get-client-service-catalog/get-client-service-catalog.query';
 export * from './queries/get-service-by-id/get-service-by-id.query';
 export * from './queries/get-service-price-history/get-service-price-history.handler';
 export * from './queries/get-service-price-history/get-service-price-history.query';
+export * from './queries/get-service-query-capabilities/get-service-query-capabilities.query';
 export * from './queries/list-service-categories/list-service-categories.query';
 export * from './queries/list-services/list-services.query';

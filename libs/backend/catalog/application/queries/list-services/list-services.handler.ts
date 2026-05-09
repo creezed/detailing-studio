@@ -1,24 +1,22 @@
 import { Inject } from '@nestjs/common';
 import { QueryHandler, type IQueryHandler } from '@nestjs/cqrs';
 
-import type { IServiceRepository } from '@det/backend/catalog/domain';
+import type { PaginatedResponseDto } from '@det/backend/shared/querying';
 
 import { ListServicesQuery } from './list-services.query';
-import { SERVICE_REPOSITORY } from '../../di/tokens';
-import { toServiceDto } from '../../dto/service.dto';
+import { SERVICE_READ_PORT } from '../../di/tokens';
 
 import type { ServiceDto } from '../../dto/service.dto';
+import type { IServiceReadPort } from '../../ports/service-read.port';
 
 @QueryHandler(ListServicesQuery)
-export class ListServicesHandler implements IQueryHandler<ListServicesQuery, ServiceDto[]> {
-  constructor(@Inject(SERVICE_REPOSITORY) private readonly repo: IServiceRepository) {}
+export class ListServicesHandler implements IQueryHandler<
+  ListServicesQuery,
+  PaginatedResponseDto<ServiceDto>
+> {
+  constructor(@Inject(SERVICE_READ_PORT) private readonly readPort: IServiceReadPort) {}
 
-  async execute(query: ListServicesQuery): Promise<ServiceDto[]> {
-    const services = await this.repo.findAll({
-      categoryId: query.categoryId,
-      isActive: query.isActive,
-    });
-
-    return services.map((s) => toServiceDto(s.toSnapshot()));
+  async execute(query: ListServicesQuery): Promise<PaginatedResponseDto<ServiceDto>> {
+    return this.readPort.list(query.dynamicQuery);
   }
 }

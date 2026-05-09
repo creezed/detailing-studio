@@ -7,6 +7,7 @@ import {
   ID_GENERATOR,
   PRICE_HISTORY_PORT,
   SERVICE_CATEGORY_REPOSITORY,
+  SERVICE_READ_PORT,
   SERVICE_REPOSITORY,
 } from '@det/backend/catalog/application';
 import {
@@ -27,6 +28,7 @@ import { CatalogServiceCategorySchema } from './persistence/catalog-service-cate
 import { CatalogServicePriceHistorySchema } from './persistence/catalog-service-price-history.schema';
 import { CatalogServicePricingSchema } from './persistence/catalog-service-pricing.schema';
 import { CatalogServiceSchema } from './persistence/catalog-service.schema';
+import { CatalogServiceReadAdapter } from './read-models/catalog-service-read.adapter';
 import { CatalogServiceCategoryRepository } from './repositories/catalog-service-category.repository';
 import { CatalogServiceRepository } from './repositories/catalog-service.repository';
 
@@ -40,6 +42,7 @@ const CATALOG_SCHEMAS = [
 
 const INFRASTRUCTURE_PROVIDERS: readonly Provider[] = [
   CatalogServiceCategoryRepository,
+  CatalogServiceReadAdapter,
   CatalogServiceRepository,
   CryptoIdGeneratorAdapter,
   PriceHistoryPortAdapter,
@@ -51,6 +54,10 @@ const INFRASTRUCTURE_PROVIDERS: readonly Provider[] = [
   {
     provide: SERVICE_REPOSITORY,
     useExisting: CatalogServiceRepository,
+  },
+  {
+    provide: SERVICE_READ_PORT,
+    useExisting: CatalogServiceReadAdapter,
   },
   {
     provide: ID_GENERATOR,

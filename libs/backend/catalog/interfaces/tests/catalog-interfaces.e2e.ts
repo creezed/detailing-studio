@@ -43,6 +43,19 @@ interface ErrorResponse {
   readonly statusCode: number;
 }
 
+interface ServiceListResponse {
+  readonly items: readonly { readonly name: string }[];
+  readonly page: number;
+  readonly pageSize: number;
+  readonly totalCount: number;
+  readonly totalPages: number;
+}
+
+interface QueryCapabilitiesResponse {
+  readonly filters: readonly { readonly field: string }[];
+  readonly sorts: readonly { readonly field: string }[];
+}
+
 interface HttpResponse {
   status(code: number): {
     send(body: ErrorResponse): void;
@@ -272,6 +285,43 @@ describe('Catalog Interfaces e2e', () => {
       const items = res.body as { name: string }[];
       expect(items).toHaveLength(1);
       expect(items[0]?.name).toBe('Мойка люкс');
+    });
+
+    it('OWNER can list services with dynamic querying', async () => {
+      await createService(app, ownerToken, categoryId, 'Мойка базовая', 30, {
+        fixedPriceCents: '200000',
+        type: 'FIXED',
+      });
+      await createService(app, ownerToken, categoryId, 'Мойка люкс', 45, {
+        fixedPriceCents: '300000',
+        type: 'FIXED',
+      });
+
+      const res = await request(app.getHttpServer())
+        .get('/api/services')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .query({ filters: 'name@=люкс', page: 1, pageSize: 10, sorts: 'displayOrder' })
+        .expect(200);
+
+      const body = res.body as ServiceListResponse;
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0]?.name).toBe('Мойка люкс');
+      expect(body.totalCount).toBe(1);
+      expect(body.page).toBe(1);
+      expect(body.pageSize).toBe(10);
+      expect(body.totalPages).toBe(1);
+    });
+
+    it('OWNER can get service query capabilities', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/services/query-capabilities')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(200);
+
+      const body = res.body as QueryCapabilitiesResponse;
+      expect(body.filters.some((filter) => filter.field === 'name')).toBe(true);
+      expect(body.filters.some((filter) => filter.field === 'isActive')).toBe(true);
+      expect(body.sorts.some((sort) => sort.field === 'displayOrder')).toBe(true);
     });
 
     it('MANAGER cannot create a service', async () => {

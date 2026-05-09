@@ -13,6 +13,7 @@ import { ServicePriceChangedHandler } from './event-handlers/service-price-chang
 import { GetClientServiceCatalogHandler } from './queries/get-client-service-catalog/get-client-service-catalog.handler';
 import { GetServiceByIdHandler } from './queries/get-service-by-id/get-service-by-id.handler';
 import { GetServicePriceHistoryHandler } from './queries/get-service-price-history/get-service-price-history.handler';
+import { GetServiceQueryCapabilitiesHandler } from './queries/get-service-query-capabilities/get-service-query-capabilities.handler';
 import { ListServiceCategoriesHandler } from './queries/list-service-categories/list-service-categories.handler';
 import { ListServicesHandler } from './queries/list-services/list-services.handler';
 
@@ -33,6 +34,7 @@ const QUERY_HANDLERS = [
   GetClientServiceCatalogHandler,
   GetServiceByIdHandler,
   GetServicePriceHistoryHandler,
+  GetServiceQueryCapabilitiesHandler,
   ListServiceCategoriesHandler,
   ListServicesHandler,
 ];
