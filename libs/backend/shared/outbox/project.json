@@ -1,26 +1,31 @@
 {
   "name": "backend-shared-outbox",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/backend/shared/outbox",
+  "sourceRoot": "libs/backend/shared/outbox/src",
   "projectType": "library",
-  "tags": ["scope:shared", "type:util", "platform:node"],
+  "tags": [
+    "scope:shared",
+    "type:util",
+    "platform:node"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/backend/shared/outbox/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/backend/shared/outbox/**/*.ts"
+        ]
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/backend/shared/outbox/tsconfig.json --noEmit",
+        "command": "tsc -b libs/backend/shared/outbox/tsconfig.json --pretty false",
         "cwd": "."
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "libs/backend/shared/outbox/jest.config.ts",
         "passWithNoTests": false

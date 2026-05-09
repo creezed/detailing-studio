@@ -1,19 +1,24 @@
 {
   "name": "iam-infrastructure",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/backend/iam/infrastructure",
+  "sourceRoot": "libs/backend/iam/infrastructure/src",
   "projectType": "library",
-  "tags": ["scope:iam", "type:infrastructure", "platform:node"],
+  "tags": [
+    "scope:iam",
+    "type:infrastructure",
+    "platform:node"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/backend/iam/infrastructure/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/backend/iam/infrastructure/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/backend/iam/infrastructure"],
       "options": {
         "jestConfig": "libs/backend/iam/infrastructure/jest.config.ts",
         "passWithNoTests": false
@@ -22,7 +27,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/backend/iam/infrastructure/tsconfig.json --noEmit",
+        "command": "tsc -b libs/backend/iam/infrastructure/tsconfig.json --pretty false",
         "cwd": "."
       }
     }

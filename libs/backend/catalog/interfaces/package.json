@@ -1,0 +1,24 @@
+{
+  "name": "@det/backend-catalog-interfaces",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@det/backend-catalog-application": "workspace:*",
+    "@det/backend-catalog-infrastructure": "workspace:*",
+    "@det/backend-iam-infrastructure": "workspace:*",
+    "@det/backend-iam-interfaces": "workspace:*",
+    "@det/backend-shared-auth": "workspace:*",
+    "@det/backend-shared-ddd": "workspace:*",
+    "@det/backend-shared-querying": "workspace:*",
+    "@det/shared-types": "workspace:*"
+  }
+}

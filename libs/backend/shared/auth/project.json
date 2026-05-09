@@ -1,20 +1,26 @@
 {
   "name": "backend-shared-auth",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/backend/shared/auth",
+  "sourceRoot": "libs/backend/shared/auth/src",
   "projectType": "library",
-  "tags": ["scope:shared", "type:util", "platform:node"],
+  "tags": [
+    "scope:shared",
+    "type:util",
+    "platform:node"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/backend/shared/auth/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/backend/shared/auth/**/*.ts"
+        ]
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/backend/shared/auth/tsconfig.json --noEmit",
+        "command": "tsc -b libs/backend/shared/auth/tsconfig.json --pretty false",
         "cwd": "."
       }
     }

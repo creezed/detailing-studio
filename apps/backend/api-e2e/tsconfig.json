@@ -1,6 +1,8 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
+    "declaration": true,
     "esModuleInterop": true,
     "module": "commonjs",
     "outDir": "../../../dist/out-tsc/apps/backend/api-e2e",

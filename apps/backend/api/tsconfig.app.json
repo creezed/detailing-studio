@@ -1,12 +1,36 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../../dist/out-tsc",
+    "outDir": "../../../dist/out-tsc/apps/backend/api",
     "module": "commonjs",
+    "composite": true,
+    "declaration": true,
     "types": ["node"],
-    "emitDecoratorMetadata": true,
-    "target": "es2021"
+    "emitDecoratorMetadata": true
   },
   "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"],
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../../../libs/backend/catalog/infrastructure/tsconfig.lib.json"
+    },
+    {
+      "path": "../../../libs/backend/catalog/interfaces/tsconfig.lib.json"
+    },
+    {
+      "path": "../../../libs/backend/iam/domain/tsconfig.lib.json"
+    },
+    {
+      "path": "../../../libs/backend/iam/infrastructure/tsconfig.lib.json"
+    },
+    {
+      "path": "../../../libs/backend/iam/interfaces/tsconfig.lib.json"
+    },
+    {
+      "path": "../../../libs/backend/shared/ddd/tsconfig.lib.json"
+    },
+    {
+      "path": "../../../libs/backend/shared/outbox/tsconfig.lib.json"
+    }
+  ]
 }

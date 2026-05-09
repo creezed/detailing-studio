@@ -1,19 +1,24 @@
 {
   "name": "catalog-infrastructure",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/backend/catalog/infrastructure",
+  "sourceRoot": "libs/backend/catalog/infrastructure/src",
   "projectType": "library",
-  "tags": ["scope:catalog", "type:infrastructure", "platform:node"],
+  "tags": [
+    "scope:catalog",
+    "type:infrastructure",
+    "platform:node"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/backend/catalog/infrastructure/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/backend/catalog/infrastructure/**/*.ts"
+        ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/backend/catalog/infrastructure"],
       "options": {
         "jestConfig": "libs/backend/catalog/infrastructure/jest.config.ts",
         "passWithNoTests": false
@@ -22,7 +27,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/backend/catalog/infrastructure/tsconfig.json --noEmit",
+        "command": "tsc -b libs/backend/catalog/infrastructure/tsconfig.json --pretty false",
         "cwd": "."
       }
     }

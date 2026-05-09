@@ -1,26 +1,31 @@
 {
   "name": "iam-interfaces",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/backend/iam/interfaces",
+  "sourceRoot": "libs/backend/iam/interfaces/src",
   "projectType": "library",
-  "tags": ["scope:iam", "type:interfaces", "platform:node"],
+  "tags": [
+    "scope:iam",
+    "type:interfaces",
+    "platform:node"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["libs/backend/iam/interfaces/**/*.ts"]
+        "lintFilePatterns": [
+          "libs/backend/iam/interfaces/**/*.ts"
+        ]
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/backend/iam/interfaces/tsconfig.json --noEmit",
+        "command": "tsc -b libs/backend/iam/interfaces/tsconfig.json --pretty false",
         "cwd": "."
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "libs/backend/iam/interfaces/jest.config.ts",
         "passWithNoTests": false

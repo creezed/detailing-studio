@@ -1,6 +1,6 @@
 import { I18nContext } from 'nestjs-i18n';
 
-import { ApplicationError, DomainError } from '@det/backend/shared/ddd';
+import { ApplicationError, DomainError } from '@det/backend-shared-ddd';
 
 import { DomainExceptionFilter } from './domain-exception.filter';
 

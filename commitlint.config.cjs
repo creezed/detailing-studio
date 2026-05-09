@@ -19,6 +19,7 @@ module.exports = {
         'client',
         'master',
         'infra',
+        'deps',
       ],
     ],
     'type-enum': [

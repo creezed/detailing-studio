@@ -182,7 +182,7 @@ const featureRestrictedImports = {
   patterns: [
     ...frontendPlatformRestrictedImports.patterns,
     {
-      group: ['@det/frontend/*/feature-*'],
+      group: ['@det/frontend-*-feature-*'],
       message:
         'feature → feature import запрещён. Композиция — в apps/frontend/<app>/src/app/app.routes.ts',
     },
@@ -308,7 +308,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['libs/backend/*/domain/**/*.ts'],
+    files: ['libs/backend/*/domain/**/*.ts', 'libs/backend/shared/ddd/**/*.ts'],
     rules: {
       'no-restricted-imports': ['error', domainRestrictedImports],
     },

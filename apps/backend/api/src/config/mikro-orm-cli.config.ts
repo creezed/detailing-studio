@@ -8,14 +8,14 @@ import {
   CatalogServicePriceHistorySchema,
   CatalogServicePricingSchema,
   CatalogServiceSchema,
-} from '@det/backend/catalog/infrastructure';
+} from '@det/backend-catalog-infrastructure';
 import {
   IamInvitationSchema,
   IamOtpRequestSchema,
   IamRefreshSessionSchema,
   IamUserSchema,
-} from '@det/backend/iam/infrastructure';
-import { OutboxEventSchema } from '@det/backend/shared/outbox';
+} from '@det/backend-iam-infrastructure';
+import { OutboxEventSchema } from '@det/backend-shared-outbox';
 
 export default defineConfig({
   clientUrl:

@@ -3,12 +3,20 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/backend/api-e2e/src",
   "projectType": "application",
-  "tags": ["scope:api", "type:e2e", "platform:node"],
+  "tags": [
+    "scope:api",
+    "type:e2e",
+    "platform:node"
+  ],
   "targets": {
     "test": {
       "executor": "@nx/jest:jest",
-      "dependsOn": ["api:build"],
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "dependsOn": [
+        "api:build"
+      ],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "apps/backend/api-e2e/jest.config.ts",
         "passWithNoTests": false,
@@ -17,8 +25,12 @@
     },
     "e2e": {
       "executor": "@nx/jest:jest",
-      "dependsOn": ["api:build"],
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "dependsOn": [
+        "api:build"
+      ],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "apps/backend/api-e2e/jest.config.ts",
         "passWithNoTests": false,
@@ -28,13 +40,15 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["apps/backend/api-e2e/src/**/*.ts"]
+        "lintFilePatterns": [
+          "apps/backend/api-e2e/src/**/*.ts"
+        ]
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p apps/backend/api-e2e/tsconfig.json --noEmit",
+        "command": "tsc -b apps/backend/api-e2e/tsconfig.json --pretty false",
         "cwd": "."
       }
     }

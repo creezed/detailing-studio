@@ -1,0 +1,15 @@
+{
+  "name": "@det/backend-api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@det/backend-catalog-infrastructure": "workspace:*",
+    "@det/backend-catalog-interfaces": "workspace:*",
+    "@det/backend-iam-domain": "workspace:*",
+    "@det/backend-iam-infrastructure": "workspace:*",
+    "@det/backend-iam-interfaces": "workspace:*",
+    "@det/backend-shared-ddd": "workspace:*",
+    "@det/backend-shared-outbox": "workspace:*"
+  }
+}
