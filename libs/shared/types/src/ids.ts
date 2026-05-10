@@ -108,6 +108,13 @@ export const SessionId = {
   },
 };
 
+export type SupplierId = Brand<string, 'SupplierId'>;
+export const SupplierId = {
+  from(value: string): SupplierId {
+    return fromUuid<'SupplierId'>(value);
+  },
+};
+
 export type OutboxEventId = Brand<string, 'OutboxEventId'>;
 export const OutboxEventId = {
   from(value: string): OutboxEventId {
