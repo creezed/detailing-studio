@@ -1,0 +1,29 @@
+{
+  "name": "backend-crm-domain",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/crm/domain/src",
+  "projectType": "library",
+  "tags": ["scope:crm", "type:domain", "platform:node"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/backend/crm/domain/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/crm/domain/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/crm/domain/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}
