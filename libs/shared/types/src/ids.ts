@@ -143,6 +143,13 @@ export const StockTakingId = {
   },
 };
 
+export type VehicleId = Brand<string, 'VehicleId'>;
+export const VehicleId = {
+  from(value: string): VehicleId {
+    return fromUuid<'VehicleId'>(value);
+  },
+};
+
 export type OutboxEventId = Brand<string, 'OutboxEventId'>;
 export const OutboxEventId = {
   from(value: string): OutboxEventId {
