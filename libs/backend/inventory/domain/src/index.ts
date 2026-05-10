@@ -24,6 +24,7 @@ export * from './stock/batch-id';
 export * from './stock/batch-source-type';
 export * from './stock/batch.entity';
 export type { BatchAllocation, IBatchSelector } from './stock/batch-selector.interface';
+export * from './stock/consumption-reason';
 export * from './stock/stock-id';
 export * from './stock/stock.aggregate';
 export * from './stock/stock.errors';
