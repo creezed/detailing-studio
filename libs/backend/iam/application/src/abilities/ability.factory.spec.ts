@@ -47,22 +47,37 @@ describe('AbilityFactory', () => {
   });
 
   describe('MANAGER', () => {
-    it('can manage Appointment and Client in assigned branches', () => {
+    it('can manage Appointment in assigned branches', () => {
       const ability = factory.createForUser(user(Role.MANAGER));
 
       expect(ability.can('manage', appSubject('Appointment', { branchId: BRANCH_ID }))).toBe(true);
-      expect(ability.can('manage', appSubject('Client', { branchId: BRANCH_ID }))).toBe(true);
-    });
-
-    it('cannot manage Appointment and Client outside assigned branches', () => {
-      const ability = factory.createForUser(user(Role.MANAGER));
-
       expect(ability.can('manage', appSubject('Appointment', { branchId: OTHER_BRANCH_ID }))).toBe(
         false,
       );
-      expect(ability.can('manage', appSubject('Client', { branchId: OTHER_BRANCH_ID }))).toBe(
-        false,
-      );
+    });
+
+    it('can read/create/update Client, Vehicle, Consent, VisitHistory', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('read', 'Client')).toBe(true);
+      expect(ability.can('create', 'Client')).toBe(true);
+      expect(ability.can('update', 'Client')).toBe(true);
+      expect(ability.can('delete', 'Client')).toBe(false);
+      expect(ability.can('read', 'Vehicle')).toBe(true);
+      expect(ability.can('create', 'Vehicle')).toBe(true);
+      expect(ability.can('update', 'Vehicle')).toBe(true);
+      expect(ability.can('read', 'Consent')).toBe(true);
+      expect(ability.can('create', 'Consent')).toBe(true);
+      expect(ability.can('delete', 'Consent')).toBe(true);
+      expect(ability.can('read', 'VisitHistory')).toBe(true);
+    });
+
+    it('cannot anonymize Client or read PiiAccessLog', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('anonymize', 'Client')).toBe(false);
+      expect(ability.can('export-data', 'Client')).toBe(false);
+      expect(ability.can('read', 'PiiAccessLog')).toBe(false);
     });
 
     it('cannot read cost fields', () => {
@@ -179,6 +194,16 @@ describe('AbilityFactory', () => {
       expect(ability.can('manage', 'User')).toBe(false);
     });
 
+    it('can read Client/Vehicle/VisitHistory for own assignments', () => {
+      const ability = factory.createForUser(user(Role.MASTER));
+
+      expect(ability.can('read', appSubject('Client', { masterId: MASTER_ID }))).toBe(true);
+      expect(ability.can('read', appSubject('Client', { masterId: OTHER_USER_ID }))).toBe(false);
+      expect(ability.can('read', appSubject('Vehicle', { masterId: MASTER_ID }))).toBe(true);
+      expect(ability.can('read', appSubject('VisitHistory', { masterId: MASTER_ID }))).toBe(true);
+      expect(ability.can('create', 'Client')).toBe(false);
+    });
+
     it('can read Sku and Stock in own branch only', () => {
       const ability = factory.createForUser(user(Role.MASTER));
 
@@ -225,12 +250,26 @@ describe('AbilityFactory', () => {
       expect(ability.can('read', appSubject('User', { id: OTHER_USER_ID }))).toBe(false);
     });
 
-    it('cannot manage WorkOrder, Client or Receipt', () => {
+    it('cannot manage WorkOrder or Receipt', () => {
       const ability = factory.createForUser(user(Role.CLIENT));
 
       expect(ability.can('manage', 'WorkOrder')).toBe(false);
-      expect(ability.can('manage', 'Client')).toBe(false);
       expect(ability.can('manage', 'Receipt')).toBe(false);
+    });
+
+    it('can read own Client/Vehicle/VisitHistory and export-data', () => {
+      const ability = factory.createForUser(user(Role.CLIENT));
+
+      expect(ability.can('read', appSubject('Client', { clientId: CLIENT_ID }))).toBe(true);
+      expect(ability.can('read', appSubject('Client', { clientId: OTHER_USER_ID }))).toBe(false);
+      expect(ability.can('read', appSubject('Vehicle', { clientId: CLIENT_ID }))).toBe(true);
+      expect(ability.can('read', appSubject('VisitHistory', { clientId: CLIENT_ID }))).toBe(true);
+      expect(ability.can('export-data', appSubject('Client', { clientId: CLIENT_ID }))).toBe(true);
+      expect(ability.can('export-data', appSubject('Client', { clientId: OTHER_USER_ID }))).toBe(
+        false,
+      );
+      expect(ability.can('create', 'Client')).toBe(false);
+      expect(ability.can('anonymize', 'Client')).toBe(false);
     });
 
     it('has zero Inventory permissions', () => {
