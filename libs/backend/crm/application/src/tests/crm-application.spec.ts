@@ -31,6 +31,8 @@ import {
   FILE_STORAGE_PORT,
   ID_GENERATOR,
   PII_ACCESS_LOG_PORT,
+  VISIT_HISTORY_READ_PORT,
+  VISIT_HISTORY_WRITE_PORT,
 } from '../di/tokens';
 import { ClientNotFoundError, DuplicatePhoneError } from '../errors/application.errors';
 
@@ -39,6 +41,7 @@ import type { IClientReadPort } from '../ports/client-read.port';
 import type { ICrmConfigPort } from '../ports/config.port';
 import type { IFileStoragePort } from '../ports/file-storage.port';
 import type { IPiiAccessLogPort } from '../ports/pii-access-log.port';
+import type { IVisitHistoryReadPort, IVisitHistoryWritePort } from '../ports/visit-history.port';
 
 const CLIENT_ID = '11111111-1111-4111-8111-111111111111';
 const VEHICLE_ID = '22222222-2222-4222-8222-222222222222';
@@ -151,6 +154,22 @@ describe('CRM Application Commands', () => {
           { provide: ANONYMIZATION_REQUEST_PORT, useValue: createMockAnonPort() },
           { provide: FILE_STORAGE_PORT, useValue: createMockFileStorage() },
           { provide: PII_ACCESS_LOG_PORT, useValue: createMockPiiLog() },
+          {
+            provide: VISIT_HISTORY_READ_PORT,
+            useValue: {
+              findByClientId: jest.fn().mockResolvedValue({ items: [], nextCursor: null }),
+              findByVehicleId: jest.fn().mockResolvedValue({ items: [], nextCursor: null }),
+              findAllByClientId: jest.fn().mockResolvedValue([]),
+            } as IVisitHistoryReadPort,
+          },
+          {
+            provide: VISIT_HISTORY_WRITE_PORT,
+            useValue: {
+              upsert: jest.fn(),
+              updateByAppointmentId: jest.fn(),
+              clearPhotosForClient: jest.fn(),
+            } as IVisitHistoryWritePort,
+          },
         ]),
       ],
     }).compile();

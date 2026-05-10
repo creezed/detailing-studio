@@ -15,10 +15,12 @@ import { RevokeConsentHandler } from './commands/revoke-consent/revoke-consent.h
 import { UpdateClientProfileHandler } from './commands/update-client-profile/update-client-profile.handler';
 import { UpdateVehicleHandler } from './commands/update-vehicle/update-vehicle.handler';
 import { UpgradeClientToRegularHandler } from './commands/upgrade-client-to-regular/upgrade-client-to-regular.handler';
+import { VisitHistoryProjector } from './projections/visit-history.projector';
 import { GetClientByIdHandler } from './queries/get-client-by-id/get-client-by-id.handler';
 import { GetClientByPhoneHandler } from './queries/get-client-by-phone/get-client-by-phone.handler';
 import { GetClientDataExportHandler } from './queries/get-client-data-export/get-client-data-export.handler';
 import { GetClientVehiclesHandler } from './queries/get-client-vehicles/get-client-vehicles.handler';
+import { GetClientVisitHistoryHandler } from './queries/get-client-visit-history/get-client-visit-history.handler';
 import { ListClientsHandler } from './queries/list-clients/list-clients.handler';
 
 import type { DynamicModule, ModuleMetadata, Provider } from '@nestjs/common';
@@ -45,6 +47,7 @@ const QUERY_HANDLERS = [
   GetClientByPhoneHandler,
   GetClientVehiclesHandler,
   GetClientDataExportHandler,
+  GetClientVisitHistoryHandler,
 ];
 
 @Module({
@@ -60,7 +63,13 @@ export class CrmApplicationModule {
       exports: [CqrsModule, ...providers],
       imports: [CqrsModule, ...imports],
       module: CrmApplicationModule,
-      providers: [...providers, ...COMMAND_HANDLERS, ...QUERY_HANDLERS, PiiAccessLogger],
+      providers: [
+        ...providers,
+        ...COMMAND_HANDLERS,
+        ...QUERY_HANDLERS,
+        PiiAccessLogger,
+        VisitHistoryProjector,
+      ],
     };
   }
 }

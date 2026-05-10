@@ -5,6 +5,7 @@ import { CLIENT_READ_PORT } from '../ports/client-read.port';
 import { CRM_CONFIG_PORT } from '../ports/config.port';
 import { FILE_STORAGE_PORT } from '../ports/file-storage.port';
 import { PII_ACCESS_LOG_PORT } from '../ports/pii-access-log.port';
+import { VISIT_HISTORY_READ_PORT, VISIT_HISTORY_WRITE_PORT } from '../ports/visit-history.port';
 
 export const CLIENT_REPOSITORY = Symbol('CLIENT_REPOSITORY');
 
@@ -16,4 +17,6 @@ export {
   FILE_STORAGE_PORT,
   ID_GENERATOR,
   PII_ACCESS_LOG_PORT,
+  VISIT_HISTORY_READ_PORT,
+  VISIT_HISTORY_WRITE_PORT,
 };
