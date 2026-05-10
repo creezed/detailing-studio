@@ -73,7 +73,7 @@ export class StockTakingsController {
     @Body() dto: StartStockTakingRequestDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<StockTakingCreatedResponseDto> {
-    const id = await this.commandBus.execute<StartStockTakingCommand, StockTakingId>(
+    const { id } = await this.commandBus.execute<StartStockTakingCommand, { id: StockTakingId }>(
       new StartStockTakingCommand(
         dto.branchId as unknown as BranchId,
         user.id as unknown as UserId,

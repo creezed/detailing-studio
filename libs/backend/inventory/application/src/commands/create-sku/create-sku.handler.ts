@@ -33,7 +33,9 @@ export class CreateSkuHandler implements ICommandHandler<CreateSkuCommand, { id:
       throw new BarcodeAlreadyExistsError(barcode.getValue());
     }
 
-    const packagings = cmd.packagings.map((p) => Packaging.create(p.id, p.name, p.coefficient));
+    const packagings = cmd.packagings.map((p) =>
+      Packaging.create(this.idGen.generate(), p.name, p.coefficient),
+    );
 
     const sku = Sku.create({
       articleNumber: cmd.articleNumber,

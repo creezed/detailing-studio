@@ -73,15 +73,14 @@ export class SkusController {
   @ApiOperation({ summary: 'Создать SKU' })
   @ApiCreatedResponse({ type: SkuCreatedResponseDto })
   async create(@Body() dto: CreateSkuRequestDto): Promise<SkuCreatedResponseDto> {
-    const id = await this.commandBus.execute<CreateSkuCommand, SkuId>(
+    const { id } = await this.commandBus.execute<CreateSkuCommand, { id: SkuId }>(
       new CreateSkuCommand(
         dto.articleNumber,
         dto.name,
         dto.group,
         dto.baseUnit,
         dto.hasExpiry,
-        dto.packagings.map((p, i) => ({
-          id: `pkg-${String(i)}`,
+        dto.packagings.map((p) => ({
           name: p.name,
           coefficient: p.coefficient,
         })),

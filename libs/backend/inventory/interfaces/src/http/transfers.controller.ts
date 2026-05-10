@@ -63,7 +63,7 @@ export class TransfersController {
     @Body() dto: CreateTransferRequestDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<TransferCreatedResponseDto> {
-    const id = await this.commandBus.execute<CreateTransferCommand, TransferId>(
+    const { id } = await this.commandBus.execute<CreateTransferCommand, { id: TransferId }>(
       new CreateTransferCommand(
         dto.fromBranchId as unknown as BranchId,
         dto.toBranchId as unknown as BranchId,
