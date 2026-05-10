@@ -471,6 +471,60 @@ importers:
         specifier: workspace:*
         version: link:../../../shared/types
 
+  libs/backend/scheduling/application:
+    dependencies:
+      '@det/backend-scheduling-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/scheduling/domain:
+    dependencies:
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/scheduling/infrastructure:
+    dependencies:
+      '@det/backend-scheduling-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/backend-scheduling-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/backend-shared-outbox':
+        specifier: workspace:*
+        version: link:../../shared/outbox
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/scheduling/interfaces:
+    dependencies:
+      '@det/backend-scheduling-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/backend-shared-auth':
+        specifier: workspace:*
+        version: link:../../shared/auth
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
   libs/backend/shared/auth: {}
 
   libs/backend/shared/ddd: {}

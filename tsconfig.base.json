@@ -25,6 +25,16 @@
       "@det/backend-crm-domain": ["libs/backend/crm/domain/src/index.ts"],
       "@det/backend-crm-infrastructure": ["libs/backend/crm/infrastructure/src/index.ts"],
       "@det/backend-crm-interfaces": ["libs/backend/crm/interfaces/src/index.ts"],
+      "@det/backend-scheduling-application": [
+        "libs/backend/scheduling/application/src/index.ts"
+      ],
+      "@det/backend-scheduling-domain": ["libs/backend/scheduling/domain/src/index.ts"],
+      "@det/backend-scheduling-infrastructure": [
+        "libs/backend/scheduling/infrastructure/src/index.ts"
+      ],
+      "@det/backend-scheduling-interfaces": [
+        "libs/backend/scheduling/interfaces/src/index.ts"
+      ],
       "@det/backend-inventory-application": ["libs/backend/inventory/application/src/index.ts"],
       "@det/backend-inventory-domain": ["libs/backend/inventory/domain/src/index.ts"],
       "@det/backend-inventory-infrastructure": [

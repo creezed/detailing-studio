@@ -1,0 +1,30 @@
+{
+  "name": "backend-scheduling-application",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/scheduling/application/src",
+  "projectType": "library",
+  "tags": ["scope:scheduling", "type:application", "platform:node"],
+  "implicitDependencies": ["backend-scheduling-domain"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/backend/scheduling/application/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/scheduling/application/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/scheduling/application/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}

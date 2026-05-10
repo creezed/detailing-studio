@@ -1,0 +1,29 @@
+{
+  "name": "backend-scheduling-infrastructure",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/scheduling/infrastructure/src",
+  "projectType": "library",
+  "tags": ["scope:scheduling", "type:infrastructure", "platform:node"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/backend/scheduling/infrastructure/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/scheduling/infrastructure/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/scheduling/infrastructure/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}
