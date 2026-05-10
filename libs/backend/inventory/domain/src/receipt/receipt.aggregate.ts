@@ -23,6 +23,29 @@ import {
 import type { ReceiptId } from './receipt-id';
 import type { CreateReceiptLineProps } from './receipt-line';
 
+export interface ReceiptSnapshot {
+  readonly id: string;
+  readonly supplierId: string;
+  readonly branchId: string;
+  readonly status: ReceiptStatus;
+  readonly lines: readonly {
+    readonly id: string;
+    readonly skuId: string;
+    readonly packagingId: string | null;
+    readonly packageQuantity: number;
+    readonly baseQuantity: { readonly amount: number; readonly unit: string };
+    readonly unitCostCents: string;
+    readonly expiresAt: string | null;
+  }[];
+  readonly supplierInvoiceNumber: string | null;
+  readonly supplierInvoiceDate: string | null;
+  readonly attachmentUrl: string | null;
+  readonly createdBy: string;
+  readonly postedBy: string | null;
+  readonly createdAt: string;
+  readonly postedAt: string | null;
+}
+
 export interface CreateReceiptProps {
   readonly id: ReceiptId;
   readonly supplierId: SupplierId;
@@ -190,6 +213,32 @@ export class Receipt extends AggregateRoot<ReceiptId> {
 
     this._status = ReceiptStatus.CANCELLED;
     this.addEvent(new ReceiptCancelled(this._id, reason, at));
+  }
+
+  toSnapshot(): ReceiptSnapshot {
+    return {
+      attachmentUrl: this._attachmentUrl,
+      branchId: this._branchId,
+      createdAt: this._createdAt.iso(),
+      createdBy: this._createdBy,
+      id: this._id,
+      lines: this._lines.map((l) => ({
+        baseQuantity: { amount: l.baseQuantity.amount, unit: l.baseQuantity.unit },
+        expiresAt: l.expiresAt !== null ? l.expiresAt.iso() : null,
+        id: l.id,
+        packageQuantity: l.packageQuantity,
+        packagingId: l.packagingId,
+        skuId: l.skuId,
+        unitCostCents: l.unitCost.cents.toString(),
+      })),
+      postedAt: this._postedAt !== null ? this._postedAt.iso() : null,
+      postedBy: this._postedBy !== null ? this._postedBy : null,
+      status: this._status,
+      supplierId: this._supplierId,
+      supplierInvoiceDate:
+        this._supplierInvoiceDate !== null ? this._supplierInvoiceDate.iso() : null,
+      supplierInvoiceNumber: this._supplierInvoiceNumber,
+    };
   }
 
   private ensureDraft(): void {

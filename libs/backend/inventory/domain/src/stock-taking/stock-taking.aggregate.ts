@@ -13,6 +13,20 @@ import { StockTakingCancelled, StockTakingPosted, StockTakingStarted } from './s
 
 import type { StockTakingId } from './stock-taking-id';
 
+export interface StockTakingSnapshot {
+  readonly id: string;
+  readonly branchId: string;
+  readonly status: StockTakingStatus;
+  readonly lines: readonly {
+    readonly skuId: string;
+    readonly expectedQuantity: { readonly amount: number; readonly unit: string };
+    readonly actualQuantity: { readonly amount: number; readonly unit: string } | null;
+  }[];
+  readonly createdBy: string;
+  readonly startedAt: string;
+  readonly completedAt: string | null;
+}
+
 export interface SnapshotLineInput {
   readonly skuId: SkuId;
   readonly expectedQuantity: Quantity;
@@ -123,6 +137,25 @@ export class StockTaking extends AggregateRoot<StockTakingId> {
     this._status = StockTakingStatus.CANCELLED;
     this._completedAt = at;
     this.addEvent(new StockTakingCancelled(this._id, at));
+  }
+
+  toSnapshot(): StockTakingSnapshot {
+    return {
+      branchId: this._branchId,
+      completedAt: this._completedAt !== null ? this._completedAt.iso() : null,
+      createdBy: this._createdBy,
+      id: this._id,
+      lines: this._lines.map((l) => ({
+        actualQuantity:
+          l.actualQuantity !== null
+            ? { amount: l.actualQuantity.amount, unit: l.actualQuantity.unit }
+            : null,
+        expectedQuantity: { amount: l.expectedQuantity.amount, unit: l.expectedQuantity.unit },
+        skuId: l.skuId,
+      })),
+      startedAt: this._startedAt.iso(),
+      status: this._status,
+    };
   }
 
   private ensureStarted(): void {
