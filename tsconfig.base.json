@@ -21,9 +21,15 @@
       "@det/backend-catalog-domain": ["libs/backend/catalog/domain/src/index.ts"],
       "@det/backend-catalog-infrastructure": ["libs/backend/catalog/infrastructure/src/index.ts"],
       "@det/backend-catalog-interfaces": ["libs/backend/catalog/interfaces/src/index.ts"],
+      "@det/backend-crm-application": ["libs/backend/crm/application/src/index.ts"],
+      "@det/backend-crm-domain": ["libs/backend/crm/domain/src/index.ts"],
+      "@det/backend-crm-infrastructure": ["libs/backend/crm/infrastructure/src/index.ts"],
+      "@det/backend-crm-interfaces": ["libs/backend/crm/interfaces/src/index.ts"],
       "@det/backend-inventory-application": ["libs/backend/inventory/application/src/index.ts"],
       "@det/backend-inventory-domain": ["libs/backend/inventory/domain/src/index.ts"],
-      "@det/backend-inventory-infrastructure": ["libs/backend/inventory/infrastructure/src/index.ts"],
+      "@det/backend-inventory-infrastructure": [
+        "libs/backend/inventory/infrastructure/src/index.ts"
+      ],
       "@det/backend-inventory-interfaces": ["libs/backend/inventory/interfaces/src/index.ts"],
       "@det/backend-iam-application": ["libs/backend/iam/application/src/index.ts"],
       "@det/backend-iam-domain": ["libs/backend/iam/domain/src/index.ts"],

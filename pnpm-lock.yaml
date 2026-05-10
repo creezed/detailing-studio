@@ -312,6 +312,60 @@ importers:
         specifier: workspace:*
         version: link:../../../shared/types
 
+  libs/backend/crm/application:
+    dependencies:
+      '@det/backend-crm-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/crm/domain:
+    dependencies:
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/crm/infrastructure:
+    dependencies:
+      '@det/backend-crm-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/backend-crm-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/backend-shared-outbox':
+        specifier: workspace:*
+        version: link:../../shared/outbox
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/crm/interfaces:
+    dependencies:
+      '@det/backend-crm-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/backend-shared-auth':
+        specifier: workspace:*
+        version: link:../../shared/auth
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
   libs/backend/iam/application:
     dependencies:
       '@det/backend-iam-domain':
