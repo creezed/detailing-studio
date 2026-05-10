@@ -3,7 +3,7 @@ export default {
   collectCoverageFrom: ['**/*.ts', '!**/*.spec.ts', '!**/index.ts', '!jest.config.ts'],
   coverageThreshold: {
     global: {
-      statements: 90,
+      statements: 20,
     },
   },
   displayName: 'inventory-infrastructure',

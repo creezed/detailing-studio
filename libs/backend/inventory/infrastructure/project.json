@@ -9,6 +9,13 @@
     "platform:node"
   ],
   "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/inventory/infrastructure/jest.config.ts",
+        "passWithNoTests": false
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
