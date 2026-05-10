@@ -14,6 +14,21 @@ import { TransferCancelled, TransferCreated, TransferPosted } from './transfer.e
 import type { TransferId } from './transfer-id';
 import type { TransferLine } from './transfer-line';
 
+export interface TransferSnapshot {
+  readonly id: string;
+  readonly fromBranchId: string;
+  readonly toBranchId: string;
+  readonly status: TransferStatus;
+  readonly lines: readonly {
+    readonly skuId: string;
+    readonly quantity: { readonly amount: number; readonly unit: string };
+  }[];
+  readonly createdBy: string;
+  readonly createdAt: string;
+  readonly postedBy: string | null;
+  readonly postedAt: string | null;
+}
+
 export interface CreateTransferProps {
   readonly id: TransferId;
   readonly fromBranchId: BranchId;
@@ -140,5 +155,22 @@ export class Transfer extends AggregateRoot<TransferId> {
 
     this._status = TransferStatus.CANCELLED;
     this.addEvent(new TransferCancelled(this._id, at));
+  }
+
+  toSnapshot(): TransferSnapshot {
+    return {
+      createdAt: this._createdAt.iso(),
+      createdBy: this._createdBy,
+      fromBranchId: this._fromBranchId,
+      id: this._id,
+      lines: this._lines.map((l) => ({
+        quantity: { amount: l.quantity.amount, unit: l.quantity.unit },
+        skuId: l.skuId,
+      })),
+      postedAt: this._postedAt !== null ? this._postedAt.iso() : null,
+      postedBy: this._postedBy !== null ? this._postedBy : null,
+      status: this._status,
+      toBranchId: this._toBranchId,
+    };
   }
 }

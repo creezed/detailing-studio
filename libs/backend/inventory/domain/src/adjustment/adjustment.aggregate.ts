@@ -9,6 +9,24 @@ import { AdjustmentApproved, AdjustmentCreated, AdjustmentRejected } from './adj
 import type { AdjustmentId } from './adjustment-id';
 import type { AdjustmentLine } from './adjustment-line';
 
+export interface AdjustmentSnapshot {
+  readonly id: string;
+  readonly branchId: string;
+  readonly status: AdjustmentStatus;
+  readonly reason: string;
+  readonly lines: readonly {
+    readonly skuId: string;
+    readonly deltaAmount: number;
+    readonly deltaUnit: string;
+    readonly snapshotUnitCostCents: string;
+  }[];
+  readonly totalAmountCents: string;
+  readonly createdBy: string;
+  readonly approvedBy: string | null;
+  readonly createdAt: string;
+  readonly approvedAt: string | null;
+}
+
 export interface CreateAdjustmentProps {
   readonly id: AdjustmentId;
   readonly branchId: BranchId;
@@ -143,6 +161,26 @@ export class Adjustment extends AggregateRoot<AdjustmentId> {
 
     this._status = AdjustmentStatus.REJECTED;
     this.addEvent(new AdjustmentRejected(this._id, by, reason, at));
+  }
+
+  toSnapshot(): AdjustmentSnapshot {
+    return {
+      approvedAt: this._approvedAt !== null ? this._approvedAt.iso() : null,
+      approvedBy: this._approvedBy !== null ? this._approvedBy : null,
+      branchId: this._branchId,
+      createdAt: this._createdAt.iso(),
+      createdBy: this._createdBy,
+      id: this._id,
+      lines: this._lines.map((l) => ({
+        deltaAmount: l.delta.amount,
+        deltaUnit: l.delta.unit,
+        skuId: l.skuId,
+        snapshotUnitCostCents: l.snapshotUnitCost.cents.toString(),
+      })),
+      reason: this._reason,
+      status: this._status,
+      totalAmountCents: this._totalAmountCents.toString(),
+    };
   }
 
   private ensurePending(): void {
