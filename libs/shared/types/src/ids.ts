@@ -115,6 +115,34 @@ export const SupplierId = {
   },
 };
 
+export type ReceiptId = Brand<string, 'ReceiptId'>;
+export const ReceiptId = {
+  from(value: string): ReceiptId {
+    return fromUuid<'ReceiptId'>(value);
+  },
+};
+
+export type AdjustmentId = Brand<string, 'AdjustmentId'>;
+export const AdjustmentId = {
+  from(value: string): AdjustmentId {
+    return fromUuid<'AdjustmentId'>(value);
+  },
+};
+
+export type TransferId = Brand<string, 'TransferId'>;
+export const TransferId = {
+  from(value: string): TransferId {
+    return fromUuid<'TransferId'>(value);
+  },
+};
+
+export type StockTakingId = Brand<string, 'StockTakingId'>;
+export const StockTakingId = {
+  from(value: string): StockTakingId {
+    return fromUuid<'StockTakingId'>(value);
+  },
+};
+
 export type OutboxEventId = Brand<string, 'OutboxEventId'>;
 export const OutboxEventId = {
   from(value: string): OutboxEventId {
