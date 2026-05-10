@@ -11,6 +11,8 @@ import { CatalogInfrastructureModule } from '@det/backend-catalog-infrastructure
 import { CatalogInterfacesModule } from '@det/backend-catalog-interfaces';
 import { IamInfrastructureModule } from '@det/backend-iam-infrastructure';
 import { IamInterfacesModule } from '@det/backend-iam-interfaces';
+import { InventoryInfrastructureModule } from '@det/backend-inventory-infrastructure';
+import { InventoryInterfacesModule } from '@det/backend-inventory-interfaces';
 
 import { authConfig } from '../config/auth.config';
 import { databaseConfig } from '../config/database.config';
@@ -50,6 +52,7 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
         paths: [
           join(process.cwd(), 'libs/backend/iam/interfaces/i18n'),
           join(process.cwd(), 'libs/backend/shared/ddd/i18n'),
+          join(process.cwd(), 'libs/backend/inventory/interfaces/src/i18n'),
         ],
       },
       resolvers: [new AcceptLanguageResolver()],
@@ -58,6 +61,8 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
     CatalogInterfacesModule,
     IamInfrastructureModule,
     IamInterfacesModule,
+    InventoryInfrastructureModule,
+    InventoryInterfacesModule,
   ],
   controllers: [HealthController],
   providers: [
