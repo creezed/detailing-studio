@@ -125,6 +125,7 @@ export {
   AdjustmentId,
   TransferId,
   StockTakingId,
+  SignedQuantity,
 } from '@det/backend-inventory-domain';
 export type {
   ISkuRepository,
