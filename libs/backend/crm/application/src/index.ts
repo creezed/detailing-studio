@@ -40,14 +40,26 @@ export type {
   PiiAccessLogEntry,
   PiiOperation,
 } from './ports/pii-access-log.port';
+export type {
+  CursorPaginatedResult,
+  IVisitHistoryReadPort,
+  IVisitHistoryWritePort,
+  UpsertVisitHistoryData,
+} from './ports/visit-history.port';
+export * from './projections/event-schemas/scheduling-events.schema';
+export * from './projections/event-schemas/work-order-events.schema';
+export * from './projections/visit-history.projector';
 export * from './queries/get-client-by-id/get-client-by-id.handler';
 export * from './queries/get-client-by-id/get-client-by-id.query';
 export * from './queries/get-client-by-phone/get-client-by-phone.handler';
 export * from './queries/get-client-by-phone/get-client-by-phone.query';
 export * from './queries/get-client-data-export/get-client-data-export.handler';
 export * from './queries/get-client-data-export/get-client-data-export.query';
+export * from './queries/get-client-visit-history/get-client-visit-history.handler';
+export * from './queries/get-client-visit-history/get-client-visit-history.query';
 export * from './queries/get-client-vehicles/get-client-vehicles.handler';
 export * from './queries/get-client-vehicles/get-client-vehicles.query';
 export * from './queries/list-clients/list-clients.handler';
 export * from './queries/list-clients/list-clients.query';
 export * from './read-models/client.read-model';
+export * from './read-models/visit-history.read-model';

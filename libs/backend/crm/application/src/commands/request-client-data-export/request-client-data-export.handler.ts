@@ -4,11 +4,18 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { IClock, IIdGenerator } from '@det/backend-shared-ddd';
 
 import { RequestClientDataExportCommand } from './request-client-data-export.command';
-import { CLIENT_READ_PORT, CLOCK, FILE_STORAGE_PORT, ID_GENERATOR } from '../../di/tokens';
+import {
+  CLIENT_READ_PORT,
+  CLOCK,
+  FILE_STORAGE_PORT,
+  ID_GENERATOR,
+  VISIT_HISTORY_READ_PORT,
+} from '../../di/tokens';
 import { ClientNotFoundError } from '../../errors/application.errors';
 
 import type { IClientReadPort } from '../../ports/client-read.port';
 import type { IFileStoragePort } from '../../ports/file-storage.port';
+import type { IVisitHistoryReadPort } from '../../ports/visit-history.port';
 
 const DATA_EXPORT_TTL_DAYS = 7;
 
@@ -20,6 +27,7 @@ export class RequestClientDataExportHandler implements ICommandHandler<
   constructor(
     @Inject(CLIENT_READ_PORT) private readonly _readPort: IClientReadPort,
     @Inject(FILE_STORAGE_PORT) private readonly _fileStorage: IFileStoragePort,
+    @Inject(VISIT_HISTORY_READ_PORT) private readonly _visitHistoryPort: IVisitHistoryReadPort,
     @Inject(CLOCK) private readonly _clock: IClock,
     @Inject(ID_GENERATOR) private readonly _idGen: IIdGenerator,
   ) {}
@@ -34,12 +42,14 @@ export class RequestClientDataExportHandler implements ICommandHandler<
     }
 
     const vehicles = await this._readPort.findVehicles(cmd.clientId);
+    const visitHistory = await this._visitHistoryPort.findAllByClientId(cmd.clientId);
 
     const exportBundle = {
       exportedAt: this._clock.now().iso(),
       requestedBy: cmd.requestedBy,
       client: clientDetail,
       vehicles,
+      visitHistory,
     };
 
     const exportId = this._idGen.generate();
