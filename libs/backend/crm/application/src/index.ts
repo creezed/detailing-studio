@@ -31,10 +31,13 @@ export * from './crm-application.module';
 export * from './di/tokens';
 export * from './errors/application.errors';
 export * from './events/client-anonymization-requested.event';
-export type { IAnonymizationRequestPort } from './ports/anonymization-request.port';
+export type {
+  AnonymizationRequest,
+  IAnonymizationRequestPort,
+} from './ports/anonymization-request.port';
 export type { IClientReadPort, ListClientsFilter, PaginatedResult } from './ports/client-read.port';
 export type { ICrmConfigPort } from './ports/config.port';
-export type { IFileStoragePort } from './ports/file-storage.port';
+export type { FileUploadResult, IFileStoragePort } from './ports/file-storage.port';
 export type {
   IPiiAccessLogPort,
   PiiAccessLogEntry,
