@@ -69,6 +69,12 @@ export class BatchBuilder {
     return this;
   }
 
+  withReceivedAt(value: DateTime): this {
+    this._props = { ...this._props, receivedAt: value };
+
+    return this;
+  }
+
   withBaseUnit(value: UnitOfMeasure): this {
     this._props = {
       ...this._props,
