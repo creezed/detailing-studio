@@ -1,0 +1,21 @@
+{
+  "name": "@det/backend-scheduling-infrastructure",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@det/backend-scheduling-application": "workspace:*",
+    "@det/backend-scheduling-domain": "workspace:*",
+    "@det/backend-shared-ddd": "workspace:*",
+    "@det/backend-shared-outbox": "workspace:*",
+    "@det/shared-types": "workspace:*"
+  }
+}
