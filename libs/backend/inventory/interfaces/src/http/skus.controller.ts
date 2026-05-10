@@ -68,7 +68,7 @@ export class SkusController {
   }
 
   @Post()
-  @CheckAbility((ab) => ab.can('manage', 'Sku'))
+  @CheckAbility((ab) => ab.can('create', 'Sku'))
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Создать SKU' })
   @ApiCreatedResponse({ type: SkuCreatedResponseDto })
@@ -103,7 +103,7 @@ export class SkusController {
   }
 
   @Patch(':id')
-  @CheckAbility((ab) => ab.can('manage', 'Sku'))
+  @CheckAbility((ab) => ab.can('update', 'Sku'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Обновить SKU' })
   @ApiNoContentResponse()
@@ -126,7 +126,7 @@ export class SkusController {
   }
 
   @Delete(':id')
-  @CheckAbility((ab) => ab.can('manage', 'Sku'))
+  @CheckAbility((ab) => ab.can('delete', 'Sku'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Деактивировать SKU' })
   @ApiNoContentResponse()

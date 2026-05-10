@@ -57,7 +57,7 @@ export class SuppliersController {
   }
 
   @Post()
-  @CheckAbility((ab) => ab.can('manage', 'Supplier'))
+  @CheckAbility((ab) => ab.can('create', 'Supplier'))
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Создать поставщика' })
   @ApiCreatedResponse({ type: SupplierCreatedResponseDto })
@@ -82,7 +82,7 @@ export class SuppliersController {
   }
 
   @Patch(':id')
-  @CheckAbility((ab) => ab.can('manage', 'Supplier'))
+  @CheckAbility((ab) => ab.can('update', 'Supplier'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Обновить контакт поставщика' })
   @ApiNoContentResponse()
@@ -100,7 +100,7 @@ export class SuppliersController {
   }
 
   @Delete(':id')
-  @CheckAbility((ab) => ab.can('manage', 'Supplier'))
+  @CheckAbility((ab) => ab.can('delete', 'Supplier'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Деактивировать поставщика' })
   @ApiNoContentResponse()

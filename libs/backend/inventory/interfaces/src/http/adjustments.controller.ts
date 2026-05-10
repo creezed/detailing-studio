@@ -68,7 +68,7 @@ export class AdjustmentsController {
   }
 
   @Post()
-  @CheckAbility((ab) => ab.can('manage', 'Adjustment'))
+  @CheckAbility((ab) => ab.can('create', 'Adjustment'))
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Создать корректировку' })
   @ApiCreatedResponse({ type: AdjustmentCreatedResponseDto })
@@ -109,7 +109,7 @@ export class AdjustmentsController {
   }
 
   @Post(':id/reject')
-  @CheckAbility((ab) => ab.can('approve', 'Adjustment'))
+  @CheckAbility((ab) => ab.can('reject', 'Adjustment'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Отклонить корректировку' })
   @ApiNoContentResponse()

@@ -65,7 +65,7 @@ export class StockTakingsController {
   }
 
   @Post()
-  @CheckAbility((ab) => ab.can('manage', 'StockTaking'))
+  @CheckAbility((ab) => ab.can('create', 'StockTaking'))
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Начать инвентаризацию' })
   @ApiCreatedResponse({ type: StockTakingCreatedResponseDto })
@@ -92,7 +92,7 @@ export class StockTakingsController {
   }
 
   @Patch(':id/measurements')
-  @CheckAbility((ab) => ab.can('manage', 'StockTaking'))
+  @CheckAbility((ab) => ab.can('update', 'StockTaking'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Ввести фактические количества' })
   @ApiNoContentResponse()
@@ -112,7 +112,7 @@ export class StockTakingsController {
   }
 
   @Post(':id/post')
-  @CheckAbility((ab) => ab.can('manage', 'StockTaking'))
+  @CheckAbility((ab) => ab.can('post', 'StockTaking'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Провести инвентаризацию' })
   @ApiNoContentResponse()
@@ -126,7 +126,7 @@ export class StockTakingsController {
   }
 
   @Post(':id/cancel')
-  @CheckAbility((ab) => ab.can('manage', 'StockTaking'))
+  @CheckAbility((ab) => ab.can('cancel', 'StockTaking'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Отменить инвентаризацию' })
   @ApiNoContentResponse()
