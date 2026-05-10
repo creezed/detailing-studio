@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "rootDir": ".",
     "outDir": "../../../../dist/out-tsc/libs/backend/iam/infrastructure",
     "declaration": true,
     "composite": true,

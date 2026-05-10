@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "rootDir": ".",
     "outDir": "../../../../dist/out-tsc/libs/backend/iam/domain",
     "declaration": true,
     "composite": true,

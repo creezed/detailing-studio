@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "rootDir": ".",
     "outDir": "../../../../dist/out-tsc/libs/backend/catalog/application",
     "declaration": true,
     "composite": true,

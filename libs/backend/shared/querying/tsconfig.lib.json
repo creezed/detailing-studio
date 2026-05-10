@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "rootDir": ".",
     "outDir": "../../../../dist/out-tsc/libs/backend/shared/querying",
     "declaration": true,
     "composite": true,

@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "rootDir": ".",
     "outDir": "../../../dist/out-tsc/libs/shared/types",
     "declaration": true,
     "composite": true,
