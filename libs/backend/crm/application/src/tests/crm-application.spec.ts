@@ -22,11 +22,23 @@ import { UpdateClientProfileCommand } from '../commands/update-client-profile/up
 import { UpdateVehicleCommand } from '../commands/update-vehicle/update-vehicle.command';
 import { UpgradeClientToRegularCommand } from '../commands/upgrade-client-to-regular/upgrade-client-to-regular.command';
 import { CrmApplicationModule } from '../crm-application.module';
-import { CLIENT_REPOSITORY, CLOCK, ID_GENERATOR } from '../di/tokens';
+import {
+  ANONYMIZATION_REQUEST_PORT,
+  CLIENT_READ_PORT,
+  CLIENT_REPOSITORY,
+  CLOCK,
+  CRM_CONFIG_PORT,
+  FILE_STORAGE_PORT,
+  ID_GENERATOR,
+  PII_ACCESS_LOG_PORT,
+} from '../di/tokens';
 import { ClientNotFoundError, DuplicatePhoneError } from '../errors/application.errors';
-import { CLIENT_READ_PORT } from '../ports/client-read.port';
 
+import type { IAnonymizationRequestPort } from '../ports/anonymization-request.port';
 import type { IClientReadPort } from '../ports/client-read.port';
+import type { ICrmConfigPort } from '../ports/config.port';
+import type { IFileStoragePort } from '../ports/file-storage.port';
+import type { IPiiAccessLogPort } from '../ports/pii-access-log.port';
 
 const CLIENT_ID = '11111111-1111-4111-8111-111111111111';
 const VEHICLE_ID = '22222222-2222-4222-8222-222222222222';
@@ -94,6 +106,31 @@ function createMockReadPort(): IClientReadPort {
   };
 }
 
+function createMockConfigPort(): ICrmConfigPort {
+  return { getCurrentPolicyVersion: () => '1.0.0' };
+}
+
+function createMockAnonPort(): IAnonymizationRequestPort {
+  return {
+    create: jest.fn().mockImplementation(() => Promise.resolve()),
+    findById: jest.fn().mockResolvedValue(null),
+    findPendingByClientId: jest.fn().mockResolvedValue(null),
+    markCompleted: jest.fn().mockImplementation(() => Promise.resolve()),
+    markCancelled: jest.fn().mockImplementation(() => Promise.resolve()),
+  };
+}
+
+function createMockFileStorage(): IFileStoragePort {
+  return {
+    uploadJson: jest.fn().mockResolvedValue({ key: 'k', signedUrl: 'https://url', expiresAt: '' }),
+    getSignedUrl: jest.fn().mockResolvedValue(null),
+  };
+}
+
+function createMockPiiLog(): IPiiAccessLogPort {
+  return { log: jest.fn().mockImplementation(() => Promise.resolve()) };
+}
+
 describe('CRM Application Commands', () => {
   let commandBus: CommandBus;
   let clientRepo: ReturnType<typeof createMockClientRepo>;
@@ -110,6 +147,10 @@ describe('CRM Application Commands', () => {
           { provide: CLOCK, useValue: new FixedClock(NOW) },
           { provide: ID_GENERATOR, useValue: idGen },
           { provide: CLIENT_READ_PORT, useValue: createMockReadPort() },
+          { provide: CRM_CONFIG_PORT, useValue: createMockConfigPort() },
+          { provide: ANONYMIZATION_REQUEST_PORT, useValue: createMockAnonPort() },
+          { provide: FILE_STORAGE_PORT, useValue: createMockFileStorage() },
+          { provide: PII_ACCESS_LOG_PORT, useValue: createMockPiiLog() },
         ]),
       ],
     }).compile();
