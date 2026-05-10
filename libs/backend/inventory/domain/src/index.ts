@@ -52,6 +52,10 @@ export * from './stock-taking/stock-taking.errors';
 export * from './stock-taking/stock-taking.events';
 export type { IStockTakingRepository } from './stock-taking/stock-taking.repository';
 
+export * from './services/batch-selection-strategy';
+export * from './services/batch-selection.service';
+export * from './services/average-cost.calculator';
+
 export * from './stock/batch-id';
 export * from './stock/batch-source-type';
 export * from './stock/batch.entity';
