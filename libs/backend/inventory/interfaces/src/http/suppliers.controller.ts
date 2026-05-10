@@ -62,7 +62,7 @@ export class SuppliersController {
   @ApiOperation({ summary: 'Создать поставщика' })
   @ApiCreatedResponse({ type: SupplierCreatedResponseDto })
   async create(@Body() dto: CreateSupplierRequestDto): Promise<SupplierCreatedResponseDto> {
-    const id = await this.commandBus.execute<CreateSupplierCommand, SupplierId>(
+    const { id } = await this.commandBus.execute<CreateSupplierCommand, { id: SupplierId }>(
       new CreateSupplierCommand(dto.name, dto.inn ?? null, {
         phone: dto.contact.phone ?? null,
         email: dto.contact.email ?? null,

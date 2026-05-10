@@ -65,6 +65,7 @@ import type { StartedTestContainer } from 'testcontainers';
 const SKU_ID_1 = '11111111-1111-4111-8111-111111111111';
 const SKU_ID_2 = '22222222-2222-4222-8222-222222222222';
 const SUPPLIER_ID_1 = '33333333-3333-4333-8333-333333333333';
+const PKG_ID_1 = '44444444-4444-4444-8444-444444444444';
 const NOW = DateTime.from('2026-01-01T10:00:00.000Z');
 
 interface OutboxRow extends QueryResultRow {
@@ -499,7 +500,7 @@ describe('InventoryApplicationModule integration', () => {
 
   describe('CreateSkuCommand', () => {
     it('creates sku and writes SkuCreated to outbox', async () => {
-      idGen.reset([SKU_ID_1]);
+      idGen.reset([PKG_ID_1, SKU_ID_1]);
 
       const result = await commandBus.execute<CreateSkuCommand, { id: SkuId }>(
         new CreateSkuCommand(
@@ -508,7 +509,7 @@ describe('InventoryApplicationModule integration', () => {
           'Полировка',
           UnitOfMeasure.ML,
           false,
-          [{ id: 'pkg-1', name: 'Бутылка 500мл', coefficient: 500 }],
+          [{ name: 'Бутылка 500мл', coefficient: 500 }],
           '4600000000008',
           null,
           'Описание',

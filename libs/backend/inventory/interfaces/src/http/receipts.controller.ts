@@ -74,7 +74,7 @@ export class ReceiptsController {
     @Body() dto: CreateReceiptRequestDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ReceiptCreatedResponseDto> {
-    const id = await this.commandBus.execute<CreateReceiptCommand, ReceiptId>(
+    const { id } = await this.commandBus.execute<CreateReceiptCommand, { id: ReceiptId }>(
       new CreateReceiptCommand(
         dto.supplierId as unknown as SupplierId,
         dto.branchId as unknown as BranchId,

@@ -8,7 +8,6 @@ export class CreateSkuCommand {
     public readonly baseUnit: UnitOfMeasure,
     public readonly hasExpiry: boolean,
     public readonly packagings: readonly {
-      readonly id: string;
       readonly name: string;
       readonly coefficient: number;
     }[],

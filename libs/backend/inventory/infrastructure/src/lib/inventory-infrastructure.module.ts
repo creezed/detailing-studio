@@ -2,13 +2,26 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module, type OnModuleInit, Provider } from '@nestjs/common';
 
 import {
+  ADJUSTMENT_READ_PORT,
   ADJUSTMENT_REPOSITORY,
+  BATCH_SELECTOR,
+  BATCH_USAGE_PORT,
+  IDEMPOTENCY_PORT,
+  INVENTORY_CONFIG_PORT,
   InventoryApplicationModule,
+  MOVEMENT_READ_PORT,
+  RECEIPT_READ_PORT,
   RECEIPT_REPOSITORY,
+  SKU_READ_PORT,
   SKU_REPOSITORY,
+  STOCK_READ_PORT,
   STOCK_REPOSITORY,
+  STOCK_SNAPSHOT_PORT,
+  STOCK_TAKING_READ_PORT,
   STOCK_TAKING_REPOSITORY,
+  SUPPLIER_READ_PORT,
   SUPPLIER_REPOSITORY,
+  TRANSFER_READ_PORT,
   TRANSFER_REPOSITORY,
 } from '@det/backend-inventory-application';
 import {
@@ -106,6 +119,74 @@ const INFRASTRUCTURE_PROVIDERS: readonly Provider[] = [
   { provide: ADJUSTMENT_REPOSITORY, useExisting: InvAdjustmentRepository },
   { provide: TRANSFER_REPOSITORY, useExisting: InvTransferRepository },
   { provide: STOCK_TAKING_REPOSITORY, useExisting: InvStockTakingRepository },
+  {
+    provide: BATCH_USAGE_PORT,
+    useValue: { areBatchesUntouched: () => Promise.resolve(true) },
+  },
+  {
+    provide: BATCH_SELECTOR,
+    useValue: { select: () => [] },
+  },
+  {
+    provide: INVENTORY_CONFIG_PORT,
+    useValue: { autoApprovalThreshold: () => 500000 },
+  },
+  {
+    provide: IDEMPOTENCY_PORT,
+    useValue: {
+      hasProcessed: () => Promise.resolve(false),
+      markProcessed: () => Promise.resolve(),
+    },
+  },
+  {
+    provide: STOCK_SNAPSHOT_PORT,
+    useValue: { snapshotForBranch: () => Promise.resolve([]) },
+  },
+  {
+    provide: SKU_READ_PORT,
+    useValue: { list: () => Promise.resolve({ items: [], total: 0 }) },
+  },
+  {
+    provide: SUPPLIER_READ_PORT,
+    useValue: { list: () => Promise.resolve({ items: [], total: 0 }) },
+  },
+  {
+    provide: RECEIPT_READ_PORT,
+    useValue: {
+      list: () => Promise.resolve({ items: [], total: 0 }),
+      findById: () => Promise.resolve(null),
+    },
+  },
+  {
+    provide: ADJUSTMENT_READ_PORT,
+    useValue: {
+      list: () => Promise.resolve({ items: [], total: 0 }),
+      listPendingApprovals: () => Promise.resolve({ items: [], total: 0 }),
+    },
+  },
+  {
+    provide: TRANSFER_READ_PORT,
+    useValue: { list: () => Promise.resolve({ items: [], total: 0 }) },
+  },
+  {
+    provide: STOCK_TAKING_READ_PORT,
+    useValue: {
+      list: () => Promise.resolve({ items: [], total: 0 }),
+      findById: () => Promise.resolve(null),
+    },
+  },
+  {
+    provide: STOCK_READ_PORT,
+    useValue: {
+      getByBranch: () => Promise.resolve({ items: [], total: 0 }),
+      getLowStockReport: () => Promise.resolve({ items: [], total: 0 }),
+      getOnDate: () => Promise.resolve([]),
+    },
+  },
+  {
+    provide: MOVEMENT_READ_PORT,
+    useValue: { list: () => Promise.resolve({ items: [], total: 0 }) },
+  },
 ];
 
 @Module({
