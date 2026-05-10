@@ -1,0 +1,17 @@
+{
+  "SKU_NOT_FOUND": "SKU не найден",
+  "SUPPLIER_NOT_FOUND": "Поставщик не найден",
+  "RECEIPT_NOT_FOUND": "Приход не найден",
+  "ADJUSTMENT_NOT_FOUND": "Корректировка не найдена",
+  "TRANSFER_NOT_FOUND": "Перемещение не найдено",
+  "STOCK_TAKING_NOT_FOUND": "Инвентаризация не найдена",
+  "ARTICLE_NUMBER_ALREADY_EXISTS": "Артикул уже существует",
+  "BARCODE_ALREADY_EXISTS": "Штрих-код уже существует",
+  "RECEIPT_BATCHES_ALREADY_CONSUMED": "Партии из прихода уже использованы",
+  "SKU_ALREADY_DEACTIVATED": "SKU уже деактивирован",
+  "SUPPLIER_ALREADY_DEACTIVATED": "Поставщик уже деактивирован",
+  "RECEIPT_NOT_DRAFT": "Приход можно редактировать только в статусе DRAFT",
+  "ADJUSTMENT_NOT_PENDING": "Корректировка не в статусе ожидания",
+  "STOCK_TAKING_NOT_STARTED": "Инвентаризация не начата",
+  "PDF_NOT_IMPLEMENTED": "Генерация PDF будет реализована позже"
+}

@@ -1,1 +1,1 @@
-export {};
+export { InventoryInterfacesModule } from './lib/inventory-interfaces.module';

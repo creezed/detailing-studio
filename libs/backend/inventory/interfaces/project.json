@@ -23,6 +23,13 @@
         "command": "tsc -b libs/backend/inventory/interfaces/tsconfig.json --pretty false",
         "cwd": "."
       }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/inventory/interfaces/jest.config.ts",
+        "passWithNoTests": false
+      }
     }
   }
 }

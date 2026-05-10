@@ -1,0 +1,17 @@
+{
+  "SKU_NOT_FOUND": "SKU not found",
+  "SUPPLIER_NOT_FOUND": "Supplier not found",
+  "RECEIPT_NOT_FOUND": "Receipt not found",
+  "ADJUSTMENT_NOT_FOUND": "Adjustment not found",
+  "TRANSFER_NOT_FOUND": "Transfer not found",
+  "STOCK_TAKING_NOT_FOUND": "Stock taking not found",
+  "ARTICLE_NUMBER_ALREADY_EXISTS": "Article number already exists",
+  "BARCODE_ALREADY_EXISTS": "Barcode already exists",
+  "RECEIPT_BATCHES_ALREADY_CONSUMED": "Receipt batches have already been consumed",
+  "SKU_ALREADY_DEACTIVATED": "SKU is already deactivated",
+  "SUPPLIER_ALREADY_DEACTIVATED": "Supplier is already deactivated",
+  "RECEIPT_NOT_DRAFT": "Receipt can only be edited in DRAFT status",
+  "ADJUSTMENT_NOT_PENDING": "Adjustment is not in pending status",
+  "STOCK_TAKING_NOT_STARTED": "Stock taking has not been started",
+  "PDF_NOT_IMPLEMENTED": "PDF generation will be implemented later"
+}
