@@ -55,6 +55,14 @@ export class Receipt extends AggregateRoot<ReceiptId> {
     return this._id;
   }
 
+  get supplierId(): SupplierId {
+    return this._supplierId;
+  }
+
+  get branchId(): BranchId {
+    return this._branchId;
+  }
+
   get status(): ReceiptStatus {
     return this._status;
   }

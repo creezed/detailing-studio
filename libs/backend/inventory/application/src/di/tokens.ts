@@ -1,0 +1,24 @@
+import { CLOCK, ID_GENERATOR } from '@det/backend-shared-ddd';
+
+export const SKU_REPOSITORY = Symbol('SKU_REPOSITORY');
+export const SUPPLIER_REPOSITORY = Symbol('SUPPLIER_REPOSITORY');
+export const RECEIPT_REPOSITORY = Symbol('RECEIPT_REPOSITORY');
+export const ADJUSTMENT_REPOSITORY = Symbol('ADJUSTMENT_REPOSITORY');
+export const STOCK_REPOSITORY = Symbol('STOCK_REPOSITORY');
+export const TRANSFER_REPOSITORY = Symbol('TRANSFER_REPOSITORY');
+export const STOCK_TAKING_REPOSITORY = Symbol('STOCK_TAKING_REPOSITORY');
+export const SKU_READ_PORT = Symbol('SKU_READ_PORT');
+export const SUPPLIER_READ_PORT = Symbol('SUPPLIER_READ_PORT');
+export const RECEIPT_READ_PORT = Symbol('RECEIPT_READ_PORT');
+export const ADJUSTMENT_READ_PORT = Symbol('ADJUSTMENT_READ_PORT');
+export const TRANSFER_READ_PORT = Symbol('TRANSFER_READ_PORT');
+export const STOCK_TAKING_READ_PORT = Symbol('STOCK_TAKING_READ_PORT');
+export const STOCK_READ_PORT = Symbol('STOCK_READ_PORT');
+export const MOVEMENT_READ_PORT = Symbol('MOVEMENT_READ_PORT');
+export const STOCK_SNAPSHOT_PORT = Symbol('STOCK_SNAPSHOT_PORT');
+export const BATCH_USAGE_PORT = Symbol('BATCH_USAGE_PORT');
+export const BATCH_SELECTOR = Symbol('BATCH_SELECTOR');
+export const INVENTORY_CONFIG_PORT = Symbol('INVENTORY_CONFIG_PORT');
+export const IDEMPOTENCY_PORT = Symbol('IDEMPOTENCY_PORT');
+
+export { CLOCK, ID_GENERATOR };

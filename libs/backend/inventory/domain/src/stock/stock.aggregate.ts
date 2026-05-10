@@ -335,6 +335,14 @@ export class Stock extends AggregateRoot<StockId> {
     this.addEvent(new ReorderLevelChanged(this.id, newLevel, now));
   }
 
+  removeBatchesBySourceDoc(sourceDocId: string): void {
+    for (let i = this._batches.length - 1; i >= 0; i--) {
+      if (this._batches[i]?.sourceDocId === sourceDocId) {
+        this._batches.splice(i, 1);
+      }
+    }
+  }
+
   toSnapshot(): StockSnapshot {
     return {
       averageCostCents: this._averageCost.cents.toString(),

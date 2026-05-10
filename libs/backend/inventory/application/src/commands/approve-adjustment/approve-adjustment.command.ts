@@ -1,0 +1,9 @@
+import type { AdjustmentId } from '@det/backend-inventory-domain';
+import type { UserId } from '@det/shared-types';
+
+export class ApproveAdjustmentCommand {
+  constructor(
+    public readonly adjustmentId: AdjustmentId,
+    public readonly approvedBy: UserId,
+  ) {}
+}
