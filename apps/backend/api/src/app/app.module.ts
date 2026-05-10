@@ -9,6 +9,8 @@ import { AcceptLanguageResolver, I18nModule } from 'nestjs-i18n';
 
 import { CatalogInfrastructureModule } from '@det/backend-catalog-infrastructure';
 import { CatalogInterfacesModule } from '@det/backend-catalog-interfaces';
+import { CrmInfrastructureModule } from '@det/backend-crm-infrastructure';
+import { CrmInterfacesModule } from '@det/backend-crm-interfaces';
 import { IamInfrastructureModule } from '@det/backend-iam-infrastructure';
 import { IamInterfacesModule } from '@det/backend-iam-interfaces';
 import { InventoryInfrastructureModule } from '@det/backend-inventory-infrastructure';
@@ -59,6 +61,8 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
     }),
     CatalogInfrastructureModule,
     CatalogInterfacesModule,
+    CrmInfrastructureModule,
+    CrmInterfacesModule,
     IamInfrastructureModule,
     IamInterfacesModule,
     InventoryInfrastructureModule,

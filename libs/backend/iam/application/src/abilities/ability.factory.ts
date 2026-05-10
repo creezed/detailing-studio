@@ -15,7 +15,9 @@ export type AppAction =
   | 'post'
   | 'cancel'
   | 'approve'
-  | 'reject';
+  | 'reject'
+  | 'anonymize'
+  | 'export-data';
 
 export type AppSubjectName =
   | 'User'
@@ -33,6 +35,10 @@ export type AppSubjectName =
   | 'Transfer'
   | 'StockTaking'
   | 'StockMovement'
+  | 'Vehicle'
+  | 'Consent'
+  | 'VisitHistory'
+  | 'PiiAccessLog'
   | 'all';
 
 type AppResourceSubjectName = Exclude<AppSubjectName, 'all'>;
@@ -79,7 +85,13 @@ export class AbilityFactory {
 
     if (user.role === Role.MANAGER) {
       can('manage', 'Appointment', { branchId: { $in: branchIds } });
-      can('manage', 'Client', { branchId: { $in: branchIds } });
+      can(['read', 'create', 'update'], 'Client');
+      can(['read', 'create', 'update'], 'Vehicle');
+      can(['read', 'create', 'delete'], 'Consent');
+      can('read', 'VisitHistory');
+      cannot('anonymize', 'Client');
+      cannot('export-data', 'Client');
+      cannot('read', 'PiiAccessLog');
       can('read', 'Service');
       can('read', 'ServiceCategory');
       can('invite', 'User', { role: Role.MASTER });
@@ -107,6 +119,9 @@ export class AbilityFactory {
     if (user.role === Role.MASTER) {
       can('read', 'Appointment', { masterId: user.id });
       can('update', 'WorkOrder', { masterId: user.id });
+      can('read', 'Client', { masterId: user.id });
+      can('read', 'Vehicle', { masterId: user.id });
+      can('read', 'VisitHistory', { masterId: user.id });
       can('read', 'Service');
       can('read', 'ServiceCategory');
 
@@ -117,6 +132,10 @@ export class AbilityFactory {
 
     if (user.role === Role.CLIENT) {
       can('manage', 'Appointment', { clientId: user.id });
+      can('read', 'Client', { clientId: user.id });
+      can('read', 'Vehicle', { clientId: user.id });
+      can('read', 'VisitHistory', { clientId: user.id });
+      can('export-data', 'Client', { clientId: user.id });
       can('read', 'Service');
       can('read', 'ServiceCategory');
     }
