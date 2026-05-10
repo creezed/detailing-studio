@@ -5,7 +5,17 @@ import { Role } from '@det/backend-iam-domain';
 
 import type { ForcedSubject, MongoAbility } from '@casl/ability';
 
-export type AppAction = 'manage' | 'create' | 'read' | 'update' | 'delete' | 'invite';
+export type AppAction =
+  | 'manage'
+  | 'create'
+  | 'read'
+  | 'update'
+  | 'delete'
+  | 'invite'
+  | 'post'
+  | 'cancel'
+  | 'approve'
+  | 'reject';
 
 export type AppSubjectName =
   | 'User'
@@ -16,9 +26,13 @@ export type AppSubjectName =
   | 'Service'
   | 'ServiceCategory'
   | 'Sku'
+  | 'Supplier'
   | 'Receipt'
   | 'Stock'
   | 'Adjustment'
+  | 'Transfer'
+  | 'StockTaking'
+  | 'StockMovement'
   | 'all';
 
 type AppResourceSubjectName = Exclude<AppSubjectName, 'all'>;
@@ -66,11 +80,27 @@ export class AbilityFactory {
     if (user.role === Role.MANAGER) {
       can('manage', 'Appointment', { branchId: { $in: branchIds } });
       can('manage', 'Client', { branchId: { $in: branchIds } });
-      can('manage', 'Receipt', { branchId: { $in: branchIds } });
       can('read', 'Service');
       can('read', 'ServiceCategory');
       can('invite', 'User', { role: Role.MASTER });
       can('create', 'Invitation', { role: Role.MASTER });
+
+      can(['read', 'create', 'update'], 'Sku');
+      can(['read', 'create', 'update'], 'Supplier');
+      can(['read', 'create', 'update'], 'Receipt', { branchId: { $in: branchIds } });
+      can('post', 'Receipt', { branchId: { $in: branchIds } });
+      can('cancel', 'Receipt', { branchId: { $in: branchIds } });
+      can(['read', 'create'], 'Adjustment', { branchId: { $in: branchIds } });
+      cannot('approve', 'Adjustment');
+      cannot('reject', 'Adjustment');
+      can(['read', 'create'], 'Transfer', { branchId: { $in: branchIds } });
+      can('post', 'Transfer', { branchId: { $in: branchIds } });
+      can(['read', 'create'], 'StockTaking', { branchId: { $in: branchIds } });
+      can('post', 'StockTaking', { branchId: { $in: branchIds } });
+      can('cancel', 'StockTaking', { branchId: { $in: branchIds } });
+      can('read', 'Stock', { branchId: { $in: branchIds } });
+      can('read', 'StockMovement', { branchId: { $in: branchIds } });
+
       cannot('read', 'all', ['cost', 'averageCost', 'unitCost']);
     }
 
@@ -79,6 +109,10 @@ export class AbilityFactory {
       can('update', 'WorkOrder', { masterId: user.id });
       can('read', 'Service');
       can('read', 'ServiceCategory');
+
+      can('read', 'Sku', { branchId: { $in: branchIds } });
+      can('read', 'Stock', { branchId: { $in: branchIds } });
+      cannot('read', 'all', ['cost', 'averageCost', 'unitCost']);
     }
 
     if (user.role === Role.CLIENT) {
