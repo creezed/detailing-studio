@@ -1,0 +1,28 @@
+{
+  "name": "inventory-infrastructure",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/inventory/infrastructure/src",
+  "projectType": "library",
+  "tags": [
+    "scope:inventory",
+    "type:infrastructure",
+    "platform:node"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/inventory/infrastructure/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/inventory/infrastructure/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}
