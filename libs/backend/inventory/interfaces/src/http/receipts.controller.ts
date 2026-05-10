@@ -66,7 +66,7 @@ export class ReceiptsController {
   }
 
   @Post()
-  @CheckAbility((ab) => ab.can('manage', 'Receipt'))
+  @CheckAbility((ab) => ab.can('create', 'Receipt'))
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Создать приход (черновик)' })
   @ApiCreatedResponse({ type: ReceiptCreatedResponseDto })
@@ -96,7 +96,7 @@ export class ReceiptsController {
   }
 
   @Patch(':id')
-  @CheckAbility((ab) => ab.can('manage', 'Receipt'))
+  @CheckAbility((ab) => ab.can('update', 'Receipt'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Обновить строки прихода (только DRAFT)' })
   @ApiNoContentResponse()
@@ -121,7 +121,7 @@ export class ReceiptsController {
   }
 
   @Post(':id/post')
-  @CheckAbility((ab) => ab.can('manage', 'Receipt'))
+  @CheckAbility((ab) => ab.can('post', 'Receipt'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Провести приход' })
   @ApiNoContentResponse()
@@ -135,7 +135,7 @@ export class ReceiptsController {
   }
 
   @Post(':id/cancel')
-  @CheckAbility((ab) => ab.can('manage', 'Receipt'))
+  @CheckAbility((ab) => ab.can('cancel', 'Receipt'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Отменить приход' })
   @ApiNoContentResponse()
@@ -147,7 +147,7 @@ export class ReceiptsController {
   }
 
   @Post(':id/attachments')
-  @CheckAbility((ab) => ab.can('manage', 'Receipt'))
+  @CheckAbility((ab) => ab.can('update', 'Receipt'))
   @ApiOperation({ summary: 'Загрузить файл накладной (multipart)' })
   uploadAttachment(): never {
     throw new HttpException('Загрузка файлов будет реализована позже', HttpStatus.NOT_IMPLEMENTED);

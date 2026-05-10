@@ -55,7 +55,7 @@ export class TransfersController {
   }
 
   @Post()
-  @CheckAbility((ab) => ab.can('manage', 'Transfer'))
+  @CheckAbility((ab) => ab.can('create', 'Transfer'))
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Создать перемещение' })
   @ApiCreatedResponse({ type: TransferCreatedResponseDto })
@@ -79,7 +79,7 @@ export class TransfersController {
   }
 
   @Post(':id/post')
-  @CheckAbility((ab) => ab.can('manage', 'Transfer'))
+  @CheckAbility((ab) => ab.can('post', 'Transfer'))
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Провести перемещение' })
   @ApiNoContentResponse()

@@ -38,7 +38,7 @@ export class StockController {
   }
 
   @Get('movements')
-  @CheckAbility((ab) => ab.can('read', 'Stock'))
+  @CheckAbility((ab) => ab.can('read', 'StockMovement'))
   @ApiOperation({ summary: 'Журнал движений' })
   @ApiOkResponse({ description: 'Постраничный журнал складских движений' })
   async movements(@Query() q: MovementsListQueryDto): Promise<unknown> {
