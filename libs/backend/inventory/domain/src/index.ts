@@ -20,6 +20,22 @@ export * from './value-objects/sku-group.value-object';
 export * from './value-objects/sku-name.value-object';
 export * from './value-objects/supplier-name.value-object';
 
+export * from './receipt/receipt-id';
+export * from './receipt/receipt-line';
+export * from './receipt/receipt-status';
+export * from './receipt/receipt.aggregate';
+export * from './receipt/receipt.errors';
+export * from './receipt/receipt.events';
+export type { IReceiptRepository } from './receipt/receipt.repository';
+
+export * from './adjustment/adjustment-id';
+export * from './adjustment/adjustment-line';
+export * from './adjustment/adjustment-status';
+export * from './adjustment/adjustment.aggregate';
+export * from './adjustment/adjustment.errors';
+export * from './adjustment/adjustment.events';
+export type { IAdjustmentRepository } from './adjustment/adjustment.repository';
+
 export * from './stock/batch-id';
 export * from './stock/batch-source-type';
 export * from './stock/batch.entity';
