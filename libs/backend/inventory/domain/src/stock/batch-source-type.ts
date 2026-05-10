@@ -1,0 +1,6 @@
+export enum BatchSourceType {
+  RECEIPT = 'RECEIPT',
+  TRANSFER = 'TRANSFER',
+  ADJUSTMENT = 'ADJUSTMENT',
+  OPENING_BALANCE = 'OPENING_BALANCE',
+}
