@@ -36,6 +36,22 @@ export * from './adjustment/adjustment.errors';
 export * from './adjustment/adjustment.events';
 export type { IAdjustmentRepository } from './adjustment/adjustment.repository';
 
+export * from './transfer/transfer-id';
+export * from './transfer/transfer-line';
+export * from './transfer/transfer-status';
+export * from './transfer/transfer.aggregate';
+export * from './transfer/transfer.errors';
+export * from './transfer/transfer.events';
+export type { ITransferRepository } from './transfer/transfer.repository';
+
+export * from './stock-taking/stock-taking-id';
+export * from './stock-taking/stock-taking-line';
+export * from './stock-taking/stock-taking-status';
+export * from './stock-taking/stock-taking.aggregate';
+export * from './stock-taking/stock-taking.errors';
+export * from './stock-taking/stock-taking.events';
+export type { IStockTakingRepository } from './stock-taking/stock-taking.repository';
+
 export * from './stock/batch-id';
 export * from './stock/batch-source-type';
 export * from './stock/batch.entity';
