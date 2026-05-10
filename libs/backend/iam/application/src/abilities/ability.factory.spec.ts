@@ -31,27 +31,36 @@ describe('AbilityFactory', () => {
       expect(ability.can('manage', 'Stock')).toBe(true);
       expect(ability.can('manage', 'Adjustment')).toBe(true);
     });
+
+    it('can manage all Inventory subjects', () => {
+      const ability = factory.createForUser(user(Role.OWNER));
+
+      expect(ability.can('manage', 'Sku')).toBe(true);
+      expect(ability.can('manage', 'Supplier')).toBe(true);
+      expect(ability.can('manage', 'Receipt')).toBe(true);
+      expect(ability.can('approve', 'Adjustment')).toBe(true);
+      expect(ability.can('reject', 'Adjustment')).toBe(true);
+      expect(ability.can('manage', 'Transfer')).toBe(true);
+      expect(ability.can('manage', 'StockTaking')).toBe(true);
+      expect(ability.can('manage', 'StockMovement')).toBe(true);
+    });
   });
 
   describe('MANAGER', () => {
-    it('can manage Appointment, Client and Receipt in assigned branches', () => {
+    it('can manage Appointment and Client in assigned branches', () => {
       const ability = factory.createForUser(user(Role.MANAGER));
 
       expect(ability.can('manage', appSubject('Appointment', { branchId: BRANCH_ID }))).toBe(true);
       expect(ability.can('manage', appSubject('Client', { branchId: BRANCH_ID }))).toBe(true);
-      expect(ability.can('manage', appSubject('Receipt', { branchId: BRANCH_ID }))).toBe(true);
     });
 
-    it('cannot manage Appointment, Client and Receipt outside assigned branches', () => {
+    it('cannot manage Appointment and Client outside assigned branches', () => {
       const ability = factory.createForUser(user(Role.MANAGER));
 
       expect(ability.can('manage', appSubject('Appointment', { branchId: OTHER_BRANCH_ID }))).toBe(
         false,
       );
       expect(ability.can('manage', appSubject('Client', { branchId: OTHER_BRANCH_ID }))).toBe(
-        false,
-      );
-      expect(ability.can('manage', appSubject('Receipt', { branchId: OTHER_BRANCH_ID }))).toBe(
         false,
       );
     });
@@ -80,6 +89,68 @@ describe('AbilityFactory', () => {
       expect(ability.can('manage', 'Stock')).toBe(false);
       expect(ability.can('manage', 'Adjustment')).toBe(false);
     });
+
+    it('can read/create/update Sku and Supplier (no branch constraint)', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('read', 'Sku')).toBe(true);
+      expect(ability.can('create', 'Sku')).toBe(true);
+      expect(ability.can('update', 'Sku')).toBe(true);
+      expect(ability.can('delete', 'Sku')).toBe(false);
+      expect(ability.can('read', 'Supplier')).toBe(true);
+      expect(ability.can('create', 'Supplier')).toBe(true);
+      expect(ability.can('update', 'Supplier')).toBe(true);
+      expect(ability.can('delete', 'Supplier')).toBe(false);
+    });
+
+    it('can create/post/cancel Receipt in own branch', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('create', appSubject('Receipt', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('post', appSubject('Receipt', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('cancel', appSubject('Receipt', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('create', appSubject('Receipt', { branchId: OTHER_BRANCH_ID }))).toBe(
+        false,
+      );
+    });
+
+    it('can create Adjustment in own branch but cannot approve/reject', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('create', appSubject('Adjustment', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('read', appSubject('Adjustment', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('approve', 'Adjustment')).toBe(false);
+      expect(ability.can('reject', 'Adjustment')).toBe(false);
+    });
+
+    it('can create/post Transfer in own branch', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('create', appSubject('Transfer', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('post', appSubject('Transfer', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('create', appSubject('Transfer', { branchId: OTHER_BRANCH_ID }))).toBe(
+        false,
+      );
+    });
+
+    it('can create/post/cancel StockTaking in own branch', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('create', appSubject('StockTaking', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('post', appSubject('StockTaking', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('cancel', appSubject('StockTaking', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('create', appSubject('StockTaking', { branchId: OTHER_BRANCH_ID }))).toBe(
+        false,
+      );
+    });
+
+    it('can read Stock and StockMovement in own branch', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('read', appSubject('Stock', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('read', appSubject('StockMovement', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('read', appSubject('Stock', { branchId: OTHER_BRANCH_ID }))).toBe(false);
+    });
   });
 
   describe('MASTER', () => {
@@ -107,6 +178,34 @@ describe('AbilityFactory', () => {
       expect(ability.can('manage', 'Receipt')).toBe(false);
       expect(ability.can('manage', 'User')).toBe(false);
     });
+
+    it('can read Sku and Stock in own branch only', () => {
+      const ability = factory.createForUser(user(Role.MASTER));
+
+      expect(ability.can('read', appSubject('Sku', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('read', appSubject('Stock', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('read', appSubject('Sku', { branchId: OTHER_BRANCH_ID }))).toBe(false);
+      expect(ability.can('read', appSubject('Stock', { branchId: OTHER_BRANCH_ID }))).toBe(false);
+    });
+
+    it('cannot read cost fields', () => {
+      const ability = factory.createForUser(user(Role.MASTER));
+
+      expect(ability.can('read', 'Sku', 'averageCost')).toBe(false);
+      expect(ability.can('read', 'Stock', 'unitCost')).toBe(false);
+    });
+
+    it('cannot create/update Sku, Supplier, Receipt, or any Inventory write', () => {
+      const ability = factory.createForUser(user(Role.MASTER));
+
+      expect(ability.can('create', 'Sku')).toBe(false);
+      expect(ability.can('update', 'Sku')).toBe(false);
+      expect(ability.can('read', 'Supplier')).toBe(false);
+      expect(ability.can('create', 'Receipt')).toBe(false);
+      expect(ability.can('create', 'Adjustment')).toBe(false);
+      expect(ability.can('create', 'Transfer')).toBe(false);
+      expect(ability.can('create', 'StockTaking')).toBe(false);
+    });
   });
 
   describe('CLIENT', () => {
@@ -132,6 +231,19 @@ describe('AbilityFactory', () => {
       expect(ability.can('manage', 'WorkOrder')).toBe(false);
       expect(ability.can('manage', 'Client')).toBe(false);
       expect(ability.can('manage', 'Receipt')).toBe(false);
+    });
+
+    it('has zero Inventory permissions', () => {
+      const ability = factory.createForUser(user(Role.CLIENT));
+
+      expect(ability.can('read', 'Sku')).toBe(false);
+      expect(ability.can('read', 'Stock')).toBe(false);
+      expect(ability.can('read', 'Supplier')).toBe(false);
+      expect(ability.can('create', 'Receipt')).toBe(false);
+      expect(ability.can('create', 'Adjustment')).toBe(false);
+      expect(ability.can('create', 'Transfer')).toBe(false);
+      expect(ability.can('create', 'StockTaking')).toBe(false);
+      expect(ability.can('read', 'StockMovement')).toBe(false);
     });
   });
 });
