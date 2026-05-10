@@ -14,6 +14,9 @@
       "path": "../../shared/ddd/tsconfig.lib.json"
     },
     {
+      "path": "../../shared/outbox/tsconfig.lib.json"
+    },
+    {
       "path": "../../../shared/types/tsconfig.lib.json"
     },
     {
