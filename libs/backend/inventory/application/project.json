@@ -1,0 +1,31 @@
+{
+  "name": "inventory-application",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/inventory/application/src",
+  "projectType": "library",
+  "tags": [
+    "scope:inventory",
+    "type:application",
+    "platform:node"
+  ],
+  "implicitDependencies": [
+    "inventory-domain"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/inventory/application/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/inventory/application/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}

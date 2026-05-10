@@ -369,6 +369,51 @@ importers:
         specifier: workspace:*
         version: link:../../../shared/types
 
+  libs/backend/inventory/application:
+    dependencies:
+      '@det/backend-inventory-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/inventory/domain:
+    dependencies:
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/inventory/infrastructure:
+    dependencies:
+      '@det/backend-inventory-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/backend-inventory-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/inventory/interfaces:
+    dependencies:
+      '@det/backend-inventory-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
   libs/backend/shared/auth: {}
 
   libs/backend/shared/ddd: {}

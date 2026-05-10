@@ -1,0 +1,28 @@
+{
+  "name": "inventory-domain",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/inventory/domain/src",
+  "projectType": "library",
+  "tags": [
+    "scope:inventory",
+    "type:domain",
+    "platform:node"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/inventory/domain/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/inventory/domain/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}
