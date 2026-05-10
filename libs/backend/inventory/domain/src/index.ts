@@ -19,3 +19,13 @@ export * from './value-objects/signed-quantity.value-object';
 export * from './value-objects/sku-group.value-object';
 export * from './value-objects/sku-name.value-object';
 export * from './value-objects/supplier-name.value-object';
+
+export * from './stock/batch-id';
+export * from './stock/batch-source-type';
+export * from './stock/batch.entity';
+export type { BatchAllocation, IBatchSelector } from './stock/batch-selector.interface';
+export * from './stock/stock-id';
+export * from './stock/stock.aggregate';
+export * from './stock/stock.errors';
+export * from './stock/stock.events';
+export type { IStockRepository } from './stock/stock.repository';
