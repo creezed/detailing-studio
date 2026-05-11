@@ -62,3 +62,76 @@ export class IamUserNotFoundError extends ApplicationError {
     super(`IAM User ${userId} not found`);
   }
 }
+
+export class AppointmentNotFoundError extends ApplicationError {
+  readonly code = 'APPOINTMENT_NOT_FOUND';
+  readonly httpStatus = 404;
+
+  constructor(id: string) {
+    super(`Appointment ${id} not found`);
+  }
+}
+
+export class ServiceInactiveError extends ApplicationError {
+  readonly code = 'SERVICE_INACTIVE';
+  readonly httpStatus = 422;
+
+  constructor(serviceId: string) {
+    super(`Service ${serviceId} is inactive`);
+  }
+}
+
+export class ServiceNotFoundError extends ApplicationError {
+  readonly code = 'SERVICE_NOT_FOUND';
+  readonly httpStatus = 404;
+
+  constructor(serviceId: string) {
+    super(`Service ${serviceId} not found`);
+  }
+}
+
+export class ServicePriceUnavailableError extends ApplicationError {
+  readonly code = 'SERVICE_PRICE_UNAVAILABLE';
+  readonly httpStatus = 422;
+
+  constructor(serviceId: string, bodyType: string) {
+    super(`Service ${serviceId} has no price for BodyType ${bodyType}`);
+  }
+}
+
+export class VehicleInactiveError extends ApplicationError {
+  readonly code = 'VEHICLE_INACTIVE';
+  readonly httpStatus = 422;
+
+  constructor(vehicleId: string) {
+    super(`Vehicle ${vehicleId} is inactive`);
+  }
+}
+
+export class VehicleNotFoundError extends ApplicationError {
+  readonly code = 'VEHICLE_NOT_FOUND';
+  readonly httpStatus = 404;
+
+  constructor(vehicleId: string) {
+    super(`Vehicle ${vehicleId} not found`);
+  }
+}
+
+export class SlotConflictError extends ApplicationError {
+  readonly code = 'SLOT_CONFLICT';
+  readonly httpStatus = 409;
+
+  constructor() {
+    super('Slot is no longer available');
+  }
+}
+
+export class AppointmentDomainRuleViolationError extends ApplicationError {
+  constructor(
+    readonly code: string,
+    readonly httpStatus: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}

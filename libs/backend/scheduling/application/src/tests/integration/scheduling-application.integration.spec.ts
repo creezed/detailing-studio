@@ -14,13 +14,16 @@ import {
   MasterId,
   ScheduleException,
   ScheduleId,
+  TimeSlot,
   TimeOfDay,
   TimeRange,
+  Timezone,
   UnavailabilityId,
   WorkingDay,
 } from '@det/backend-scheduling-domain';
 import type { MasterWeeklyPattern, WeeklyPattern } from '@det/backend-scheduling-domain';
-import { CLOCK, DateTime, ID_GENERATOR } from '@det/backend-shared-ddd';
+import { CLOCK, DateTime, ID_GENERATOR, Money } from '@det/backend-shared-ddd';
+import { AppointmentId, ClientId, ServiceId, UserId, VehicleId } from '@det/shared-types';
 
 import {
   createSchedulingTestSchema,
@@ -29,6 +32,7 @@ import {
   PostgresBayRepository,
   PostgresBranchReadPort,
   PostgresBranchRepository,
+  PostgresAppointmentRepository,
   PostgresBranchScheduleReadPort,
   PostgresBranchScheduleRepository,
   PostgresMasterScheduleReadPort,
@@ -37,13 +41,16 @@ import {
 } from './scheduling-test-adapters';
 import {
   FixedClock,
+  InMemoryCatalogServicePort,
   InMemoryBayUsagePort,
   InMemoryBranchUsagePort,
+  InMemoryCrmVehiclePort,
   InMemoryIamUserPort,
   QueueIdGenerator,
 } from './scheduling-test-primitives';
 import { AddBranchScheduleExceptionCommand } from '../../commands/add-branch-schedule-exception/add-branch-schedule-exception.command';
 import { AddMasterUnavailabilityCommand } from '../../commands/add-master-unavailability/add-master-unavailability.command';
+import { CreateAppointmentCommand } from '../../commands/create-appointment/create-appointment.command';
 import { CreateBayCommand } from '../../commands/create-bay/create-bay.command';
 import { CreateBranchCommand } from '../../commands/create-branch/create-branch.command';
 import { DeactivateBayCommand } from '../../commands/deactivate-bay/deactivate-bay.command';
@@ -51,11 +58,13 @@ import { DeactivateBranchCommand } from '../../commands/deactivate-branch/deacti
 import { ReactivateBranchCommand } from '../../commands/reactivate-branch/reactivate-branch.command';
 import { RemoveBranchScheduleExceptionCommand } from '../../commands/remove-branch-schedule-exception/remove-branch-schedule-exception.command';
 import { RemoveMasterUnavailabilityCommand } from '../../commands/remove-master-unavailability/remove-master-unavailability.command';
+import { RescheduleAppointmentCommand } from '../../commands/reschedule-appointment/reschedule-appointment.command';
 import { SetBranchScheduleCommand } from '../../commands/set-branch-schedule/set-branch-schedule.command';
 import { SetMasterScheduleCommand } from '../../commands/set-master-schedule/set-master-schedule.command';
 import { UpdateBayCommand } from '../../commands/update-bay/update-bay.command';
 import { UpdateBranchCommand } from '../../commands/update-branch/update-branch.command';
 import {
+  APPOINTMENT_REPOSITORY,
   BAY_READ_PORT,
   BAY_REPOSITORY,
   BAY_USAGE_PORT,
@@ -64,6 +73,8 @@ import {
   BRANCH_SCHEDULE_READ_PORT,
   BRANCH_SCHEDULE_REPOSITORY,
   BRANCH_USAGE_PORT,
+  CATALOG_SERVICE_PORT,
+  CRM_VEHICLE_PORT,
   IAM_USER_PORT,
   MASTER_SCHEDULE_READ_PORT,
   MASTER_SCHEDULE_REPOSITORY,
@@ -76,6 +87,8 @@ import {
   IamUserNotFoundError,
   MasterScheduleNotFoundError,
   MasterScheduleOutsideBranchHoursError,
+  ServiceInactiveError,
+  SlotConflictError,
 } from '../../errors/application.errors';
 import { GetBranchByIdQuery } from '../../queries/get-branch-by-id/get-branch-by-id.query';
 import { GetBranchScheduleQuery } from '../../queries/get-branch-schedule/get-branch-schedule.query';
@@ -93,6 +106,7 @@ import type {
   MasterScheduleReadModel,
   PaginatedResult,
 } from '../../read-models/scheduling.read-models';
+import type { AppointmentCommandResult } from '../../services/appointment-command-result';
 import type { TestingModule } from '@nestjs/testing';
 import type { StartedTestContainer } from 'testcontainers';
 
@@ -105,6 +119,16 @@ const UNAVAILABILITY_ID = UnavailabilityId.from('77777777-7777-4777-8777-7777777
 const MASTER_ID = MasterId.from('88888888-8888-4888-8888-888888888888');
 const MISSING_ID = BranchId.from('99999999-9999-4999-8999-999999999999');
 const NOW = DateTime.from('2026-01-01T10:00:00.000Z');
+const CLIENT_ID = ClientId.from('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+const VEHICLE_ID = VehicleId.from('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+const SERVICE_ID = ServiceId.from('cccccccc-cccc-4ccc-8ccc-cccccccccccc');
+const ACTOR_ID = UserId.from('dddddddd-dddd-4ddd-8ddd-dddddddddddd');
+const APPOINTMENT_ID_1 = AppointmentId.from('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
+const APPOINTMENT_ID_2 = AppointmentId.from('abababab-abab-4aba-8aba-abababababab');
+const APPOINTMENT_ID_3 = AppointmentId.from('12121212-1212-4212-8212-121212121212');
+const APPOINTMENT_SERVICE_ID_1 = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+const APPOINTMENT_SERVICE_ID_2 = '99999999-9999-4999-8999-999999999998';
+const APPOINTMENT_SERVICE_ID_3 = '23232323-2323-4232-8232-232323232323';
 
 function workingDay(openHour: number, closeHour: number): WorkingDay {
   return WorkingDay.from({
@@ -130,6 +154,14 @@ function masterPattern(openHour = 10, closeHour = 17): MasterWeeklyPattern {
   return weeklyPattern(openHour, closeHour);
 }
 
+function appointmentSlot(startIso: string, endIso: string): TimeSlot {
+  return TimeSlot.from(
+    DateTime.from(startIso),
+    DateTime.from(endIso),
+    Timezone.from('Europe/Moscow'),
+  );
+}
+
 describe('SchedulingApplicationModule integration', () => {
   let container: StartedTestContainer;
   let client: Client;
@@ -140,6 +172,9 @@ describe('SchedulingApplicationModule integration', () => {
   let branchUsagePort: InMemoryBranchUsagePort;
   let bayUsagePort: InMemoryBayUsagePort;
   let iamUserPort: InMemoryIamUserPort;
+  let appointmentRepo: PostgresAppointmentRepository;
+  let catalogServicePort: InMemoryCatalogServicePort;
+  let crmVehiclePort: InMemoryCrmVehiclePort;
 
   beforeAll(async () => {
     container = await new GenericContainer('postgres:16-alpine')
@@ -176,12 +211,16 @@ describe('SchedulingApplicationModule integration', () => {
     const bayRepo = new PostgresBayRepository(client);
     const branchScheduleRepo = new PostgresBranchScheduleRepository(client);
     const masterScheduleRepo = new PostgresMasterScheduleRepository(client);
+    appointmentRepo = new PostgresAppointmentRepository(client);
+    catalogServicePort = new InMemoryCatalogServicePort();
+    crmVehiclePort = new InMemoryCrmVehiclePort();
 
     moduleRef = await Test.createTestingModule({
       imports: [
         SchedulingApplicationModule.register([
           { provide: BRANCH_REPOSITORY, useValue: branchRepo },
           { provide: BAY_REPOSITORY, useValue: bayRepo },
+          { provide: APPOINTMENT_REPOSITORY, useValue: appointmentRepo },
           { provide: BRANCH_SCHEDULE_REPOSITORY, useValue: branchScheduleRepo },
           { provide: MASTER_SCHEDULE_REPOSITORY, useValue: masterScheduleRepo },
           { provide: BRANCH_READ_PORT, useValue: new PostgresBranchReadPort(client) },
@@ -197,6 +236,8 @@ describe('SchedulingApplicationModule integration', () => {
           { provide: BRANCH_USAGE_PORT, useValue: branchUsagePort },
           { provide: BAY_USAGE_PORT, useValue: bayUsagePort },
           { provide: IAM_USER_PORT, useValue: iamUserPort },
+          { provide: CATALOG_SERVICE_PORT, useValue: catalogServicePort },
+          { provide: CRM_VEHICLE_PORT, useValue: crmVehiclePort },
           { provide: CLOCK, useValue: new FixedClock(NOW) },
           { provide: ID_GENERATOR, useValue: idGen },
         ]),
@@ -211,6 +252,52 @@ describe('SchedulingApplicationModule integration', () => {
   afterEach(async () => {
     await moduleRef.close();
   });
+
+  async function seedAppointmentPrerequisites(): Promise<void> {
+    idGen.reset([BRANCH_ID_1, BAY_ID_1, BRANCH_SCHEDULE_ID, MASTER_SCHEDULE_ID]);
+    await commandBus.execute(new CreateBranchCommand('Центр', 'Москва', 'Europe/Moscow'));
+    await commandBus.execute(new CreateBayCommand(BRANCH_ID_1, 'Бокс 1'));
+    await commandBus.execute(new SetBranchScheduleCommand(BRANCH_ID_1, weeklyPattern()));
+    await commandBus.execute(new SetMasterScheduleCommand(MASTER_ID, BRANCH_ID_1, masterPattern()));
+
+    catalogServicePort.setService({
+      durationMinutes: 60,
+      id: SERVICE_ID,
+      isActive: true,
+      name: 'Полировка',
+      pricing: { price: Money.rub('1500.00'), type: 'FIXED' },
+    });
+    crmVehiclePort.setVehicle({
+      bodyType: 'SEDAN',
+      clientId: CLIENT_ID,
+      id: VEHICLE_ID,
+      isActive: true,
+    });
+  }
+
+  async function createAppointment(
+    appointmentId: AppointmentId,
+    appointmentServiceId: string,
+    slot: TimeSlot,
+  ): Promise<AppointmentCommandResult<{ id: AppointmentId }>> {
+    idGen.reset([appointmentServiceId, appointmentId]);
+    return commandBus.execute<
+      CreateAppointmentCommand,
+      AppointmentCommandResult<{ id: AppointmentId }>
+    >(
+      new CreateAppointmentCommand(
+        CLIENT_ID,
+        VEHICLE_ID,
+        BRANCH_ID_1,
+        MASTER_ID,
+        [SERVICE_ID],
+        slot,
+        BAY_ID_1,
+        ACTOR_ID,
+        'ONLINE',
+      ),
+    );
+  }
 
   it('creates, updates, deactivates and reactivates Branch', async () => {
     idGen.reset([BRANCH_ID_1]);
@@ -426,6 +513,115 @@ describe('SchedulingApplicationModule integration', () => {
         ),
       ),
     ).rejects.toBeInstanceOf(MasterScheduleNotFoundError);
+  });
+
+  it('creates and reschedules Appointment', async () => {
+    await seedAppointmentPrerequisites();
+
+    const createResult = await createAppointment(
+      APPOINTMENT_ID_1,
+      APPOINTMENT_SERVICE_ID_1,
+      appointmentSlot('2026-01-05T10:00:00.000Z', '2026-01-05T11:00:00.000Z'),
+    );
+    expect(createResult).toEqual({ ok: true, value: { id: APPOINTMENT_ID_1 } });
+
+    const rescheduleResult = await commandBus.execute<
+      RescheduleAppointmentCommand,
+      AppointmentCommandResult<null>
+    >(
+      new RescheduleAppointmentCommand(
+        APPOINTMENT_ID_1,
+        BRANCH_ID_1,
+        MASTER_ID,
+        appointmentSlot('2026-01-05T11:00:00.000Z', '2026-01-05T12:00:00.000Z'),
+        BAY_ID_1,
+        ACTOR_ID,
+        'MANAGER',
+      ),
+    );
+    expect(rescheduleResult).toEqual({ ok: true, value: null });
+
+    const appointment = await appointmentRepo.findById(APPOINTMENT_ID_1);
+    if (appointment === null) {
+      throw new Error('Appointment was not persisted');
+    }
+    expect(appointment.toSnapshot()).toMatchObject({
+      id: APPOINTMENT_ID_1,
+      slotEnd: '2026-01-05T12:00:00.000Z',
+      slotStart: '2026-01-05T11:00:00.000Z',
+    });
+    expect(await outboxEventTypes(client)).toEqual(
+      expect.arrayContaining(['AppointmentCreated', 'AppointmentRescheduled']),
+    );
+  });
+
+  it('rejects Appointment creation for inactive Service', async () => {
+    await seedAppointmentPrerequisites();
+    catalogServicePort.setService({
+      durationMinutes: 60,
+      id: SERVICE_ID,
+      isActive: false,
+      name: 'Полировка',
+      pricing: { price: Money.rub('1500.00'), type: 'FIXED' },
+    });
+
+    const result = await createAppointment(
+      APPOINTMENT_ID_1,
+      APPOINTMENT_SERVICE_ID_1,
+      appointmentSlot('2026-01-05T10:00:00.000Z', '2026-01-05T11:00:00.000Z'),
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBeInstanceOf(ServiceInactiveError);
+    }
+  });
+
+  it('rejects Appointment creation for occupied Slot', async () => {
+    await seedAppointmentPrerequisites();
+
+    const slot = appointmentSlot('2026-01-05T10:00:00.000Z', '2026-01-05T11:00:00.000Z');
+    const firstResult = await createAppointment(APPOINTMENT_ID_1, APPOINTMENT_SERVICE_ID_1, slot);
+    expect(firstResult.ok).toBe(true);
+
+    const secondResult = await createAppointment(APPOINTMENT_ID_2, APPOINTMENT_SERVICE_ID_2, slot);
+
+    expect(secondResult.ok).toBe(false);
+    if (!secondResult.ok) {
+      expect(secondResult.error).toBeInstanceOf(SlotConflictError);
+    }
+  });
+
+  it('retries Appointment creation after optimistic lock failures', async () => {
+    await seedAppointmentPrerequisites();
+    appointmentRepo.failNextSavesWithOptimisticLock(2);
+    idGen.reset([
+      APPOINTMENT_SERVICE_ID_1,
+      APPOINTMENT_ID_1,
+      APPOINTMENT_SERVICE_ID_2,
+      APPOINTMENT_ID_2,
+      APPOINTMENT_SERVICE_ID_3,
+      APPOINTMENT_ID_3,
+    ]);
+
+    const result = await commandBus.execute<
+      CreateAppointmentCommand,
+      AppointmentCommandResult<{ id: AppointmentId }>
+    >(
+      new CreateAppointmentCommand(
+        CLIENT_ID,
+        VEHICLE_ID,
+        BRANCH_ID_1,
+        MASTER_ID,
+        [SERVICE_ID],
+        appointmentSlot('2026-01-05T10:00:00.000Z', '2026-01-05T11:00:00.000Z'),
+        BAY_ID_1,
+        ACTOR_ID,
+        'ONLINE',
+      ),
+    );
+
+    expect(result).toEqual({ ok: true, value: { id: APPOINTMENT_ID_3 } });
   });
 
   it('returns branches with pagination, details and ListMastersByBranch IAM enrichment', async () => {
