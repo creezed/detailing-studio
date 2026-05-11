@@ -51,6 +51,7 @@ export * from './appointment/cancellation-request';
 export * from './appointment/state-transitions';
 
 export * from './services/availability-calculator';
+export * from './services/cancellation-policy';
 
 export * from './testing/fake-id-generator';
 export * from './testing/branch.builder';
