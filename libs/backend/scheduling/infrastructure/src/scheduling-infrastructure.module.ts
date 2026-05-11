@@ -1,6 +1,11 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { Module, type OnModuleInit, type Provider } from '@nestjs/common';
-import { CqrsModule } from '@nestjs/cqrs';
+import {
+  Module,
+  type DynamicModule,
+  type ModuleMetadata,
+  type OnModuleInit,
+  type Provider,
+} from '@nestjs/common';
 
 import {
   APPOINTMENT_READ_PORT,
@@ -18,6 +23,7 @@ import {
   MASTER_SCHEDULE_READ_PORT,
   MASTER_SCHEDULE_REPOSITORY,
   SCHEDULING_APPOINTMENT_PORT,
+  SchedulingApplicationModule,
   WorkOrderClosedIntegrationEvent,
 } from '@det/backend-scheduling-application';
 import {
@@ -163,28 +169,28 @@ const INFRASTRUCTURE_PROVIDERS: readonly Provider[] = [
   },
 ];
 
-@Module({
-  exports: [
-    APPOINTMENT_READ_PORT,
-    APPOINTMENT_REPOSITORY,
-    BAY_READ_PORT,
-    BAY_REPOSITORY,
-    BAY_USAGE_PORT,
-    BRANCH_READ_PORT,
-    BRANCH_REPOSITORY,
-    BRANCH_SCHEDULE_READ_PORT,
-    BRANCH_SCHEDULE_REPOSITORY,
-    BRANCH_USAGE_PORT,
-    CLOCK,
-    ID_GENERATOR,
-    MASTER_SCHEDULE_READ_PORT,
-    MASTER_SCHEDULE_REPOSITORY,
-    SCHEDULING_APPOINTMENT_PORT,
-  ],
-  imports: [CqrsModule, MikroOrmModule.forFeature(SCHEDULING_SCHEMAS), OutboxModule],
-  providers: [...INFRASTRUCTURE_PROVIDERS],
-})
+@Module({})
 export class SchedulingInfrastructureModule implements OnModuleInit {
+  static register(
+    externalProviders: readonly Provider[],
+    externalImports: NonNullable<ModuleMetadata['imports']> = [],
+  ): DynamicModule {
+    const providers = [...INFRASTRUCTURE_PROVIDERS, ...externalProviders];
+
+    return {
+      exports: [SchedulingApplicationModule],
+      imports: [
+        OutboxModule,
+        SchedulingApplicationModule.register(providers, [
+          MikroOrmModule.forFeature(SCHEDULING_SCHEMAS),
+          OutboxModule,
+          ...externalImports,
+        ]),
+      ],
+      module: SchedulingInfrastructureModule,
+    };
+  }
+
   constructor(private readonly eventRegistry: EventTypeRegistry) {}
 
   onModuleInit(): void {
