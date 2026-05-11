@@ -1,4 +1,5 @@
 import {
+  AppointmentServiceId,
   ScheduleException,
   TimeOfDay,
   TimeRange,
@@ -6,8 +7,13 @@ import {
   UnavailabilityId,
   WorkingDay,
 } from '@det/backend-scheduling-domain';
-import type { DayOfWeek, MasterWeeklyPattern, WeeklyPattern } from '@det/backend-scheduling-domain';
-import { DateTime } from '@det/backend-shared-ddd';
+import type {
+  AppointmentService,
+  DayOfWeek,
+  MasterWeeklyPattern,
+  WeeklyPattern,
+} from '@det/backend-scheduling-domain';
+import { DateTime, Money } from '@det/backend-shared-ddd';
 
 import type {
   ScheduleExceptionReadModel,
@@ -51,6 +57,14 @@ export interface UnavailabilityRecord {
   readonly fromAt: string;
   readonly toAt: string;
   readonly reason: string;
+}
+
+export interface AppointmentServiceRecord {
+  readonly id: string;
+  readonly serviceId: string;
+  readonly serviceNameSnapshot: string;
+  readonly durationMinutesSnapshot: number;
+  readonly priceAmount: string;
 }
 
 export function serializeWeeklyPattern(
@@ -147,6 +161,30 @@ export function unavailabilitiesToReadModel(
     id: record.id,
     reason: record.reason,
     toAt: record.toAt,
+  }));
+}
+
+export function serializeAppointmentServices(
+  services: readonly AppointmentService[],
+): readonly AppointmentServiceRecord[] {
+  return services.map((service) => ({
+    durationMinutesSnapshot: service.durationMinutesSnapshot,
+    id: service.id,
+    priceAmount: service.priceSnapshot.toNumber().toFixed(2),
+    serviceId: service.serviceId,
+    serviceNameSnapshot: service.serviceNameSnapshot,
+  }));
+}
+
+export function deserializeAppointmentServices(
+  records: readonly AppointmentServiceRecord[],
+): readonly AppointmentService[] {
+  return records.map((record) => ({
+    durationMinutesSnapshot: record.durationMinutesSnapshot,
+    id: AppointmentServiceId.from(record.id),
+    priceSnapshot: Money.rub(record.priceAmount),
+    serviceId: record.serviceId,
+    serviceNameSnapshot: record.serviceNameSnapshot,
   }));
 }
 

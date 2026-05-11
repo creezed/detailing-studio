@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 
 import { AddBranchScheduleExceptionHandler } from './commands/add-branch-schedule-exception/add-branch-schedule-exception.handler';
 import { AddMasterUnavailabilityHandler } from './commands/add-master-unavailability/add-master-unavailability.handler';
+import { CreateAppointmentHandler } from './commands/create-appointment/create-appointment.handler';
 import { CreateBayHandler } from './commands/create-bay/create-bay.handler';
 import { CreateBranchHandler } from './commands/create-branch/create-branch.handler';
 import { DeactivateBayHandler } from './commands/deactivate-bay/deactivate-bay.handler';
@@ -10,6 +11,7 @@ import { DeactivateBranchHandler } from './commands/deactivate-branch/deactivate
 import { ReactivateBranchHandler } from './commands/reactivate-branch/reactivate-branch.handler';
 import { RemoveBranchScheduleExceptionHandler } from './commands/remove-branch-schedule-exception/remove-branch-schedule-exception.handler';
 import { RemoveMasterUnavailabilityHandler } from './commands/remove-master-unavailability/remove-master-unavailability.handler';
+import { RescheduleAppointmentHandler } from './commands/reschedule-appointment/reschedule-appointment.handler';
 import { SetBranchScheduleHandler } from './commands/set-branch-schedule/set-branch-schedule.handler';
 import { SetMasterScheduleHandler } from './commands/set-master-schedule/set-master-schedule.handler';
 import { UpdateBayHandler } from './commands/update-bay/update-bay.handler';
@@ -20,6 +22,7 @@ import { GetMasterScheduleHandler } from './queries/get-master-schedule/get-mast
 import { ListBaysByBranchHandler } from './queries/list-bays-by-branch/list-bays-by-branch.handler';
 import { ListBranchesHandler } from './queries/list-branches/list-branches.handler';
 import { ListMastersByBranchHandler } from './queries/list-masters-by-branch/list-masters-by-branch.handler';
+import { AppointmentHotPathService } from './services/appointment-hot-path.service';
 
 import type { DynamicModule, ModuleMetadata, Provider } from '@nestjs/common';
 
@@ -37,6 +40,8 @@ const COMMAND_HANDLERS = [
   SetMasterScheduleHandler,
   AddMasterUnavailabilityHandler,
   RemoveMasterUnavailabilityHandler,
+  CreateAppointmentHandler,
+  RescheduleAppointmentHandler,
 ];
 
 const QUERY_HANDLERS = [
@@ -61,7 +66,7 @@ export class SchedulingApplicationModule {
       exports: [CqrsModule, ...providers],
       imports: [CqrsModule, ...imports],
       module: SchedulingApplicationModule,
-      providers: [...providers, ...COMMAND_HANDLERS, ...QUERY_HANDLERS],
+      providers: [...providers, AppointmentHotPathService, ...COMMAND_HANDLERS, ...QUERY_HANDLERS],
     };
   }
 }

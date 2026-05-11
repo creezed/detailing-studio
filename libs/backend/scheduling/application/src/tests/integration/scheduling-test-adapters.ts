@@ -1,21 +1,37 @@
-import { Bay, Branch, BranchSchedule, MasterSchedule } from '@det/backend-scheduling-domain';
+import {
+  Appointment,
+  Bay,
+  Branch,
+  BranchSchedule,
+  CancellationRequestId,
+  MasterSchedule,
+} from '@det/backend-scheduling-domain';
 import type {
+  AppointmentId,
+  AppointmentStatus,
   BayId,
   BranchId,
+  CancellationRequest,
+  CreationChannel,
+  IAppointmentRepository,
   IBayRepository,
   IBranchRepository,
   IBranchScheduleRepository,
   IMasterScheduleRepository,
   MasterId,
   ScheduleId,
+  TimeSlot,
 } from '@det/backend-scheduling-domain';
+import { DateTime } from '@det/backend-shared-ddd';
 import type { DomainEvent } from '@det/backend-shared-ddd';
 
 import {
+  deserializeAppointmentServices,
   deserializeScheduleExceptions,
   deserializeUnavailabilities,
   deserializeWeeklyPattern,
   scheduleExceptionsToReadModel,
+  serializeAppointmentServices,
   serializeScheduleExceptions,
   serializeUnavailabilities,
   serializeWeeklyPattern,
@@ -24,6 +40,7 @@ import {
 } from './scheduling-test-serializers';
 
 import type {
+  AppointmentServiceRecord,
   ScheduleExceptionRecord,
   UnavailabilityRecord,
   WeeklyPatternRecord,
@@ -77,6 +94,43 @@ interface MasterScheduleRow extends QueryResultRow {
   readonly unavailabilities: readonly UnavailabilityRecord[];
 }
 
+interface AppointmentRow extends QueryResultRow {
+  readonly id: string;
+  readonly client_id: string;
+  readonly vehicle_id: string;
+  readonly branch_id: string;
+  readonly bay_id: string | null;
+  readonly master_id: string;
+  readonly services: readonly AppointmentServiceRecord[];
+  readonly slot_start: string;
+  readonly slot_end: string;
+  readonly timezone: string;
+  readonly status: AppointmentStatus;
+  readonly cancellation_request: CancellationRequestRecord | null;
+  readonly created_by: string;
+  readonly created_via: CreationChannel;
+  readonly created_at: string;
+  readonly version: number;
+}
+
+interface CancellationRequestRecord {
+  readonly id: string;
+  readonly requestedAt: string;
+  readonly requestedBy: string;
+  readonly reason: string;
+  readonly status: CancellationRequest['status'];
+  readonly decidedAt: string | null;
+  readonly decidedBy: string | null;
+  readonly decisionReason: string | null;
+}
+
+class OptimisticLockError extends Error {
+  constructor() {
+    super('Optimistic lock failed');
+    this.name = 'OptimisticLockError';
+  }
+}
+
 export async function createSchedulingTestSchema(client: Client): Promise<void> {
   await client.query(`
     create table if not exists sch_branches (
@@ -115,6 +169,36 @@ export async function createSchedulingTestSchema(client: Client): Promise<void> 
     )
   `);
   await client.query(`
+    create table if not exists sch_appointments (
+      id text primary key,
+      client_id text not null,
+      vehicle_id text not null,
+      branch_id text not null,
+      bay_id text null,
+      master_id text not null,
+      services jsonb not null,
+      slot_start text not null,
+      slot_end text not null,
+      timezone text not null,
+      status text not null,
+      cancellation_request jsonb null,
+      created_by text not null,
+      created_via text not null,
+      created_at text not null,
+      version integer not null
+    )
+  `);
+  await client.query(`
+    create unique index if not exists sch_appointments_master_start_active_idx
+      on sch_appointments (master_id, slot_start)
+      where status in ('PENDING_CONFIRMATION', 'CONFIRMED', 'IN_PROGRESS')
+  `);
+  await client.query(`
+    create unique index if not exists sch_appointments_bay_start_active_idx
+      on sch_appointments (bay_id, slot_start)
+      where bay_id is not null and status in ('PENDING_CONFIRMATION', 'CONFIRMED', 'IN_PROGRESS')
+  `);
+  await client.query(`
     create table if not exists outbox_events (
       event_id text primary key,
       aggregate_id text not null,
@@ -128,7 +212,7 @@ export async function createSchedulingTestSchema(client: Client): Promise<void> 
 
 export async function truncateSchedulingTestSchema(client: Client): Promise<void> {
   await client.query(
-    'truncate table sch_master_schedules, sch_branch_schedules, sch_bays, sch_branches, outbox_events',
+    'truncate table sch_appointments, sch_master_schedules, sch_branch_schedules, sch_bays, sch_branches, outbox_events',
   );
 }
 
@@ -389,6 +473,192 @@ export class PostgresMasterScheduleRepository implements IMasterScheduleReposito
   }
 }
 
+export class PostgresAppointmentRepository implements IAppointmentRepository {
+  private remainingOptimisticLockFailures = 0;
+
+  constructor(private readonly client: Client) {}
+
+  failNextSavesWithOptimisticLock(count: number): void {
+    this.remainingOptimisticLockFailures = count;
+  }
+
+  async findById(id: AppointmentId): Promise<Appointment | null> {
+    const result = await this.client.query<AppointmentRow>(
+      'select * from sch_appointments where id = $1',
+      [id],
+    );
+    const row = result.rows[0];
+
+    return row === undefined ? null : this.toDomain(row);
+  }
+
+  async save(appointment: Appointment): Promise<void> {
+    if (this.remainingOptimisticLockFailures > 0) {
+      this.remainingOptimisticLockFailures -= 1;
+      throw new OptimisticLockError();
+    }
+
+    const snapshot = appointment.toSnapshot();
+    const events = appointment.pullDomainEvents();
+
+    await this.client.query('begin');
+    try {
+      const existingResult = await this.client.query<{ readonly version: number }>(
+        'select version from sch_appointments where id = $1',
+        [snapshot.id],
+      );
+      const existing = existingResult.rows[0];
+
+      if (existing === undefined) {
+        await this.client.query(
+          `insert into sch_appointments (
+            id, client_id, vehicle_id, branch_id, bay_id, master_id, services,
+            slot_start, slot_end, timezone, status, cancellation_request,
+            created_by, created_via, created_at, version
+          )
+          values (
+            $1, $2, $3, $4, $5, $6, $7::jsonb,
+            $8, $9, $10, $11, $12::jsonb,
+            $13, $14, $15, $16
+          )`,
+          [
+            snapshot.id,
+            snapshot.clientId,
+            snapshot.vehicleId,
+            snapshot.branchId,
+            snapshot.bayId,
+            snapshot.masterId,
+            JSON.stringify(serializeAppointmentServices(snapshot.services)),
+            snapshot.slotStart,
+            snapshot.slotEnd,
+            snapshot.timezone,
+            snapshot.status,
+            stringifyCancellationRequest(snapshot.cancellationRequest),
+            snapshot.createdBy,
+            snapshot.createdVia,
+            snapshot.createdAt,
+            snapshot.version,
+          ],
+        );
+      } else {
+        const result = await this.client.query(
+          `update sch_appointments set
+            client_id = $2,
+            vehicle_id = $3,
+            branch_id = $4,
+            bay_id = $5,
+            master_id = $6,
+            services = $7::jsonb,
+            slot_start = $8,
+            slot_end = $9,
+            timezone = $10,
+            status = $11,
+            cancellation_request = $12::jsonb,
+            created_by = $13,
+            created_via = $14,
+            created_at = $15,
+            version = version + 1
+          where id = $1 and version = $16`,
+          [
+            snapshot.id,
+            snapshot.clientId,
+            snapshot.vehicleId,
+            snapshot.branchId,
+            snapshot.bayId,
+            snapshot.masterId,
+            JSON.stringify(serializeAppointmentServices(snapshot.services)),
+            snapshot.slotStart,
+            snapshot.slotEnd,
+            snapshot.timezone,
+            snapshot.status,
+            stringifyCancellationRequest(snapshot.cancellationRequest),
+            snapshot.createdBy,
+            snapshot.createdVia,
+            snapshot.createdAt,
+            snapshot.version,
+          ],
+        );
+        if (result.rowCount !== 1) {
+          throw new OptimisticLockError();
+        }
+      }
+
+      await insertEvents(this.client, events);
+      await this.client.query('commit');
+    } catch (error) {
+      await this.client.query('rollback');
+      if (isUniqueViolation(error)) {
+        throw new OptimisticLockError();
+      }
+      throw error;
+    }
+  }
+
+  async findOverlappingForMaster(
+    masterId: MasterId,
+    slot: TimeSlot,
+    excludeAppointmentId?: AppointmentId,
+  ): Promise<readonly Appointment[]> {
+    return this.findOverlapping('master_id', masterId, slot, excludeAppointmentId);
+  }
+
+  async findOverlappingForBay(
+    bayId: BayId,
+    slot: TimeSlot,
+    excludeAppointmentId?: AppointmentId,
+  ): Promise<readonly Appointment[]> {
+    return this.findOverlapping('bay_id', bayId, slot, excludeAppointmentId);
+  }
+
+  private async findOverlapping(
+    column: 'bay_id' | 'master_id',
+    ownerId: string,
+    slot: TimeSlot,
+    excludeAppointmentId?: AppointmentId,
+  ): Promise<readonly Appointment[]> {
+    const params = [
+      ownerId,
+      slot.start.iso(),
+      slot.end.iso(),
+      ['PENDING_CONFIRMATION', 'CONFIRMED', 'IN_PROGRESS'],
+      excludeAppointmentId ?? null,
+    ];
+    const result = await this.client.query<AppointmentRow>(
+      `select * from sch_appointments
+       where ${column} = $1
+         and slot_start < $3
+         and slot_end > $2
+         and status = any($4::text[])
+         and ($5::text is null or id <> $5)
+       order by slot_start`,
+      params,
+    );
+
+    return result.rows.map((row) => this.toDomain(row));
+  }
+
+  private toDomain(row: AppointmentRow): Appointment {
+    return Appointment.restore({
+      bayId: row.bay_id,
+      branchId: row.branch_id,
+      cancellationRequest: deserializeCancellationRequest(row.cancellation_request),
+      clientId: row.client_id,
+      createdAt: row.created_at,
+      createdBy: row.created_by,
+      createdVia: row.created_via,
+      id: row.id,
+      masterId: row.master_id,
+      services: deserializeAppointmentServices(row.services),
+      slotEnd: row.slot_end,
+      slotStart: row.slot_start,
+      status: row.status,
+      timezone: row.timezone,
+      vehicleId: row.vehicle_id,
+      version: row.version,
+    });
+  }
+}
+
 export class PostgresBranchReadPort implements IBranchReadPort {
   constructor(private readonly client: Client) {}
 
@@ -521,6 +791,46 @@ function masterScheduleRowToReadModel(row: MasterScheduleRow): MasterScheduleRea
     unavailabilities: unavailabilitiesToReadModel(row.unavailabilities),
     weeklyPattern: weeklyPatternToReadModel(row.weekly_pattern),
   };
+}
+
+function stringifyCancellationRequest(request: CancellationRequest | null): string | null {
+  if (request === null) {
+    return null;
+  }
+
+  return JSON.stringify({
+    decidedAt: request.decidedAt?.iso() ?? null,
+    decidedBy: request.decidedBy,
+    decisionReason: request.decisionReason,
+    id: request.id,
+    reason: request.reason,
+    requestedAt: request.requestedAt.iso(),
+    requestedBy: request.requestedBy,
+    status: request.status,
+  } satisfies CancellationRequestRecord);
+}
+
+function deserializeCancellationRequest(
+  record: CancellationRequestRecord | null,
+): CancellationRequest | null {
+  if (record === null) {
+    return null;
+  }
+
+  return {
+    decidedAt: record.decidedAt === null ? null : DateTime.from(record.decidedAt),
+    decidedBy: record.decidedBy,
+    decisionReason: record.decisionReason,
+    id: CancellationRequestId.from(record.id),
+    reason: record.reason,
+    requestedAt: DateTime.from(record.requestedAt),
+    requestedBy: record.requestedBy,
+    status: record.status,
+  };
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && Reflect.get(error, 'code') === '23505';
 }
 
 async function insertEvents(client: Client, events: readonly DomainEvent[]): Promise<void> {
