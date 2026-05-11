@@ -537,6 +537,51 @@ importers:
 
   libs/backend/shared/querying: {}
 
+  libs/backend/work-order/application:
+    dependencies:
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/backend-work-order-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/work-order/domain:
+    dependencies:
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/work-order/infrastructure:
+    dependencies:
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/backend-work-order-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/backend-work-order-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/work-order/interfaces:
+    dependencies:
+      '@det/backend-work-order-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
   libs/shared/contracts: {}
 
   libs/shared/types: {}

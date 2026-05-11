@@ -1,0 +1,38 @@
+{
+  "name": "work-order-application",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/work-order/application/src",
+  "projectType": "library",
+  "tags": [
+    "scope:work-order",
+    "type:application",
+    "platform:node"
+  ],
+  "implicitDependencies": [
+    "work-order-domain"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/work-order/application/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/work-order/application/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/work-order/application/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}

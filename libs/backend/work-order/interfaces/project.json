@@ -1,0 +1,35 @@
+{
+  "name": "work-order-interfaces",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/work-order/interfaces/src",
+  "projectType": "library",
+  "tags": [
+    "scope:work-order",
+    "type:interfaces",
+    "platform:node"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/work-order/interfaces/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/work-order/interfaces/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/work-order/interfaces/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

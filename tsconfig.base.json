@@ -41,6 +41,16 @@
         "libs/backend/inventory/infrastructure/src/index.ts"
       ],
       "@det/backend-inventory-interfaces": ["libs/backend/inventory/interfaces/src/index.ts"],
+      "@det/backend-work-order-application": [
+        "libs/backend/work-order/application/src/index.ts"
+      ],
+      "@det/backend-work-order-domain": ["libs/backend/work-order/domain/src/index.ts"],
+      "@det/backend-work-order-infrastructure": [
+        "libs/backend/work-order/infrastructure/src/index.ts"
+      ],
+      "@det/backend-work-order-interfaces": [
+        "libs/backend/work-order/interfaces/src/index.ts"
+      ],
       "@det/backend-iam-application": ["libs/backend/iam/application/src/index.ts"],
       "@det/backend-iam-domain": ["libs/backend/iam/domain/src/index.ts"],
       "@det/backend-iam-infrastructure": ["libs/backend/iam/infrastructure/src/index.ts"],
