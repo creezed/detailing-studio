@@ -24,6 +24,7 @@ import type {
 } from '@det/backend-scheduling-domain';
 import { DateTime } from '@det/backend-shared-ddd';
 import type { DomainEvent } from '@det/backend-shared-ddd';
+import type { ClientId } from '@det/shared-types';
 
 import {
   deserializeAppointmentServices,
@@ -45,15 +46,23 @@ import type {
   UnavailabilityRecord,
   WeeklyPatternRecord,
 } from './scheduling-test-serializers';
+import type {
+  IAppointmentReadPort,
+  ListAppointmentsFilter,
+} from '../../ports/appointment-read.port';
 import type { IBayReadPort } from '../../ports/bay-read.port';
 import type { IBranchReadPort, ListBranchesFilter } from '../../ports/branch-read.port';
 import type { IBranchScheduleReadPort } from '../../ports/branch-schedule-read.port';
 import type { IMasterScheduleReadPort } from '../../ports/master-schedule-read.port';
 import type {
+  AppointmentCancellationRequestReadModel,
   BayReadModel,
+  AppointmentReadModel,
+  AppointmentServiceReadModel,
   BranchDetailReadModel,
   BranchListItemReadModel,
   BranchScheduleReadModel,
+  CursorPaginatedResult,
   MasterScheduleReadModel,
   PaginatedResult,
 } from '../../read-models/scheduling.read-models';
@@ -61,6 +70,11 @@ import type { Client, QueryResultRow } from 'pg';
 
 interface OutboxRow extends QueryResultRow {
   readonly event_type: string;
+}
+
+interface OutboxPayloadRow extends QueryResultRow {
+  readonly event_type: string;
+  readonly payload: unknown;
 }
 
 interface BranchRow extends QueryResultRow {
@@ -221,6 +235,13 @@ export async function outboxEventTypes(client: Client): Promise<readonly string[
     'select event_type from outbox_events order by occurred_at, event_id',
   );
   return result.rows.map((row) => row.event_type);
+}
+
+export async function outboxEvents(client: Client): Promise<readonly OutboxPayloadRow[]> {
+  const result = await client.query<OutboxPayloadRow>(
+    'select event_type, payload from outbox_events order by occurred_at, event_id',
+  );
+  return result.rows;
 }
 
 export class PostgresBranchRepository implements IBranchRepository {
@@ -764,6 +785,87 @@ export class PostgresMasterScheduleReadPort implements IMasterScheduleReadPort {
   }
 }
 
+export class PostgresAppointmentReadPort implements IAppointmentReadPort {
+  constructor(private readonly client: Client) {}
+
+  async getById(appointmentId: AppointmentId): Promise<AppointmentReadModel | null> {
+    const result = await this.client.query<AppointmentRow>(
+      'select * from sch_appointments where id = $1',
+      [appointmentId],
+    );
+    const row = result.rows[0];
+
+    return row === undefined ? null : appointmentRowToReadModel(row);
+  }
+
+  async list(filter: ListAppointmentsFilter): Promise<CursorPaginatedResult<AppointmentReadModel>> {
+    const params: Array<string | number> = [];
+    const conditions: string[] = [];
+
+    addCondition(conditions, params, 'branch_id', filter.branchId);
+    addCondition(conditions, params, 'client_id', filter.clientId);
+    addCondition(conditions, params, 'master_id', filter.masterId);
+    addCondition(conditions, params, 'status', filter.status);
+
+    if (filter.from !== undefined) {
+      params.push(filter.from);
+      conditions.push(`slot_start >= $${String(params.length)}`);
+    }
+    if (filter.to !== undefined) {
+      params.push(filter.to);
+      conditions.push(`slot_start < $${String(params.length)}`);
+    }
+    if (filter.cursor !== undefined) {
+      const cursor = parseAppointmentCursor(filter.cursor);
+      params.push(cursor.slotStart, cursor.id);
+      conditions.push(
+        `(slot_start, id) > ($${String(params.length - 1)}, $${String(params.length)})`,
+      );
+    }
+
+    const whereClause = conditions.length === 0 ? '' : `where ${conditions.join(' and ')}`;
+    params.push(filter.limit + 1);
+    const result = await this.client.query<AppointmentRow>(
+      `select * from sch_appointments ${whereClause}
+       order by slot_start, id
+       limit $${String(params.length)}`,
+      params,
+    );
+    const rows = result.rows.slice(0, filter.limit);
+    const nextRow = result.rows[filter.limit];
+
+    return {
+      items: rows.map((row) => appointmentRowToReadModel(row)),
+      nextCursor: nextRow === undefined ? null : nextAppointmentCursor(rows),
+    };
+  }
+
+  async listByMasterAndDay(
+    masterId: MasterId,
+    date: string,
+  ): Promise<readonly AppointmentReadModel[]> {
+    const result = await this.client.query<AppointmentRow>(
+      `select * from sch_appointments
+       where master_id = $1
+         and slot_start >= $2
+         and slot_start < $3
+       order by slot_start, id`,
+      [masterId, `${date}T00:00:00.000Z`, `${date}T23:59:59.999Z`],
+    );
+
+    return result.rows.map((row) => appointmentRowToReadModel(row));
+  }
+
+  async listByClient(
+    clientId: ClientId,
+    limit = 50,
+    cursor?: string,
+  ): Promise<readonly AppointmentReadModel[]> {
+    const page = await this.list({ clientId, cursor, limit });
+    return page.items;
+  }
+}
+
 function branchRowToListItem(row: BranchRow): BranchListItemReadModel {
   return {
     address: row.address,
@@ -790,6 +892,97 @@ function masterScheduleRowToReadModel(row: MasterScheduleRow): MasterScheduleRea
     masterId: row.master_id,
     unavailabilities: unavailabilitiesToReadModel(row.unavailabilities),
     weeklyPattern: weeklyPatternToReadModel(row.weekly_pattern),
+  };
+}
+
+function appointmentRowToReadModel(row: AppointmentRow): AppointmentReadModel {
+  return {
+    bayId: row.bay_id,
+    branchId: row.branch_id,
+    cancellationRequest: cancellationRequestToReadModel(row.cancellation_request),
+    clientId: row.client_id,
+    createdAt: row.created_at,
+    createdBy: row.created_by,
+    createdVia: row.created_via,
+    id: row.id,
+    masterId: row.master_id,
+    services: row.services.map(appointmentServiceToReadModel),
+    slotEnd: row.slot_end,
+    slotStart: row.slot_start,
+    status: row.status,
+    timezone: row.timezone,
+    vehicleId: row.vehicle_id,
+  };
+}
+
+function appointmentServiceToReadModel(
+  service: AppointmentServiceRecord,
+): AppointmentServiceReadModel {
+  return {
+    durationMinutes: service.durationMinutesSnapshot,
+    id: service.id,
+    priceAmount: service.priceAmount,
+    serviceId: service.serviceId,
+    serviceName: service.serviceNameSnapshot,
+  };
+}
+
+function cancellationRequestToReadModel(
+  request: CancellationRequestRecord | null,
+): AppointmentCancellationRequestReadModel | null {
+  if (request === null) {
+    return null;
+  }
+
+  return {
+    decidedAt: request.decidedAt,
+    decidedBy: request.decidedBy,
+    decisionReason: request.decisionReason,
+    id: request.id,
+    reason: request.reason,
+    requestedAt: request.requestedAt,
+    requestedBy: request.requestedBy,
+    status: request.status,
+  };
+}
+
+function addCondition(
+  conditions: string[],
+  params: Array<string | number>,
+  column: string,
+  value: string | undefined,
+): void {
+  if (value === undefined) {
+    return;
+  }
+
+  params.push(value);
+  conditions.push(`${column} = $${String(params.length)}`);
+}
+
+interface AppointmentCursor {
+  readonly slotStart: string;
+  readonly id: string;
+}
+
+function appointmentCursor(row: AppointmentRow): string {
+  return `${row.slot_start}|${row.id}`;
+}
+
+function nextAppointmentCursor(rows: readonly AppointmentRow[]): string | null {
+  const lastRow = rows[rows.length - 1];
+  return lastRow === undefined ? null : appointmentCursor(lastRow);
+}
+
+function parseAppointmentCursor(cursor: string): AppointmentCursor {
+  const separatorIndex = cursor.indexOf('|');
+  if (separatorIndex < 0) {
+    return { id: '', slotStart: cursor };
+  }
+
+  return {
+    id: cursor.slice(separatorIndex + 1),
+    slotStart: cursor.slice(0, separatorIndex),
   };
 }
 
@@ -844,8 +1037,19 @@ async function insertEvents(client: Client, events: readonly DomainEvent[]): Pro
         event.aggregateType,
         event.eventType,
         event.occurredAt,
-        JSON.stringify({ eventType: event.eventType }),
+        JSON.stringify(toSerializableEventPayload(event)),
       ],
     );
   }
+}
+
+function toSerializableEventPayload(event: DomainEvent): unknown {
+  return JSON.parse(
+    JSON.stringify(event, (_key, value: unknown) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      return value;
+    }),
+  ) as unknown;
 }

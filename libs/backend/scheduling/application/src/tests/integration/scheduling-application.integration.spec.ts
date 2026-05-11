@@ -4,6 +4,8 @@ import { Client } from 'pg';
 import { GenericContainer, Wait } from 'testcontainers';
 
 import {
+  AppointmentId,
+  AppointmentStatus,
   BayAlreadyDeactivatedError,
   BayId,
   BranchAlreadyActiveError,
@@ -23,11 +25,13 @@ import {
 } from '@det/backend-scheduling-domain';
 import type { MasterWeeklyPattern, WeeklyPattern } from '@det/backend-scheduling-domain';
 import { CLOCK, DateTime, ID_GENERATOR, Money } from '@det/backend-shared-ddd';
-import { AppointmentId, ClientId, ServiceId, UserId, VehicleId } from '@det/shared-types';
+import { ClientId, ServiceId, UserId, VehicleId } from '@det/shared-types';
 
 import {
   createSchedulingTestSchema,
   outboxEventTypes,
+  outboxEvents,
+  PostgresAppointmentReadPort,
   PostgresBayReadPort,
   PostgresBayRepository,
   PostgresBranchReadPort,
@@ -47,9 +51,11 @@ import {
   InMemoryCrmVehiclePort,
   InMemoryIamUserPort,
   QueueIdGenerator,
+  RecordingWorkOrderPort,
 } from './scheduling-test-primitives';
 import { AddBranchScheduleExceptionCommand } from '../../commands/add-branch-schedule-exception/add-branch-schedule-exception.command';
 import { AddMasterUnavailabilityCommand } from '../../commands/add-master-unavailability/add-master-unavailability.command';
+import { CompleteAppointmentCommand } from '../../commands/complete-appointment/complete-appointment.command';
 import { CreateAppointmentCommand } from '../../commands/create-appointment/create-appointment.command';
 import { CreateBayCommand } from '../../commands/create-bay/create-bay.command';
 import { CreateBranchCommand } from '../../commands/create-branch/create-branch.command';
@@ -61,10 +67,12 @@ import { RemoveMasterUnavailabilityCommand } from '../../commands/remove-master-
 import { RescheduleAppointmentCommand } from '../../commands/reschedule-appointment/reschedule-appointment.command';
 import { SetBranchScheduleCommand } from '../../commands/set-branch-schedule/set-branch-schedule.command';
 import { SetMasterScheduleCommand } from '../../commands/set-master-schedule/set-master-schedule.command';
+import { StartWorkCommand } from '../../commands/start-work/start-work.command';
 import { UpdateBayCommand } from '../../commands/update-bay/update-bay.command';
 import { UpdateBranchCommand } from '../../commands/update-branch/update-branch.command';
 import {
   APPOINTMENT_REPOSITORY,
+  APPOINTMENT_READ_PORT,
   BAY_READ_PORT,
   BAY_REPOSITORY,
   BAY_USAGE_PORT,
@@ -78,6 +86,7 @@ import {
   IAM_USER_PORT,
   MASTER_SCHEDULE_READ_PORT,
   MASTER_SCHEDULE_REPOSITORY,
+  WORK_ORDER_PORT,
 } from '../../di/tokens';
 import {
   BayInUseError,
@@ -90,18 +99,25 @@ import {
   ServiceInactiveError,
   SlotConflictError,
 } from '../../errors/application.errors';
+import { GetAvailableSlotsQuery } from '../../queries/get-available-slots/get-available-slots.query';
 import { GetBranchByIdQuery } from '../../queries/get-branch-by-id/get-branch-by-id.query';
 import { GetBranchScheduleQuery } from '../../queries/get-branch-schedule/get-branch-schedule.query';
 import { GetMasterScheduleQuery } from '../../queries/get-master-schedule/get-master-schedule.query';
+import { ListAppointmentsQuery } from '../../queries/list-appointments/list-appointments.query';
 import { ListBaysByBranchQuery } from '../../queries/list-bays-by-branch/list-bays-by-branch.query';
 import { ListBranchesQuery } from '../../queries/list-branches/list-branches.query';
 import { ListMastersByBranchQuery } from '../../queries/list-masters-by-branch/list-masters-by-branch.query';
+import { CloseAppointmentOnWorkOrderClosedSaga } from '../../sagas/close-appointment-on-work-order-closed.saga';
+import { WorkOrderClosedIntegrationEvent } from '../../sagas/work-order-closed.event';
 import { SchedulingApplicationModule } from '../../scheduling-application.module';
 
 import type {
   BayReadModel,
+  AvailableSlotReadModel,
+  AppointmentReadModel,
   BranchDetailReadModel,
   BranchScheduleReadModel,
+  CursorPaginatedResult,
   MasterReadModel,
   MasterScheduleReadModel,
   PaginatedResult,
@@ -175,6 +191,7 @@ describe('SchedulingApplicationModule integration', () => {
   let appointmentRepo: PostgresAppointmentRepository;
   let catalogServicePort: InMemoryCatalogServicePort;
   let crmVehiclePort: InMemoryCrmVehiclePort;
+  let workOrderPort: RecordingWorkOrderPort;
 
   beforeAll(async () => {
     container = await new GenericContainer('postgres:16-alpine')
@@ -214,6 +231,7 @@ describe('SchedulingApplicationModule integration', () => {
     appointmentRepo = new PostgresAppointmentRepository(client);
     catalogServicePort = new InMemoryCatalogServicePort();
     crmVehiclePort = new InMemoryCrmVehiclePort();
+    workOrderPort = new RecordingWorkOrderPort();
 
     moduleRef = await Test.createTestingModule({
       imports: [
@@ -221,6 +239,7 @@ describe('SchedulingApplicationModule integration', () => {
           { provide: BRANCH_REPOSITORY, useValue: branchRepo },
           { provide: BAY_REPOSITORY, useValue: bayRepo },
           { provide: APPOINTMENT_REPOSITORY, useValue: appointmentRepo },
+          { provide: APPOINTMENT_READ_PORT, useValue: new PostgresAppointmentReadPort(client) },
           { provide: BRANCH_SCHEDULE_REPOSITORY, useValue: branchScheduleRepo },
           { provide: MASTER_SCHEDULE_REPOSITORY, useValue: masterScheduleRepo },
           { provide: BRANCH_READ_PORT, useValue: new PostgresBranchReadPort(client) },
@@ -238,6 +257,7 @@ describe('SchedulingApplicationModule integration', () => {
           { provide: IAM_USER_PORT, useValue: iamUserPort },
           { provide: CATALOG_SERVICE_PORT, useValue: catalogServicePort },
           { provide: CRM_VEHICLE_PORT, useValue: crmVehiclePort },
+          { provide: WORK_ORDER_PORT, useValue: workOrderPort },
           { provide: CLOCK, useValue: new FixedClock(NOW) },
           { provide: ID_GENERATOR, useValue: idGen },
         ]),
@@ -622,6 +642,189 @@ describe('SchedulingApplicationModule integration', () => {
     );
 
     expect(result).toEqual({ ok: true, value: { id: APPOINTMENT_ID_3 } });
+  });
+
+  it('starts Appointment work, writes full AppointmentStarted event and is idempotent', async () => {
+    await seedAppointmentPrerequisites();
+    await createAppointment(
+      APPOINTMENT_ID_1,
+      APPOINTMENT_SERVICE_ID_1,
+      appointmentSlot('2026-01-05T10:00:00.000Z', '2026-01-05T11:00:00.000Z'),
+    );
+
+    const firstResult = await commandBus.execute<StartWorkCommand, AppointmentCommandResult<null>>(
+      new StartWorkCommand(APPOINTMENT_ID_1, ACTOR_ID),
+    );
+    const secondResult = await commandBus.execute<StartWorkCommand, AppointmentCommandResult<null>>(
+      new StartWorkCommand(APPOINTMENT_ID_1, ACTOR_ID),
+    );
+
+    expect(firstResult).toEqual({ ok: true, value: null });
+    expect(secondResult).toEqual({ ok: true, value: null });
+    const appointment = await appointmentRepo.findById(APPOINTMENT_ID_1);
+    expect(appointment?.toSnapshot().status).toBe(AppointmentStatus.IN_PROGRESS);
+
+    const events = await outboxEvents(client);
+    const startedEvents = events.filter((event) => event.event_type === 'AppointmentStarted');
+    expect(startedEvents).toHaveLength(1);
+    expect(startedEvents[0]?.payload).toMatchObject({
+      appointmentId: APPOINTMENT_ID_1,
+      branchId: BRANCH_ID_1,
+      clientId: CLIENT_ID,
+      masterId: MASTER_ID,
+      services: [
+        expect.objectContaining({
+          durationMinutes: 60,
+          priceCents: '150000',
+          serviceId: SERVICE_ID,
+          serviceName: 'Полировка',
+        }),
+      ],
+      vehicleId: VEHICLE_ID,
+    });
+  });
+
+  it('completes Appointment and is idempotent', async () => {
+    await seedAppointmentPrerequisites();
+    await createAppointment(
+      APPOINTMENT_ID_1,
+      APPOINTMENT_SERVICE_ID_1,
+      appointmentSlot('2026-01-05T10:00:00.000Z', '2026-01-05T11:00:00.000Z'),
+    );
+    await commandBus.execute(new StartWorkCommand(APPOINTMENT_ID_1, ACTOR_ID));
+
+    const completedAt = DateTime.from('2026-01-05T12:00:00.000Z');
+    const firstResult = await commandBus.execute<
+      CompleteAppointmentCommand,
+      AppointmentCommandResult<null>
+    >(new CompleteAppointmentCommand(APPOINTMENT_ID_1, completedAt));
+    const secondResult = await commandBus.execute<
+      CompleteAppointmentCommand,
+      AppointmentCommandResult<null>
+    >(new CompleteAppointmentCommand(APPOINTMENT_ID_1, completedAt));
+
+    expect(firstResult).toEqual({ ok: true, value: null });
+    expect(secondResult).toEqual({ ok: true, value: null });
+    const appointment = await appointmentRepo.findById(APPOINTMENT_ID_1);
+    expect(appointment?.toSnapshot().status).toBe(AppointmentStatus.COMPLETED);
+    const eventTypes = await outboxEventTypes(client);
+    expect(eventTypes.filter((eventType) => eventType === 'AppointmentCompleted')).toHaveLength(1);
+  });
+
+  it('completes Appointment from synthetic WorkOrderClosed event', async () => {
+    await seedAppointmentPrerequisites();
+    await createAppointment(
+      APPOINTMENT_ID_1,
+      APPOINTMENT_SERVICE_ID_1,
+      appointmentSlot('2026-01-05T10:00:00.000Z', '2026-01-05T11:00:00.000Z'),
+    );
+    await commandBus.execute(new StartWorkCommand(APPOINTMENT_ID_1, ACTOR_ID));
+
+    await moduleRef
+      .get(CloseAppointmentOnWorkOrderClosedSaga)
+      .handle(
+        new WorkOrderClosedIntegrationEvent(
+          'feedfeed-feed-4fee-8fee-feedfeedfeed',
+          APPOINTMENT_ID_1,
+          '2026-01-05T12:00:00.000Z',
+        ),
+      );
+
+    const appointment = await appointmentRepo.findById(APPOINTMENT_ID_1);
+    expect(appointment?.toSnapshot().status).toBe(AppointmentStatus.COMPLETED);
+  });
+
+  it('lists Appointments with filters and cursor pagination', async () => {
+    await seedAppointmentPrerequisites();
+    idGen.reset([
+      APPOINTMENT_SERVICE_ID_1,
+      APPOINTMENT_ID_1,
+      APPOINTMENT_SERVICE_ID_2,
+      APPOINTMENT_ID_2,
+    ]);
+    await commandBus.execute(
+      new CreateAppointmentCommand(
+        CLIENT_ID,
+        VEHICLE_ID,
+        BRANCH_ID_1,
+        MASTER_ID,
+        [SERVICE_ID],
+        appointmentSlot('2026-01-05T10:00:00.000Z', '2026-01-05T11:00:00.000Z'),
+        BAY_ID_1,
+        ACTOR_ID,
+        'ONLINE',
+      ),
+    );
+    await commandBus.execute(
+      new CreateAppointmentCommand(
+        CLIENT_ID,
+        VEHICLE_ID,
+        BRANCH_ID_1,
+        MASTER_ID,
+        [SERVICE_ID],
+        appointmentSlot('2026-01-05T11:00:00.000Z', '2026-01-05T12:00:00.000Z'),
+        BAY_ID_1,
+        ACTOR_ID,
+        'ONLINE',
+      ),
+    );
+
+    const firstPage = await queryBus.execute<
+      ListAppointmentsQuery,
+      CursorPaginatedResult<AppointmentReadModel>
+    >(
+      new ListAppointmentsQuery(
+        {
+          branchId: BRANCH_ID_1,
+          dateRange: {
+            from: '2026-01-05T00:00:00.000Z',
+            to: '2026-01-06T00:00:00.000Z',
+          },
+          masterId: MASTER_ID,
+          status: AppointmentStatus.CONFIRMED,
+        },
+        1,
+      ),
+    );
+    expect(firstPage.items).toHaveLength(1);
+    expect(firstPage.items[0]?.id).toBe(APPOINTMENT_ID_1);
+    expect(firstPage.nextCursor).not.toBeNull();
+
+    const secondPage = await queryBus.execute<
+      ListAppointmentsQuery,
+      CursorPaginatedResult<AppointmentReadModel>
+    >(
+      new ListAppointmentsQuery(
+        { branchId: BRANCH_ID_1, masterId: MASTER_ID, status: AppointmentStatus.CONFIRMED },
+        1,
+        firstPage.nextCursor ?? undefined,
+      ),
+    );
+    expect(secondPage.items[0]?.id).toBe(APPOINTMENT_ID_2);
+    expect(secondPage.nextCursor).toBeNull();
+  });
+
+  it('returns available slots excluding booked Appointment', async () => {
+    await seedAppointmentPrerequisites();
+    await createAppointment(
+      APPOINTMENT_ID_1,
+      APPOINTMENT_SERVICE_ID_1,
+      appointmentSlot('2026-01-05T10:00:00.000Z', '2026-01-05T11:00:00.000Z'),
+    );
+
+    const slots = await queryBus.execute<GetAvailableSlotsQuery, readonly AvailableSlotReadModel[]>(
+      new GetAvailableSlotsQuery({
+        bodyType: 'SEDAN',
+        branchId: BRANCH_ID_1,
+        from: DateTime.from('2026-01-05T09:00:00.000Z'),
+        masterId: MASTER_ID,
+        services: [SERVICE_ID],
+        to: DateTime.from('2026-01-05T13:00:00.000Z'),
+      }),
+    );
+
+    expect(slots.map((slot) => slot.slotStart)).toContain('2026-01-05T11:00:00.000Z');
+    expect(slots.map((slot) => slot.slotStart)).not.toContain('2026-01-05T10:00:00.000Z');
   });
 
   it('returns branches with pagination, details and ListMastersByBranch IAM enrichment', async () => {
