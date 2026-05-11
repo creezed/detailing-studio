@@ -1,0 +1,7 @@
+export enum WorkOrderStatus {
+  OPEN = 'OPEN',
+  IN_PROGRESS = 'IN_PROGRESS',
+  AWAITING_REVIEW = 'AWAITING_REVIEW',
+  CLOSED = 'CLOSED',
+  CANCELLED = 'CANCELLED',
+}

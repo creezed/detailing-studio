@@ -1,0 +1,35 @@
+{
+  "name": "work-order-domain",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/work-order/domain/src",
+  "projectType": "library",
+  "tags": [
+    "scope:work-order",
+    "type:domain",
+    "platform:node"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/work-order/domain/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/work-order/domain/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/work-order/domain/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}
