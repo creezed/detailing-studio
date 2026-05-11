@@ -131,7 +131,12 @@ describe('WorkOrder Application', () => {
           },
           {
             provide: INVENTORY_STOCK_PORT,
-            useValue: { getCurrentQuantity: () => Promise.resolve(null) },
+            useValue: {
+              getCurrentQuantity: () => Promise.resolve(null),
+              canConsume: () => Promise.resolve(true),
+              consume: () => Promise.resolve({ ok: true }),
+              compensate: () => Promise.resolve(),
+            },
           },
         ]),
       ],

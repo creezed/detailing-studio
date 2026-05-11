@@ -4,6 +4,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { AddConsumptionHandler } from './commands/add-consumption/add-consumption.handler';
 import { AddPhotoHandler } from './commands/add-photo/add-photo.handler';
 import { CancelWorkOrderHandler } from './commands/cancel-work-order/cancel-work-order.handler';
+import { CloseWorkOrderHandler } from './commands/close-work-order/close-work-order.handler';
 import { OpenWorkOrderHandler } from './commands/open-work-order/open-work-order.handler';
 import { RemoveConsumptionLineHandler } from './commands/remove-consumption-line/remove-consumption-line.handler';
 import { RemovePhotoHandler } from './commands/remove-photo/remove-photo.handler';
@@ -30,6 +31,7 @@ const COMMAND_HANDLERS = [
   SubmitForReviewHandler,
   ReturnToInProgressHandler,
   CancelWorkOrderHandler,
+  CloseWorkOrderHandler,
 ];
 
 const QUERY_HANDLERS = [

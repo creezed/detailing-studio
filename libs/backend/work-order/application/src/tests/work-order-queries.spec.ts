@@ -161,6 +161,18 @@ class InMemoryInventoryStockPort implements IInventoryStockPort {
   getCurrentQuantity(branchId: string, skuId: string): Promise<Quantity | null> {
     return Promise.resolve(this._stock.get(`${branchId}:${skuId}`) ?? null);
   }
+
+  canConsume(): Promise<boolean> {
+    return Promise.resolve(true);
+  }
+
+  consume(): Promise<{ ok: boolean }> {
+    return Promise.resolve({ ok: true });
+  }
+
+  compensate(): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 class InMemoryWorkOrderReadPort implements IWorkOrderReadPort {
