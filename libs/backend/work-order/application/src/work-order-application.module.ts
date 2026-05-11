@@ -10,6 +10,13 @@ import { RemovePhotoHandler } from './commands/remove-photo/remove-photo.handler
 import { ReturnToInProgressHandler } from './commands/return-to-in-progress/return-to-in-progress.handler';
 import { SubmitForReviewHandler } from './commands/submit-for-review/submit-for-review.handler';
 import { UpdateConsumptionLineHandler } from './commands/update-consumption-line/update-consumption-line.handler';
+import { GetClientWorkOrdersHandler } from './queries/get-client-work-orders/get-client-work-orders.handler';
+import { GetCurrentStockForBranchHandler } from './queries/get-current-stock/get-current-stock.handler';
+import { GetMyWorkOrdersHandler } from './queries/get-my-work-orders/get-my-work-orders.handler';
+import { GetNormDeviationReportHandler } from './queries/get-norm-deviation-report/get-norm-deviation-report.handler';
+import { GetWorkOrderByAppointmentHandler } from './queries/get-work-order-by-appointment/get-work-order-by-appointment.handler';
+import { GetWorkOrderByIdHandler } from './queries/get-work-order-by-id/get-work-order-by-id.handler';
+import { ListWorkOrdersHandler } from './queries/list-work-orders/list-work-orders.handler';
 
 import type { DynamicModule, ModuleMetadata, Provider } from '@nestjs/common';
 
@@ -25,6 +32,16 @@ const COMMAND_HANDLERS = [
   CancelWorkOrderHandler,
 ];
 
+const QUERY_HANDLERS = [
+  ListWorkOrdersHandler,
+  GetWorkOrderByIdHandler,
+  GetWorkOrderByAppointmentHandler,
+  GetMyWorkOrdersHandler,
+  GetClientWorkOrdersHandler,
+  GetNormDeviationReportHandler,
+  GetCurrentStockForBranchHandler,
+];
+
 @Module({
   imports: [CqrsModule],
   exports: [CqrsModule],
@@ -38,7 +55,7 @@ export class WorkOrderApplicationModule {
       exports: [CqrsModule, ...providers],
       imports: [CqrsModule, ...imports],
       module: WorkOrderApplicationModule,
-      providers: [...providers, ...COMMAND_HANDLERS],
+      providers: [...providers, ...COMMAND_HANDLERS, ...QUERY_HANDLERS],
     };
   }
 }

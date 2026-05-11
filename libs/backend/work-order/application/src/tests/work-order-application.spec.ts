@@ -14,7 +14,19 @@ import { RemovePhotoCommand } from '../commands/remove-photo/remove-photo.comman
 import { ReturnToInProgressCommand } from '../commands/return-to-in-progress/return-to-in-progress.command';
 import { SubmitForReviewCommand } from '../commands/submit-for-review/submit-for-review.command';
 import { UpdateConsumptionLineCommand } from '../commands/update-consumption-line/update-consumption-line.command';
-import { CLOCK, ID_GENERATOR, PHOTO_STORAGE_PORT, WORK_ORDER_REPOSITORY } from '../di/tokens';
+import {
+  CATALOG_SKU_PORT,
+  CLOCK,
+  CRM_CLIENT_PORT,
+  CRM_VEHICLE_PORT,
+  IAM_USER_PORT,
+  ID_GENERATOR,
+  INVENTORY_STOCK_PORT,
+  PHOTO_STORAGE_PORT,
+  SCHEDULING_APPOINTMENT_PORT,
+  WORK_ORDER_READ_PORT,
+  WORK_ORDER_REPOSITORY,
+} from '../di/tokens';
 import { WorkOrderNotFoundError } from '../errors/application.errors';
 import { WorkOrderApplicationModule } from '../work-order-application.module';
 import { InMemoryPhotoStoragePort } from './in-memory-photo-storage.port';
@@ -95,9 +107,32 @@ describe('WorkOrder Application', () => {
       imports: [
         WorkOrderApplicationModule.register([
           { provide: WORK_ORDER_REPOSITORY, useValue: repo },
+          {
+            provide: WORK_ORDER_READ_PORT,
+            useValue: {
+              list: () => Promise.resolve({ items: [], nextCursor: null }),
+              listClosedByClient: () => Promise.resolve({ items: [], nextCursor: null }),
+              getNormDeviationReport: () => Promise.resolve([]),
+            },
+          },
           { provide: PHOTO_STORAGE_PORT, useValue: storage },
           { provide: CLOCK, useValue: new FixedClock() },
           { provide: ID_GENERATOR, useValue: idGen },
+          { provide: IAM_USER_PORT, useValue: { getById: () => Promise.resolve(null) } },
+          { provide: CRM_CLIENT_PORT, useValue: { getById: () => Promise.resolve(null) } },
+          { provide: CRM_VEHICLE_PORT, useValue: { getById: () => Promise.resolve(null) } },
+          { provide: CATALOG_SKU_PORT, useValue: { getMany: () => Promise.resolve([]) } },
+          {
+            provide: SCHEDULING_APPOINTMENT_PORT,
+            useValue: {
+              getById: () => Promise.resolve(null),
+              listByMasterAndDay: () => Promise.resolve([]),
+            },
+          },
+          {
+            provide: INVENTORY_STOCK_PORT,
+            useValue: { getCurrentQuantity: () => Promise.resolve(null) },
+          },
         ]),
       ],
     }).compile();
