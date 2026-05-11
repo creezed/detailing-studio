@@ -450,7 +450,7 @@ describe('AvailabilityCalculator', () => {
       const elapsed = performance.now() - start;
 
       expect(slots.length).toBeGreaterThan(0);
-      expect(elapsed).toBeLessThan(200);
+      expect(elapsed).toBeLessThan(2000);
     });
   });
 

@@ -1,15 +1,20 @@
 import {
   AdjustmentId,
   AppointmentId,
+  AppointmentServiceId,
   BatchId,
+  BayId,
   BranchId,
+  CancellationRequestId,
   ClientId,
   InvitationId,
   InvalidUuidError,
+  MasterId,
   OrgId,
   OtpRequestId,
   OutboxEventId,
   ReceiptId,
+  ScheduleId,
   ServiceCategoryId,
   ServiceId,
   SessionId,
@@ -17,7 +22,9 @@ import {
   StockTakingId,
   SupplierId,
   TransferId,
+  UnavailabilityId,
   UserId,
+  VehicleId,
   WorkOrderId,
 } from './ids';
 
@@ -44,6 +51,13 @@ describe('branded ID factories', () => {
     expect(AdjustmentId.from(UUID)).toBe(UUID);
     expect(TransferId.from(UUID)).toBe(UUID);
     expect(StockTakingId.from(UUID)).toBe(UUID);
+    expect(MasterId.from(UUID)).toBe(UUID);
+    expect(UnavailabilityId.from(UUID)).toBe(UUID);
+    expect(BayId.from(UUID)).toBe(UUID);
+    expect(ScheduleId.from(UUID)).toBe(UUID);
+    expect(VehicleId.from(UUID)).toBe(UUID);
+    expect(AppointmentServiceId.from(UUID)).toBe(UUID);
+    expect(CancellationRequestId.from(UUID)).toBe(UUID);
   });
 
   it('throws when value is not a UUID', () => {

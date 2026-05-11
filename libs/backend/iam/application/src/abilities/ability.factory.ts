@@ -39,6 +39,10 @@ export type AppSubjectName =
   | 'Consent'
   | 'VisitHistory'
   | 'PiiAccessLog'
+  | 'Branch'
+  | 'Bay'
+  | 'BranchSchedule'
+  | 'MasterSchedule'
   | 'all';
 
 type AppResourceSubjectName = Exclude<AppSubjectName, 'all'>;
@@ -84,6 +88,10 @@ export class AbilityFactory {
     }
 
     if (user.role === Role.MANAGER) {
+      can(['read', 'create', 'update'], 'Branch', { branchId: { $in: branchIds } });
+      can(['read', 'create', 'update'], 'Bay', { branchId: { $in: branchIds } });
+      can(['read', 'update'], 'BranchSchedule', { branchId: { $in: branchIds } });
+      can(['read', 'update'], 'MasterSchedule', { branchId: { $in: branchIds } });
       can('manage', 'Appointment', { branchId: { $in: branchIds } });
       can(['read', 'create', 'update'], 'Client');
       can(['read', 'create', 'update'], 'Vehicle');
@@ -138,6 +146,7 @@ export class AbilityFactory {
       can('export-data', 'Client', { clientId: user.id });
       can('read', 'Service');
       can('read', 'ServiceCategory');
+      can('read', 'Branch');
     }
 
     return build();
