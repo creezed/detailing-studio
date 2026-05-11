@@ -8,6 +8,7 @@ import { CloseWorkOrderHandler } from './commands/close-work-order/close-work-or
 import { OpenWorkOrderHandler } from './commands/open-work-order/open-work-order.handler';
 import { RemoveConsumptionLineHandler } from './commands/remove-consumption-line/remove-consumption-line.handler';
 import { RemovePhotoHandler } from './commands/remove-photo/remove-photo.handler';
+import { ReopenWorkOrderHandler } from './commands/reopen-work-order/reopen-work-order.handler';
 import { ReturnToInProgressHandler } from './commands/return-to-in-progress/return-to-in-progress.handler';
 import { SubmitForReviewHandler } from './commands/submit-for-review/submit-for-review.handler';
 import { UpdateConsumptionLineHandler } from './commands/update-consumption-line/update-consumption-line.handler';
@@ -32,6 +33,7 @@ const COMMAND_HANDLERS = [
   ReturnToInProgressHandler,
   CancelWorkOrderHandler,
   CloseWorkOrderHandler,
+  ReopenWorkOrderHandler,
 ];
 
 const QUERY_HANDLERS = [

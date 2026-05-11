@@ -8,6 +8,7 @@ export { SubmitForReviewCommand } from './commands/submit-for-review/submit-for-
 export { ReturnToInProgressCommand } from './commands/return-to-in-progress/return-to-in-progress.command';
 export { CancelWorkOrderCommand } from './commands/cancel-work-order/cancel-work-order.command';
 export { CloseWorkOrderCommand } from './commands/close-work-order/close-work-order.command';
+export { ReopenWorkOrderCommand } from './commands/reopen-work-order/reopen-work-order.command';
 
 export { ListWorkOrdersQuery } from './queries/list-work-orders/list-work-orders.query';
 export { GetWorkOrderByIdQuery } from './queries/get-work-order-by-id/get-work-order-by-id.query';

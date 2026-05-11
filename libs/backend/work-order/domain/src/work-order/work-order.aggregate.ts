@@ -411,6 +411,7 @@ export class WorkOrder extends AggregateRoot<WorkOrderId> {
       WorkOrderStatus.OPEN,
       WorkOrderStatus.IN_PROGRESS,
       WorkOrderStatus.AWAITING_REVIEW,
+      WorkOrderStatus.CLOSING,
     ]);
     this._status = WorkOrderStatus.CANCELLED;
     this._cancellationReason = reason;

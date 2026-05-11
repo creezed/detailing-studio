@@ -452,6 +452,28 @@ describe('WorkOrder aggregate', () => {
       expect(wo.status).toBe(WorkOrderStatus.CANCELLED);
     });
 
+    it('should cancel from CLOSING', () => {
+      const snapshot = new WorkOrderBuilder().withIdGen(idGen).build().toSnapshot();
+      const wo = WorkOrder.restore({ ...snapshot, status: WorkOrderStatus.CLOSING });
+      wo.pullDomainEvents();
+
+      wo.cancel('abort closing', 'manager-1', NOW);
+
+      expect(wo.status).toBe(WorkOrderStatus.CANCELLED);
+      const events = wo.pullDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(WorkOrderCancelled);
+    });
+
+    it('should throw from CLOSED (must reopen first)', () => {
+      const snapshot = new WorkOrderBuilder().withIdGen(idGen).build().toSnapshot();
+      const closed = WorkOrder.restore({ ...snapshot, status: WorkOrderStatus.CLOSED });
+
+      expect(() => {
+        closed.cancel('reason', 'user-1', NOW);
+      }).toThrow(InvalidStateTransitionError);
+    });
+
     it('should throw from CANCELLED (terminal)', () => {
       const wo = new WorkOrderBuilder().withIdGen(idGen).build();
       wo.cancel('reason', 'user-1', NOW);

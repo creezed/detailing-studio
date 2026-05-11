@@ -5,15 +5,15 @@ import type { IClock, IIdGenerator } from '@det/backend-shared-ddd';
 import { WorkOrderId, WorkOrderStatus } from '@det/backend-work-order-domain';
 import type { IWorkOrderRepository } from '@det/backend-work-order-domain';
 
-import { CancelWorkOrderCommand } from './cancel-work-order.command';
+import { ReopenWorkOrderCommand } from './reopen-work-order.command';
 import { CLOCK, ID_GENERATOR, INVENTORY_STOCK_PORT, WORK_ORDER_REPOSITORY } from '../../di/tokens';
 import { WorkOrderNotFoundError } from '../../errors/application.errors';
 
 import type { IInventoryStockPort } from '../../ports/inventory-stock.port';
 import type { ICommandHandler } from '@nestjs/cqrs';
 
-@CommandHandler(CancelWorkOrderCommand)
-export class CancelWorkOrderHandler implements ICommandHandler<CancelWorkOrderCommand, void> {
+@CommandHandler(ReopenWorkOrderCommand)
+export class ReopenWorkOrderHandler implements ICommandHandler<ReopenWorkOrderCommand, void> {
   constructor(
     @Inject(WORK_ORDER_REPOSITORY) private readonly _repo: IWorkOrderRepository,
     @Inject(CLOCK) private readonly _clock: IClock,
@@ -21,29 +21,31 @@ export class CancelWorkOrderHandler implements ICommandHandler<CancelWorkOrderCo
     @Inject(INVENTORY_STOCK_PORT) private readonly _stock: IInventoryStockPort,
   ) {}
 
-  async execute(cmd: CancelWorkOrderCommand): Promise<void> {
+  async execute(cmd: ReopenWorkOrderCommand): Promise<void> {
     const wo = await this._repo.findById(WorkOrderId.from(cmd.workOrderId));
     if (!wo) {
       throw new WorkOrderNotFoundError(cmd.workOrderId);
     }
 
     const snapshot = wo.toSnapshot();
-    const wasClosing = snapshot.status === WorkOrderStatus.CLOSING;
 
-    wo.cancel(cmd.reason, cmd.by, this._clock.now());
+    if (snapshot.status === WorkOrderStatus.IN_PROGRESS) {
+      return;
+    }
 
-    if (wasClosing) {
-      const cancelAttemptId = this._idGen.generate();
-      const linesToCompensate = snapshot.lines.filter((l) => l.actualAmount > 0);
+    const now = this._clock.now();
+    wo.reopen(cmd.by, cmd.reason, now);
 
-      for (const line of linesToCompensate) {
-        await this._stock.compensate({
-          sourceType: 'WORK_ORDER',
-          sourceDocId: cmd.workOrderId,
-          sourceLineId: line.id,
-          idempotencyKey: `WO:${cmd.workOrderId}:${line.id}:cancel:${cancelAttemptId}`,
-        });
-      }
+    const reopenAttemptId = this._idGen.generate();
+    const linesToCompensate = snapshot.lines.filter((l) => l.actualAmount > 0);
+
+    for (const line of linesToCompensate) {
+      await this._stock.compensate({
+        sourceType: 'WORK_ORDER',
+        sourceDocId: cmd.workOrderId,
+        sourceLineId: line.id,
+        idempotencyKey: `WO:${cmd.workOrderId}:${line.id}:reopen:${reopenAttemptId}`,
+      });
     }
 
     await this._repo.save(wo);
