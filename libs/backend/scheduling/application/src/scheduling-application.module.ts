@@ -1,0 +1,67 @@
+import { Module } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
+
+import { AddBranchScheduleExceptionHandler } from './commands/add-branch-schedule-exception/add-branch-schedule-exception.handler';
+import { AddMasterUnavailabilityHandler } from './commands/add-master-unavailability/add-master-unavailability.handler';
+import { CreateBayHandler } from './commands/create-bay/create-bay.handler';
+import { CreateBranchHandler } from './commands/create-branch/create-branch.handler';
+import { DeactivateBayHandler } from './commands/deactivate-bay/deactivate-bay.handler';
+import { DeactivateBranchHandler } from './commands/deactivate-branch/deactivate-branch.handler';
+import { ReactivateBranchHandler } from './commands/reactivate-branch/reactivate-branch.handler';
+import { RemoveBranchScheduleExceptionHandler } from './commands/remove-branch-schedule-exception/remove-branch-schedule-exception.handler';
+import { RemoveMasterUnavailabilityHandler } from './commands/remove-master-unavailability/remove-master-unavailability.handler';
+import { SetBranchScheduleHandler } from './commands/set-branch-schedule/set-branch-schedule.handler';
+import { SetMasterScheduleHandler } from './commands/set-master-schedule/set-master-schedule.handler';
+import { UpdateBayHandler } from './commands/update-bay/update-bay.handler';
+import { UpdateBranchHandler } from './commands/update-branch/update-branch.handler';
+import { GetBranchByIdHandler } from './queries/get-branch-by-id/get-branch-by-id.handler';
+import { GetBranchScheduleHandler } from './queries/get-branch-schedule/get-branch-schedule.handler';
+import { GetMasterScheduleHandler } from './queries/get-master-schedule/get-master-schedule.handler';
+import { ListBaysByBranchHandler } from './queries/list-bays-by-branch/list-bays-by-branch.handler';
+import { ListBranchesHandler } from './queries/list-branches/list-branches.handler';
+import { ListMastersByBranchHandler } from './queries/list-masters-by-branch/list-masters-by-branch.handler';
+
+import type { DynamicModule, ModuleMetadata, Provider } from '@nestjs/common';
+
+const COMMAND_HANDLERS = [
+  CreateBranchHandler,
+  UpdateBranchHandler,
+  DeactivateBranchHandler,
+  ReactivateBranchHandler,
+  CreateBayHandler,
+  UpdateBayHandler,
+  DeactivateBayHandler,
+  SetBranchScheduleHandler,
+  AddBranchScheduleExceptionHandler,
+  RemoveBranchScheduleExceptionHandler,
+  SetMasterScheduleHandler,
+  AddMasterUnavailabilityHandler,
+  RemoveMasterUnavailabilityHandler,
+];
+
+const QUERY_HANDLERS = [
+  ListBranchesHandler,
+  GetBranchByIdHandler,
+  GetBranchScheduleHandler,
+  ListBaysByBranchHandler,
+  GetMasterScheduleHandler,
+  ListMastersByBranchHandler,
+];
+
+@Module({
+  imports: [CqrsModule],
+  exports: [CqrsModule],
+})
+export class SchedulingApplicationModule {
+  static register(
+    providers: readonly Provider[],
+    imports: NonNullable<ModuleMetadata['imports']> = [],
+  ): DynamicModule {
+    return {
+      exports: [CqrsModule, ...providers],
+      imports: [CqrsModule, ...imports],
+      module: SchedulingApplicationModule,
+      providers: [...providers, ...COMMAND_HANDLERS, ...QUERY_HANDLERS],
+    };
+  }
+}

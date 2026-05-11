@@ -1,0 +1,17 @@
+import { CLOCK, ID_GENERATOR } from '@det/backend-shared-ddd';
+
+export const BRANCH_REPOSITORY = Symbol('BRANCH_REPOSITORY');
+export const BAY_REPOSITORY = Symbol('BAY_REPOSITORY');
+export const BRANCH_SCHEDULE_REPOSITORY = Symbol('BRANCH_SCHEDULE_REPOSITORY');
+export const MASTER_SCHEDULE_REPOSITORY = Symbol('MASTER_SCHEDULE_REPOSITORY');
+
+export const BRANCH_READ_PORT = Symbol('BRANCH_READ_PORT');
+export const BAY_READ_PORT = Symbol('BAY_READ_PORT');
+export const BRANCH_SCHEDULE_READ_PORT = Symbol('BRANCH_SCHEDULE_READ_PORT');
+export const MASTER_SCHEDULE_READ_PORT = Symbol('MASTER_SCHEDULE_READ_PORT');
+
+export const BRANCH_USAGE_PORT = Symbol('BRANCH_USAGE_PORT');
+export const BAY_USAGE_PORT = Symbol('BAY_USAGE_PORT');
+export const IAM_USER_PORT = Symbol('IAM_USER_PORT');
+
+export { CLOCK, ID_GENERATOR };
