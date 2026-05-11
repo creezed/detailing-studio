@@ -1,5 +1,6 @@
 import { DomainError } from '@det/backend-shared-ddd';
 
+import type { WorkOrderClosingViolation } from '../services/closing-validator';
 import type { WorkOrderStatus } from '../value-objects/work-order-status';
 
 export class InvalidStateTransitionError extends DomainError {
@@ -59,5 +60,23 @@ export class InvalidOperationError extends DomainError {
 
   constructor(public readonly detail: string) {
     super(detail);
+  }
+}
+
+export class WorkOrderClosingValidationError extends DomainError {
+  readonly code = 'WORK_ORDER_CLOSING_VALIDATION';
+  readonly httpStatus = 422;
+
+  constructor(public readonly violations: readonly WorkOrderClosingViolation[]) {
+    super(`Cannot close work order: ${String(violations.length)} violation(s)`);
+  }
+}
+
+export class EmptyReopenReasonError extends DomainError {
+  readonly code = 'EMPTY_REOPEN_REASON';
+  readonly httpStatus = 422;
+
+  constructor() {
+    super('Reopen reason must not be empty');
   }
 }

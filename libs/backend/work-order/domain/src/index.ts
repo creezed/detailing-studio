@@ -7,6 +7,9 @@ export * from './value-objects/photo-ref.value-object';
 export * from './value-objects/work-order-service-snapshot';
 export * from './value-objects/material-norm-snapshot';
 
+export * from './services/norm-deviation-calculator';
+export * from './services/closing-validator';
+
 export * from './work-order/state-transitions';
 export * from './work-order/consumption-line.entity';
 export * from './work-order/work-order.aggregate';

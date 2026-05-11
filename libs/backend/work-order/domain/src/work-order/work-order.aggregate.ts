@@ -5,19 +5,23 @@ import { ConsumptionLine } from './consumption-line.entity';
 import { canTransition } from './state-transitions';
 import {
   ConsumptionLineNotFoundError,
+  EmptyReopenReasonError,
   InvalidOperationError,
   InvalidStateTransitionError,
   PhotoLimitExceededError,
   ServicesEmptyError,
+  WorkOrderClosingValidationError,
 } from './work-order.errors';
 import {
   WorkOrderCancelled,
+  WorkOrderClosed,
   WorkOrderConsumptionAdded,
   WorkOrderConsumptionRemoved,
   WorkOrderConsumptionUpdated,
   WorkOrderOpened,
   WorkOrderPhotoAdded,
   WorkOrderPhotoRemoved,
+  WorkOrderReopened,
   WorkOrderReturnedToInProgress,
   WorkOrderSubmittedForReview,
 } from './work-order.events';
@@ -27,7 +31,8 @@ import { WorkOrderId } from '../value-objects/work-order-id';
 import { WorkOrderStatus } from '../value-objects/work-order-status';
 
 import type { ConsumptionLineSnapshot } from './consumption-line.entity';
-import type { MaterialNormSnapshotData } from './work-order.events';
+import type { ClosedConsumptionLineData, MaterialNormSnapshotData } from './work-order.events';
+import type { ClosingValidator } from '../services/closing-validator';
 import type { MaterialNormSnapshot } from '../value-objects/material-norm-snapshot';
 import type { PhotoRef } from '../value-objects/photo-ref.value-object';
 import type {
@@ -83,7 +88,7 @@ export class WorkOrder extends AggregateRoot<WorkOrderId> {
     private readonly _photosAfter: PhotoRef[],
     private _status: WorkOrderStatus,
     private readonly _openedAt: DateTime,
-    private readonly _closedAt: DateTime | null,
+    private _closedAt: DateTime | null,
     private _cancellationReason: string | null,
     private readonly _version: number,
   ) {
@@ -333,6 +338,57 @@ export class WorkOrder extends AggregateRoot<WorkOrderId> {
     }
     this._status = WorkOrderStatus.IN_PROGRESS;
     this.addEvent(new WorkOrderReturnedToInProgress(this._id, by, reason, now));
+  }
+
+  close(closedAt: DateTime, validator: ClosingValidator): void {
+    this.assertStatusIn([WorkOrderStatus.IN_PROGRESS, WorkOrderStatus.AWAITING_REVIEW]);
+
+    const violations = validator.validate(this);
+    if (violations.length > 0) {
+      throw new WorkOrderClosingValidationError(violations);
+    }
+
+    this._status = WorkOrderStatus.CLOSED;
+    this._closedAt = closedAt;
+
+    const lineData: ClosedConsumptionLineData[] = this._lines.map((l) => ({
+      lineId: l.id,
+      skuId: l.skuId,
+      actualAmount: l.actualAmount.amount,
+      actualUnit: l.actualAmount.unit,
+      normAmount: l.normAmount.amount,
+      normUnit: l.normAmount.unit,
+      deviationRatio: l.currentDeviationRatio(),
+    }));
+
+    this.addEvent(
+      new WorkOrderClosed(
+        this._id,
+        this._appointmentId,
+        this._branchId,
+        this._masterId,
+        this._clientId,
+        this._vehicleId,
+        [...this._services],
+        lineData,
+        this._photosBefore.length,
+        this._photosAfter.length,
+        closedAt,
+      ),
+    );
+  }
+
+  reopen(by: string, reason: string, now: DateTime): void {
+    this.assertTransition(WorkOrderStatus.IN_PROGRESS);
+    if (this._status !== WorkOrderStatus.CLOSED) {
+      throw new InvalidStateTransitionError(this._status, WorkOrderStatus.IN_PROGRESS);
+    }
+    if (!reason.trim()) {
+      throw new EmptyReopenReasonError();
+    }
+    this._status = WorkOrderStatus.IN_PROGRESS;
+    this._closedAt = null;
+    this.addEvent(new WorkOrderReopened(this._id, by, reason, now));
   }
 
   cancel(reason: string, by: string, now: DateTime): void {

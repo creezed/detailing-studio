@@ -146,3 +146,46 @@ export class WorkOrderCancelled extends DomainEvent {
     super(woEventProps(workOrderId, 'WorkOrderCancelled', cancelledAt));
   }
 }
+
+export interface ClosedConsumptionLineData {
+  readonly lineId: string;
+  readonly skuId: string;
+  readonly actualAmount: number;
+  readonly actualUnit: string;
+  readonly normAmount: number;
+  readonly normUnit: string;
+  readonly deviationRatio: number;
+}
+
+export class WorkOrderClosed extends DomainEvent {
+  readonly eventType = 'WorkOrderClosed';
+
+  constructor(
+    public readonly workOrderId: WorkOrderId,
+    public readonly appointmentId: string,
+    public readonly branchId: string,
+    public readonly masterId: string,
+    public readonly clientId: string,
+    public readonly vehicleId: string,
+    public readonly services: readonly WorkOrderServiceSnapshotData[],
+    public readonly lines: readonly ClosedConsumptionLineData[],
+    public readonly photosBeforeCount: number,
+    public readonly photosAfterCount: number,
+    public readonly closedAt: DateTime,
+  ) {
+    super(woEventProps(workOrderId, 'WorkOrderClosed', closedAt));
+  }
+}
+
+export class WorkOrderReopened extends DomainEvent {
+  readonly eventType = 'WorkOrderReopened';
+
+  constructor(
+    public readonly workOrderId: WorkOrderId,
+    public readonly reopenedBy: string,
+    public readonly reason: string,
+    public readonly reopenedAt: DateTime,
+  ) {
+    super(woEventProps(workOrderId, 'WorkOrderReopened', reopenedAt));
+  }
+}
