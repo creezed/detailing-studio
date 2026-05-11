@@ -7,6 +7,7 @@ export { RemoveConsumptionLineCommand } from './commands/remove-consumption-line
 export { SubmitForReviewCommand } from './commands/submit-for-review/submit-for-review.command';
 export { ReturnToInProgressCommand } from './commands/return-to-in-progress/return-to-in-progress.command';
 export { CancelWorkOrderCommand } from './commands/cancel-work-order/cancel-work-order.command';
+export { CloseWorkOrderCommand } from './commands/close-work-order/close-work-order.command';
 
 export { ListWorkOrdersQuery } from './queries/list-work-orders/list-work-orders.query';
 export { GetWorkOrderByIdQuery } from './queries/get-work-order-by-id/get-work-order-by-id.query';
@@ -31,7 +32,11 @@ export {
   ID_GENERATOR,
 } from './di/tokens';
 
-export { WorkOrderNotFoundError } from './errors/application.errors';
+export {
+  WorkOrderNotFoundError,
+  InsufficientStockForCloseError,
+} from './errors/application.errors';
+export type { InsufficientLineInfo } from './errors/application.errors';
 
 export { WorkOrderApplicationModule } from './work-order-application.module';
 
@@ -49,7 +54,12 @@ export type {
   ISchedulingAppointmentPort,
   SchedulingAppointmentReadModel,
 } from './ports/scheduling-appointment.port';
-export type { IInventoryStockPort } from './ports/inventory-stock.port';
+export type {
+  IInventoryStockPort,
+  ConsumeStockInput,
+  CompensateStockInput,
+  ConsumeStockResult,
+} from './ports/inventory-stock.port';
 export type {
   IWorkOrderReadPort,
   ListWorkOrdersFilter,
