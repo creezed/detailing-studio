@@ -29,6 +29,7 @@ export * from './dto/user-detail/user-detail.dto';
 export * from './errors/application.errors';
 export * from './iam-application.module';
 export type { IJwtIssuer, JwtPayload } from './ports/jwt-issuer/jwt-issuer.port';
+export type { IamUserPort, UserReadModel } from './ports/iam-user/iam-user.port';
 export type { IPasswordHasher } from './ports/password-hasher/password-hasher.port';
 export type { ISmsOtpPort } from './ports/sms-otp/sms-otp.port';
 export type { ITokenGenerator } from './ports/token-generator/token-generator.port';
