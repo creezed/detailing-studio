@@ -34,8 +34,24 @@ export * from './master-schedule/master-schedule.errors';
 export * from './master-schedule/master-schedule.events';
 export * from './master-schedule/master-schedule.repository';
 
+export * from './value-objects/appointment-id';
+export * from './value-objects/appointment-service-id';
+export * from './value-objects/cancellation-request-id';
+export * from './value-objects/appointment-status';
+export * from './value-objects/creation-channel';
+export * from './value-objects/time-slot.value-object';
+export * from './value-objects/appointment-service.value-object';
+
+export * from './appointment/appointment.aggregate';
+export * from './appointment/appointment.errors';
+export * from './appointment/appointment.events';
+export * from './appointment/appointment.repository';
+export * from './appointment/cancellation-request';
+export * from './appointment/state-transitions';
+
 export * from './testing/fake-id-generator';
 export * from './testing/branch.builder';
 export * from './testing/bay.builder';
 export * from './testing/branch-schedule.builder';
 export * from './testing/master-schedule.builder';
+export * from './testing/appointment.builder';
