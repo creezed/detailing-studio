@@ -6,9 +6,13 @@ import {
   InvalidStateTransitionError,
   ServicesEmptyError,
   PhotoLimitExceededError,
+  WorkOrderClosingValidationError,
 } from './work-order.errors';
 import {
   WorkOrderCancelled,
+  WorkOrderClosed,
+  WorkOrderClosingReverted,
+  WorkOrderClosingStarted,
   WorkOrderConsumptionAdded,
   WorkOrderConsumptionRemoved,
   WorkOrderConsumptionUpdated,
@@ -18,6 +22,7 @@ import {
   WorkOrderReturnedToInProgress,
   WorkOrderSubmittedForReview,
 } from './work-order.events';
+import { ClosingValidator } from '../services/closing-validator';
 import { FakeIdGenerator } from '../testing/fake-id-generator';
 import { buildPhotoRef, resetPhotoCounter } from '../testing/photo-ref.builder';
 import { WorkOrderBuilder } from '../testing/work-order.builder';
@@ -504,6 +509,174 @@ describe('WorkOrder aggregate', () => {
 
       expect(() => {
         closed.removePhoto('any-id', NOW);
+      }).toThrow(InvalidStateTransitionError);
+    });
+  });
+
+  // ─── CLOSING (two-phase) ─────────────────────────────────────────
+
+  describe('startClosing', () => {
+    const validator = new ClosingValidator();
+
+    function buildClosableWo(): WorkOrder {
+      const wo = new WorkOrderBuilder().withIdGen(idGen).build();
+      wo.addPhotoBefore(buildPhotoRef({ type: PhotoType.BEFORE }), NOW);
+      wo.addPhotoAfter(buildPhotoRef({ type: PhotoType.AFTER }), NOW);
+      wo.addConsumption(
+        '00000000-0000-4000-a000-111000000001',
+        Quantity.of(100, UnitOfMeasure.ML),
+        NOW,
+        idGen,
+      );
+      wo.addConsumption(
+        '00000000-0000-4000-a000-111000000002',
+        Quantity.of(2, UnitOfMeasure.PCS),
+        NOW,
+        idGen,
+      );
+      wo.submitForReview('master', NOW);
+      wo.pullDomainEvents();
+      return wo;
+    }
+
+    it('should transition AWAITING_REVIEW → CLOSING', () => {
+      const wo = buildClosableWo();
+      wo.startClosing(NOW, validator);
+
+      expect(wo.status).toBe(WorkOrderStatus.CLOSING);
+      const events = wo.pullDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(WorkOrderClosingStarted);
+    });
+
+    it('should transition IN_PROGRESS → CLOSING', () => {
+      const wo = buildClosableWo();
+      wo.returnToInProgress('manager', 'fix', NOW);
+      wo.pullDomainEvents();
+      wo.startClosing(NOW, validator);
+
+      expect(wo.status).toBe(WorkOrderStatus.CLOSING);
+    });
+
+    it('should reject from OPEN', () => {
+      const wo = new WorkOrderBuilder().withIdGen(idGen).build();
+      wo.pullDomainEvents();
+
+      expect(() => {
+        wo.startClosing(NOW, validator);
+      }).toThrow(InvalidStateTransitionError);
+    });
+
+    it('should reject when validation fails (no photos)', () => {
+      const wo = new WorkOrderBuilder().withIdGen(idGen).build();
+      wo.addConsumption(
+        '00000000-0000-4000-a000-111000000001',
+        Quantity.of(100, UnitOfMeasure.ML),
+        NOW,
+        idGen,
+      );
+      wo.submitForReview('master', NOW);
+      wo.pullDomainEvents();
+
+      expect(() => {
+        wo.startClosing(NOW, validator);
+      }).toThrow(WorkOrderClosingValidationError);
+    });
+  });
+
+  describe('finalizeClose', () => {
+    const validator = new ClosingValidator();
+
+    function buildClosingWo(): WorkOrder {
+      const wo = new WorkOrderBuilder().withIdGen(idGen).build();
+      wo.addPhotoBefore(buildPhotoRef({ type: PhotoType.BEFORE }), NOW);
+      wo.addPhotoAfter(buildPhotoRef({ type: PhotoType.AFTER }), NOW);
+      wo.addConsumption(
+        '00000000-0000-4000-a000-111000000001',
+        Quantity.of(100, UnitOfMeasure.ML),
+        NOW,
+        idGen,
+      );
+      wo.addConsumption(
+        '00000000-0000-4000-a000-111000000002',
+        Quantity.of(2, UnitOfMeasure.PCS),
+        NOW,
+        idGen,
+      );
+      wo.submitForReview('master', NOW);
+      wo.startClosing(NOW, validator);
+      wo.pullDomainEvents();
+      return wo;
+    }
+
+    it('should transition CLOSING → CLOSED with WorkOrderClosed event', () => {
+      const wo = buildClosingWo();
+      wo.finalizeClose(NOW);
+
+      expect(wo.status).toBe(WorkOrderStatus.CLOSED);
+      const events = wo.pullDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(WorkOrderClosed);
+    });
+
+    it('should set closedAt', () => {
+      const wo = buildClosingWo();
+      wo.finalizeClose(NOW);
+
+      expect(wo.toSnapshot().closedAt).toBe(NOW.iso());
+    });
+
+    it('should reject from non-CLOSING status', () => {
+      const wo = new WorkOrderBuilder().withIdGen(idGen).build();
+      wo.pullDomainEvents();
+
+      expect(() => {
+        wo.finalizeClose(NOW);
+      }).toThrow(InvalidStateTransitionError);
+    });
+  });
+
+  describe('revertClosing', () => {
+    const validator = new ClosingValidator();
+
+    function buildClosingWo(): WorkOrder {
+      const wo = new WorkOrderBuilder().withIdGen(idGen).build();
+      wo.addPhotoBefore(buildPhotoRef({ type: PhotoType.BEFORE }), NOW);
+      wo.addPhotoAfter(buildPhotoRef({ type: PhotoType.AFTER }), NOW);
+      wo.addConsumption(
+        '00000000-0000-4000-a000-111000000001',
+        Quantity.of(100, UnitOfMeasure.ML),
+        NOW,
+        idGen,
+      );
+      wo.addConsumption(
+        '00000000-0000-4000-a000-111000000002',
+        Quantity.of(2, UnitOfMeasure.PCS),
+        NOW,
+        idGen,
+      );
+      wo.submitForReview('master', NOW);
+      wo.startClosing(NOW, validator);
+      wo.pullDomainEvents();
+      return wo;
+    }
+
+    it('should transition CLOSING → IN_PROGRESS', () => {
+      const wo = buildClosingWo();
+      wo.revertClosing('Insufficient stock', NOW);
+
+      expect(wo.status).toBe(WorkOrderStatus.IN_PROGRESS);
+      const events = wo.pullDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(WorkOrderClosingReverted);
+    });
+
+    it('should reject from non-CLOSING status', () => {
+      const wo = new WorkOrderBuilder().withIdGen(idGen).build();
+      wo.pullDomainEvents();
+
+      expect(() => {
+        wo.revertClosing('reason', NOW);
       }).toThrow(InvalidStateTransitionError);
     });
   });

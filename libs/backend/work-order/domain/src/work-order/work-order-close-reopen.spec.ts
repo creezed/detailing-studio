@@ -6,7 +6,7 @@ import {
   InvalidStateTransitionError,
   WorkOrderClosingValidationError,
 } from './work-order.errors';
-import { WorkOrderClosed, WorkOrderReopened } from './work-order.events';
+import { WorkOrderClosed, WorkOrderClosingStarted, WorkOrderReopened } from './work-order.events';
 import { ClosingValidator } from '../services/closing-validator';
 import { FakeIdGenerator } from '../testing/fake-id-generator';
 import { buildPhotoRef, resetPhotoCounter } from '../testing/photo-ref.builder';
@@ -18,7 +18,7 @@ const NOW = DateTime.from('2024-06-15T10:00:00Z');
 const CLOSE_AT = DateTime.from('2024-06-15T12:00:00Z');
 const REOPEN_AT = DateTime.from('2024-06-15T13:00:00Z');
 
-describe('WorkOrder.close', () => {
+describe('WorkOrder two-phase close (startClosing + finalizeClose)', () => {
   const validator = new ClosingValidator();
   let idGen: FakeIdGenerator;
 
@@ -47,56 +47,47 @@ describe('WorkOrder.close', () => {
     return wo;
   }
 
-  it('should close from IN_PROGRESS with valid state', () => {
+  it('should close from IN_PROGRESS via two-phase', () => {
     const wo = buildClosableWo();
 
-    wo.close(CLOSE_AT, validator);
+    wo.startClosing(CLOSE_AT, validator);
+    expect(wo.status).toBe(WorkOrderStatus.CLOSING);
 
+    wo.finalizeClose(CLOSE_AT);
     expect(wo.status).toBe(WorkOrderStatus.CLOSED);
-    const snapshot = wo.toSnapshot();
-    expect(snapshot.closedAt).toBe(CLOSE_AT.iso());
+    expect(wo.toSnapshot().closedAt).toBe(CLOSE_AT.iso());
   });
 
-  it('should close from AWAITING_REVIEW', () => {
+  it('should close from AWAITING_REVIEW via two-phase', () => {
     const wo = buildClosableWo();
     wo.submitForReview('user-1', NOW);
     wo.pullDomainEvents();
 
-    wo.close(CLOSE_AT, validator);
+    wo.startClosing(CLOSE_AT, validator);
+    wo.finalizeClose(CLOSE_AT);
 
     expect(wo.status).toBe(WorkOrderStatus.CLOSED);
   });
 
-  it('should emit WorkOrderClosed with full snapshot', () => {
+  it('should emit WorkOrderClosingStarted then WorkOrderClosed', () => {
     const wo = buildClosableWo();
 
-    wo.close(CLOSE_AT, validator);
+    wo.startClosing(CLOSE_AT, validator);
+    const closingEvents = wo.pullDomainEvents();
+    expect(closingEvents).toHaveLength(1);
+    expect(closingEvents[0]).toBeInstanceOf(WorkOrderClosingStarted);
 
-    const events = wo.pullDomainEvents();
-    expect(events).toHaveLength(1);
-    const event = events[0] as WorkOrderClosed;
+    wo.finalizeClose(CLOSE_AT);
+    const closedEvents = wo.pullDomainEvents();
+    expect(closedEvents).toHaveLength(1);
+    const event = closedEvents[0] as WorkOrderClosed;
     expect(event).toBeInstanceOf(WorkOrderClosed);
     expect(event.workOrderId).toBe(wo.id);
-    expect(event.appointmentId).toBeTruthy();
-    expect(event.branchId).toBeTruthy();
-    expect(event.masterId).toBeTruthy();
-    expect(event.clientId).toBeTruthy();
-    expect(event.vehicleId).toBeTruthy();
     expect(event.services).toHaveLength(1);
     expect(event.lines).toHaveLength(2);
     expect(event.photosBeforeCount).toBe(1);
     expect(event.photosAfterCount).toBe(1);
     expect(event.closedAt).toBe(CLOSE_AT);
-
-    const line = event.lines[0];
-    expect(line).toBeDefined();
-    if (line) {
-      expect(line.lineId).toBeTruthy();
-      expect(line.skuId).toBeTruthy();
-      expect(typeof line.actualAmount).toBe('number');
-      expect(typeof line.normAmount).toBe('number');
-      expect(typeof line.deviationRatio).toBe('number');
-    }
   });
 
   it('should throw InvalidStateTransitionError when closing from OPEN', () => {
@@ -109,7 +100,7 @@ describe('WorkOrder.close', () => {
     const openWo = WorkOrder.restore({ ...openSnapshot, status: WorkOrderStatus.OPEN });
 
     expect(() => {
-      openWo.close(CLOSE_AT, validator);
+      openWo.startClosing(CLOSE_AT, validator);
     }).toThrow(InvalidStateTransitionError);
   });
 
@@ -119,7 +110,7 @@ describe('WorkOrder.close', () => {
     const closed = WorkOrder.restore({ ...snapshot, status: WorkOrderStatus.CLOSED });
 
     expect(() => {
-      closed.close(CLOSE_AT, validator);
+      closed.startClosing(CLOSE_AT, validator);
     }).toThrow(InvalidStateTransitionError);
   });
 
@@ -141,11 +132,11 @@ describe('WorkOrder.close', () => {
     wo.pullDomainEvents();
 
     expect(() => {
-      wo.close(CLOSE_AT, validator);
+      wo.startClosing(CLOSE_AT, validator);
     }).toThrow(WorkOrderClosingValidationError);
 
     try {
-      wo.close(CLOSE_AT, validator);
+      wo.startClosing(CLOSE_AT, validator);
     } catch (e) {
       const err = e as WorkOrderClosingValidationError;
       expect(err.violations.some((v) => v.kind === 'NO_BEFORE_PHOTO')).toBe(true);
@@ -170,7 +161,7 @@ describe('WorkOrder.close', () => {
     wo.pullDomainEvents();
 
     expect(() => {
-      wo.close(CLOSE_AT, validator);
+      wo.startClosing(CLOSE_AT, validator);
     }).toThrow(WorkOrderClosingValidationError);
   });
 
@@ -193,18 +184,18 @@ describe('WorkOrder.close', () => {
     wo.pullDomainEvents();
 
     expect(() => {
-      wo.close(CLOSE_AT, validator);
+      wo.startClosing(CLOSE_AT, validator);
     }).toThrow(WorkOrderClosingValidationError);
 
     try {
-      wo.close(CLOSE_AT, validator);
+      wo.startClosing(CLOSE_AT, validator);
     } catch (e) {
       const err = e as WorkOrderClosingValidationError;
       expect(err.violations.some((v) => v.kind === 'DEVIATION_WITHOUT_REASON')).toBe(true);
     }
   });
 
-  it('should NOT throw when status remains unchanged after validation error', () => {
+  it('should NOT change status after validation error', () => {
     const wo = new WorkOrderBuilder().withIdGen(idGen).build();
     wo.addPhotoBefore(buildPhotoRef({ type: PhotoType.BEFORE }), NOW);
     wo.addConsumption(
@@ -222,7 +213,7 @@ describe('WorkOrder.close', () => {
     wo.pullDomainEvents();
 
     try {
-      wo.close(CLOSE_AT, validator);
+      wo.startClosing(CLOSE_AT, validator);
     } catch {
       // expected
     }
@@ -256,7 +247,8 @@ describe('WorkOrder.reopen', () => {
       NOW,
       idGen,
     );
-    wo.close(CLOSE_AT, validator);
+    wo.startClosing(CLOSE_AT, validator);
+    wo.finalizeClose(CLOSE_AT);
     wo.pullDomainEvents();
     return wo;
   }

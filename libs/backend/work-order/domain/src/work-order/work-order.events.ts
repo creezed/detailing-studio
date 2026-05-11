@@ -157,6 +157,29 @@ export interface ClosedConsumptionLineData {
   readonly deviationRatio: number;
 }
 
+export class WorkOrderClosingStarted extends DomainEvent {
+  readonly eventType = 'WorkOrderClosingStarted';
+
+  constructor(
+    public readonly workOrderId: WorkOrderId,
+    public readonly startedAt: DateTime,
+  ) {
+    super(woEventProps(workOrderId, 'WorkOrderClosingStarted', startedAt));
+  }
+}
+
+export class WorkOrderClosingReverted extends DomainEvent {
+  readonly eventType = 'WorkOrderClosingReverted';
+
+  constructor(
+    public readonly workOrderId: WorkOrderId,
+    public readonly reason: string,
+    public readonly revertedAt: DateTime,
+  ) {
+    super(woEventProps(workOrderId, 'WorkOrderClosingReverted', revertedAt));
+  }
+}
+
 export class WorkOrderClosed extends DomainEvent {
   readonly eventType = 'WorkOrderClosed';
 

@@ -15,6 +15,8 @@ import {
 import {
   WorkOrderCancelled,
   WorkOrderClosed,
+  WorkOrderClosingReverted,
+  WorkOrderClosingStarted,
   WorkOrderConsumptionAdded,
   WorkOrderConsumptionRemoved,
   WorkOrderConsumptionUpdated,
@@ -340,13 +342,20 @@ export class WorkOrder extends AggregateRoot<WorkOrderId> {
     this.addEvent(new WorkOrderReturnedToInProgress(this._id, by, reason, now));
   }
 
-  close(closedAt: DateTime, validator: ClosingValidator): void {
+  startClosing(now: DateTime, validator: ClosingValidator): void {
     this.assertStatusIn([WorkOrderStatus.IN_PROGRESS, WorkOrderStatus.AWAITING_REVIEW]);
 
     const violations = validator.validate(this);
     if (violations.length > 0) {
       throw new WorkOrderClosingValidationError(violations);
     }
+
+    this._status = WorkOrderStatus.CLOSING;
+    this.addEvent(new WorkOrderClosingStarted(this._id, now));
+  }
+
+  finalizeClose(closedAt: DateTime): void {
+    this.assertStatusIn([WorkOrderStatus.CLOSING]);
 
     this._status = WorkOrderStatus.CLOSED;
     this._closedAt = closedAt;
@@ -376,6 +385,12 @@ export class WorkOrder extends AggregateRoot<WorkOrderId> {
         closedAt,
       ),
     );
+  }
+
+  revertClosing(reason: string, now: DateTime): void {
+    this.assertStatusIn([WorkOrderStatus.CLOSING]);
+    this._status = WorkOrderStatus.IN_PROGRESS;
+    this.addEvent(new WorkOrderClosingReverted(this._id, reason, now));
   }
 
   reopen(by: string, reason: string, now: DateTime): void {
