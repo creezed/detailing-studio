@@ -192,6 +192,20 @@ export const VehicleId = {
   },
 };
 
+export type ConsumptionLineId = Brand<string, 'ConsumptionLineId'>;
+export const ConsumptionLineId = {
+  from(value: string): ConsumptionLineId {
+    return fromUuid<'ConsumptionLineId'>(value);
+  },
+};
+
+export type PhotoId = Brand<string, 'PhotoId'>;
+export const PhotoId = {
+  from(value: string): PhotoId {
+    return fromUuid<'PhotoId'>(value);
+  },
+};
+
 export type OutboxEventId = Brand<string, 'OutboxEventId'>;
 export const OutboxEventId = {
   from(value: string): OutboxEventId {
