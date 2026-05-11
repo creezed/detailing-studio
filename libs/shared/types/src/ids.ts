@@ -52,6 +52,20 @@ export const AppointmentId = {
   },
 };
 
+export type AppointmentServiceId = Brand<string, 'AppointmentServiceId'>;
+export const AppointmentServiceId = {
+  from(value: string): AppointmentServiceId {
+    return fromUuid<'AppointmentServiceId'>(value);
+  },
+};
+
+export type CancellationRequestId = Brand<string, 'CancellationRequestId'>;
+export const CancellationRequestId = {
+  from(value: string): CancellationRequestId {
+    return fromUuid<'CancellationRequestId'>(value);
+  },
+};
+
 export type WorkOrderId = Brand<string, 'WorkOrderId'>;
 export const WorkOrderId = {
   from(value: string): WorkOrderId {
