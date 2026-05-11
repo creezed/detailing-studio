@@ -8,6 +8,9 @@ import {
 } from '@det/backend-scheduling-domain';
 import type {
   AppointmentId,
+  AppointmentDateRange,
+  AppointmentListFilter,
+  AppointmentListResult,
   AppointmentStatus,
   BayId,
   BranchId,
@@ -631,6 +634,88 @@ export class PostgresAppointmentRepository implements IAppointmentRepository {
     return this.findOverlapping('bay_id', bayId, slot, excludeAppointmentId);
   }
 
+  async listByFilter(filter: AppointmentListFilter): Promise<AppointmentListResult> {
+    const limit = filter.limit ?? 50;
+    const params: Array<string | Date> = [];
+    const conditions: string[] = [];
+
+    addCondition(conditions, params, 'branch_id', filter.branchId);
+    addCondition(conditions, params, 'client_id', filter.clientId);
+    addCondition(conditions, params, 'master_id', filter.masterId);
+    addCondition(conditions, params, 'status', filter.status);
+
+    if (filter.from !== undefined) {
+      params.push(filter.from);
+      conditions.push(`slot_start >= $${String(params.length)}`);
+    }
+    if (filter.to !== undefined) {
+      params.push(filter.to);
+      conditions.push(`slot_start < $${String(params.length)}`);
+    }
+    if (filter.cursor !== undefined) {
+      const cursor = parseAppointmentCursor(filter.cursor);
+      params.push(cursor.slotStart, cursor.id);
+      conditions.push(
+        `(slot_start, id) > ($${String(params.length - 1)}, $${String(params.length)})`,
+      );
+    }
+
+    const whereClause = conditions.length === 0 ? '' : `where ${conditions.join(' and ')}`;
+    params.push(String(limit + 1));
+    const result = await this.client.query<AppointmentRow>(
+      `select * from sch_appointments ${whereClause}
+       order by slot_start, id
+       limit $${String(params.length)}`,
+      params,
+    );
+    const rows = result.rows.slice(0, limit);
+    const nextRow = result.rows[limit];
+
+    return {
+      items: rows.map((row) => this.toDomain(row)),
+      nextCursor: nextRow === undefined ? null : nextAppointmentCursor(rows),
+    };
+  }
+
+  findByClient(clientId: string, limit: number, cursor?: string): Promise<AppointmentListResult> {
+    return this.listByFilter({ clientId, cursor, limit });
+  }
+
+  async findByMasterAndDay(masterId: MasterId, date: string): Promise<readonly Appointment[]> {
+    const result = await this.client.query<AppointmentRow>(
+      `select * from sch_appointments
+       where master_id = $1
+         and slot_start >= $2
+         and slot_start < $3
+       order by slot_start, id`,
+      [masterId, `${date}T00:00:00.000Z`, nextUtcDate(date)],
+    );
+
+    return result.rows.map((row) => this.toDomain(row));
+  }
+
+  async findActiveByBranch(
+    branchId: BranchId,
+    dateRange: AppointmentDateRange,
+  ): Promise<readonly Appointment[]> {
+    const result = await this.client.query<AppointmentRow>(
+      `select * from sch_appointments
+       where branch_id = $1
+         and slot_start < $2
+         and slot_end > $3
+         and status = any($4::text[])
+       order by slot_start, id`,
+      [
+        branchId,
+        dateRange.to.toISOString(),
+        dateRange.from.toISOString(),
+        ['PENDING_CONFIRMATION', 'CONFIRMED', 'IN_PROGRESS'],
+      ],
+    );
+
+    return result.rows.map((row) => this.toDomain(row));
+  }
+
   private async findOverlapping(
     column: 'bay_id' | 'master_id',
     ownerId: string,
@@ -948,7 +1033,7 @@ function cancellationRequestToReadModel(
 
 function addCondition(
   conditions: string[],
-  params: Array<string | number>,
+  params: Array<string | number | Date>,
   column: string,
   value: string | undefined,
 ): void {
@@ -984,6 +1069,11 @@ function parseAppointmentCursor(cursor: string): AppointmentCursor {
     id: cursor.slice(separatorIndex + 1),
     slotStart: cursor.slice(0, separatorIndex),
   };
+}
+
+function nextUtcDate(date: string): string {
+  const from = new Date(`${date}T00:00:00.000Z`);
+  return new Date(from.getTime() + 24 * 60 * 60 * 1000).toISOString();
 }
 
 function stringifyCancellationRequest(request: CancellationRequest | null): string | null {

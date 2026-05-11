@@ -13,6 +13,18 @@ export interface AppointmentListFilter {
   readonly status?: AppointmentStatus;
   readonly from?: Date;
   readonly to?: Date;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+export interface AppointmentDateRange {
+  readonly from: Date;
+  readonly to: Date;
+}
+
+export interface AppointmentListResult {
+  readonly items: readonly Appointment[];
+  readonly nextCursor: string | null;
 }
 
 export interface IAppointmentRepository {
@@ -27,5 +39,12 @@ export interface IAppointmentRepository {
     bayId: BayId,
     slot: TimeSlot,
     excludeAppointmentId?: AppointmentId,
+  ): Promise<readonly Appointment[]>;
+  listByFilter(filter: AppointmentListFilter): Promise<AppointmentListResult>;
+  findByClient(clientId: string, limit: number, cursor?: string): Promise<AppointmentListResult>;
+  findByMasterAndDay(masterId: MasterId, date: string): Promise<readonly Appointment[]>;
+  findActiveByBranch(
+    branchId: BranchId,
+    dateRange: AppointmentDateRange,
   ): Promise<readonly Appointment[]>;
 }
