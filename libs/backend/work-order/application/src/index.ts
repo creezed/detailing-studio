@@ -18,6 +18,8 @@ export { GetClientWorkOrdersQuery } from './queries/get-client-work-orders/get-c
 export { GetNormDeviationReportQuery } from './queries/get-norm-deviation-report/get-norm-deviation-report.query';
 export { GetCurrentStockForBranchQuery } from './queries/get-current-stock/get-current-stock.query';
 
+export { WorkOrderStatus } from '@det/backend-work-order-domain';
+
 export {
   WORK_ORDER_REPOSITORY,
   WORK_ORDER_READ_PORT,
