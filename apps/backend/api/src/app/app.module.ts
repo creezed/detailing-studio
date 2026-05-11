@@ -15,6 +15,7 @@ import { IamInfrastructureModule } from '@det/backend-iam-infrastructure';
 import { IamInterfacesModule } from '@det/backend-iam-interfaces';
 import { InventoryInfrastructureModule } from '@det/backend-inventory-infrastructure';
 import { InventoryInterfacesModule } from '@det/backend-inventory-interfaces';
+import { SchedulingInterfacesModule } from '@det/backend-scheduling-interfaces';
 
 import { ApiSchedulingModule } from './scheduling.module';
 import { authConfig } from '../config/auth.config';
@@ -69,6 +70,7 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
     InventoryInfrastructureModule,
     InventoryInterfacesModule,
     ApiSchedulingModule,
+    SchedulingInterfacesModule,
   ],
   controllers: [HealthController],
   providers: [
