@@ -25,7 +25,17 @@ export * from './branch-schedule/branch-schedule.errors';
 export * from './branch-schedule/branch-schedule.events';
 export * from './branch-schedule/branch-schedule.repository';
 
+export * from './value-objects/master-id';
+export * from './value-objects/unavailability-id';
+export * from './value-objects/unavailability.value-object';
+
+export * from './master-schedule/master-schedule.aggregate';
+export * from './master-schedule/master-schedule.errors';
+export * from './master-schedule/master-schedule.events';
+export * from './master-schedule/master-schedule.repository';
+
 export * from './testing/fake-id-generator';
 export * from './testing/branch.builder';
 export * from './testing/bay.builder';
 export * from './testing/branch-schedule.builder';
+export * from './testing/master-schedule.builder';
