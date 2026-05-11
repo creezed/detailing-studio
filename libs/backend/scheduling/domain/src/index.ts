@@ -9,6 +9,7 @@ export * from './value-objects/time-of-day.value-object';
 export * from './value-objects/time-range.value-object';
 export * from './value-objects/working-day.value-object';
 export * from './value-objects/schedule-exception.value-object';
+export * from './value-objects/duration.value-object';
 
 export * from './branch/branch.aggregate';
 export * from './branch/branch.errors';
@@ -48,6 +49,8 @@ export * from './appointment/appointment.events';
 export * from './appointment/appointment.repository';
 export * from './appointment/cancellation-request';
 export * from './appointment/state-transitions';
+
+export * from './services/availability-calculator';
 
 export * from './testing/fake-id-generator';
 export * from './testing/branch.builder';

@@ -3,6 +3,7 @@ import { BayId } from './bay-id';
 import { BranchId } from './branch-id';
 import { InvalidBranchNameError, BranchName } from './branch-name.value-object';
 import { DayOfWeek } from './day-of-week';
+import { Duration, InvalidDurationError } from './duration.value-object';
 import {
   ScheduleException,
   InvalidScheduleExceptionError,
@@ -55,6 +56,22 @@ describe('Value Objects', () => {
       const idGen = new FakeIdGenerator('00000000-0000-4000-a000-000000000006');
       const id = ScheduleId.generate(idGen);
       expect(id).toBe('00000000-0000-4000-a000-000000000006');
+    });
+  });
+
+  describe('Duration', () => {
+    it('should create duration in minutes', () => {
+      expect(Duration.minutes(90).minutes).toBe(90);
+    });
+
+    it('should create zero duration', () => {
+      expect(Duration.zero().minutes).toBe(0);
+    });
+
+    it('should reject negative, fractional and non-finite minutes', () => {
+      expect(() => Duration.minutes(-1)).toThrow(InvalidDurationError);
+      expect(() => Duration.minutes(1.5)).toThrow(InvalidDurationError);
+      expect(() => Duration.minutes(Number.NaN)).toThrow(InvalidDurationError);
     });
   });
 
