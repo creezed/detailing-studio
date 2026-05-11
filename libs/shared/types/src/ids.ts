@@ -143,6 +143,20 @@ export const StockTakingId = {
   },
 };
 
+export type MasterId = Brand<string, 'MasterId'>;
+export const MasterId = {
+  from(value: string): MasterId {
+    return fromUuid<'MasterId'>(value);
+  },
+};
+
+export type UnavailabilityId = Brand<string, 'UnavailabilityId'>;
+export const UnavailabilityId = {
+  from(value: string): UnavailabilityId {
+    return fromUuid<'UnavailabilityId'>(value);
+  },
+};
+
 export type BayId = Brand<string, 'BayId'>;
 export const BayId = {
   from(value: string): BayId {
