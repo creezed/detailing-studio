@@ -4,10 +4,11 @@ export const ALLOWED_TRANSITIONS: Readonly<Record<WorkOrderStatus, readonly Work
   [WorkOrderStatus.OPEN]: [WorkOrderStatus.IN_PROGRESS, WorkOrderStatus.CANCELLED],
   [WorkOrderStatus.IN_PROGRESS]: [WorkOrderStatus.AWAITING_REVIEW, WorkOrderStatus.CANCELLED],
   [WorkOrderStatus.AWAITING_REVIEW]: [
-    WorkOrderStatus.CLOSED,
+    WorkOrderStatus.CLOSING,
     WorkOrderStatus.IN_PROGRESS,
     WorkOrderStatus.CANCELLED,
   ],
+  [WorkOrderStatus.CLOSING]: [WorkOrderStatus.CLOSED, WorkOrderStatus.IN_PROGRESS],
   [WorkOrderStatus.CLOSED]: [WorkOrderStatus.IN_PROGRESS],
   [WorkOrderStatus.CANCELLED]: [],
 };
