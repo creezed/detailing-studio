@@ -1,8 +1,13 @@
-import type { DayOfWeek } from '@det/backend-scheduling-domain';
+import type { AppointmentStatus, CreationChannel, DayOfWeek } from '@det/backend-scheduling-domain';
 
 export interface PaginatedResult<T> {
   readonly items: readonly T[];
   readonly total: number;
+}
+
+export interface CursorPaginatedResult<T> {
+  readonly items: readonly T[];
+  readonly nextCursor: string | null;
 }
 
 export interface TimeRangeReadModel {
@@ -73,4 +78,49 @@ export interface MasterReadModel {
   readonly masterId: string;
   readonly fullName: string;
   readonly schedule: MasterScheduleReadModel;
+}
+
+export interface AppointmentServiceReadModel {
+  readonly id: string;
+  readonly serviceId: string;
+  readonly serviceName: string;
+  readonly durationMinutes: number;
+  readonly priceAmount: string;
+}
+
+export interface AppointmentCancellationRequestReadModel {
+  readonly id: string;
+  readonly requestedAt: string;
+  readonly requestedBy: string;
+  readonly reason: string;
+  readonly status: string;
+  readonly decidedAt: string | null;
+  readonly decidedBy: string | null;
+  readonly decisionReason: string | null;
+}
+
+export interface AppointmentReadModel {
+  readonly id: string;
+  readonly clientId: string;
+  readonly vehicleId: string;
+  readonly branchId: string;
+  readonly bayId: string | null;
+  readonly masterId: string;
+  readonly services: readonly AppointmentServiceReadModel[];
+  readonly slotStart: string;
+  readonly slotEnd: string;
+  readonly timezone: string;
+  readonly status: AppointmentStatus;
+  readonly cancellationRequest: AppointmentCancellationRequestReadModel | null;
+  readonly createdBy: string;
+  readonly createdVia: CreationChannel;
+  readonly createdAt: string;
+}
+
+export interface AvailableSlotReadModel {
+  readonly masterId: string;
+  readonly branchId: string;
+  readonly slotStart: string;
+  readonly slotEnd: string;
+  readonly timezone: string;
 }

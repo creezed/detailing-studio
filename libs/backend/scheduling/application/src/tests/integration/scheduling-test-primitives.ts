@@ -12,6 +12,10 @@ import type {
 } from '../../ports/catalog-service.port';
 import type { CrmVehicleReadModel, ICrmVehiclePort } from '../../ports/crm-vehicle.port';
 import type { IIamUserPort, IamUserReadModel } from '../../ports/iam-user.port';
+import type {
+  IWorkOrderPort,
+  OpenWorkOrderFromAppointmentSnapshot,
+} from '../../ports/work-order.port';
 
 export class FixedClock implements IClock {
   constructor(private readonly current: DateTime) {}
@@ -124,5 +128,18 @@ export class InMemoryCrmVehiclePort implements ICrmVehiclePort {
     }
 
     return Promise.resolve(vehicle);
+  }
+}
+
+export class RecordingWorkOrderPort implements IWorkOrderPort {
+  private readonly snapshots: OpenWorkOrderFromAppointmentSnapshot[] = [];
+
+  openFromAppointment(snapshot: OpenWorkOrderFromAppointmentSnapshot): Promise<void> {
+    this.snapshots.push(snapshot);
+    return Promise.resolve();
+  }
+
+  recorded(): readonly OpenWorkOrderFromAppointmentSnapshot[] {
+    return [...this.snapshots];
   }
 }
