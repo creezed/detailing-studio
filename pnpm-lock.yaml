@@ -252,6 +252,15 @@ importers:
 
   apps/backend/api-e2e: {}
 
+  apps/backend/notifications-worker:
+    dependencies:
+      '@det/backend-notifications-infrastructure':
+        specifier: workspace:*
+        version: link:../../../libs/backend/notifications/infrastructure
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../../libs/backend/shared/ddd
+
   libs/backend/catalog/application:
     dependencies:
       '@det/backend-catalog-domain':
@@ -473,6 +482,60 @@ importers:
       '@det/backend-inventory-application':
         specifier: workspace:*
         version: link:../application
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/notifications/application:
+    dependencies:
+      '@det/backend-notifications-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/notifications/domain:
+    dependencies:
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/notifications/infrastructure:
+    dependencies:
+      '@det/backend-notifications-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/backend-notifications-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/backend-shared-outbox':
+        specifier: workspace:*
+        version: link:../../shared/outbox
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/notifications/interfaces:
+    dependencies:
+      '@det/backend-notifications-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/backend-shared-auth':
+        specifier: workspace:*
+        version: link:../../shared/auth
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
       '@det/shared-types':
         specifier: workspace:*
         version: link:../../../shared/types

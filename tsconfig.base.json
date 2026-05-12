@@ -51,6 +51,18 @@
       "@det/backend-work-order-interfaces": [
         "libs/backend/work-order/interfaces/src/index.ts"
       ],
+      "@det/backend-notifications-application": [
+        "libs/backend/notifications/application/src/index.ts"
+      ],
+      "@det/backend-notifications-domain": [
+        "libs/backend/notifications/domain/src/index.ts"
+      ],
+      "@det/backend-notifications-infrastructure": [
+        "libs/backend/notifications/infrastructure/src/index.ts"
+      ],
+      "@det/backend-notifications-interfaces": [
+        "libs/backend/notifications/interfaces/src/index.ts"
+      ],
       "@det/backend-iam-application": ["libs/backend/iam/application/src/index.ts"],
       "@det/backend-iam-domain": ["libs/backend/iam/domain/src/index.ts"],
       "@det/backend-iam-infrastructure": ["libs/backend/iam/infrastructure/src/index.ts"],
