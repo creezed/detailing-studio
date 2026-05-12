@@ -16,8 +16,10 @@ import { IamInterfacesModule } from '@det/backend-iam-interfaces';
 import { InventoryInfrastructureModule } from '@det/backend-inventory-infrastructure';
 import { InventoryInterfacesModule } from '@det/backend-inventory-interfaces';
 import { SchedulingInterfacesModule } from '@det/backend-scheduling-interfaces';
+import { WorkOrderInterfacesModule } from '@det/backend-work-order-interfaces';
 
 import { ApiSchedulingModule } from './scheduling.module';
+import { ApiWorkOrderModule } from './work-order.module';
 import { authConfig } from '../config/auth.config';
 import { databaseConfig } from '../config/database.config';
 import { emailConfig } from '../config/email.config';
@@ -71,6 +73,8 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
     InventoryInterfacesModule,
     ApiSchedulingModule,
     SchedulingInterfacesModule,
+    ApiWorkOrderModule,
+    WorkOrderInterfacesModule,
   ],
   controllers: [HealthController],
   providers: [
