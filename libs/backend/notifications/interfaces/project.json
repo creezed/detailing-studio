@@ -1,0 +1,35 @@
+{
+  "name": "notifications-interfaces",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/notifications/interfaces/src",
+  "projectType": "library",
+  "tags": [
+    "scope:notifications",
+    "type:interfaces",
+    "platform:node"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/notifications/interfaces/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/notifications/interfaces/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/notifications/interfaces/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

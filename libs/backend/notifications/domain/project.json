@@ -1,0 +1,35 @@
+{
+  "name": "notifications-domain",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/notifications/domain/src",
+  "projectType": "library",
+  "tags": [
+    "scope:notifications",
+    "type:domain",
+    "platform:node"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/notifications/domain/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/notifications/domain/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/notifications/domain/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}

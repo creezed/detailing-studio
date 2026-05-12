@@ -1,0 +1,35 @@
+{
+  "name": "notifications-worker",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/backend/notifications-worker/src",
+  "projectType": "application",
+  "tags": [
+    "scope:notifications",
+    "type:app",
+    "platform:node"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "apps/backend/notifications-worker/src/**/*.ts"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "apps/backend/notifications-worker/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b apps/backend/notifications-worker/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}

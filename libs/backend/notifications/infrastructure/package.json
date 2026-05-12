@@ -1,0 +1,21 @@
+{
+  "name": "@det/backend-notifications-infrastructure",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@det/backend-notifications-application": "workspace:*",
+    "@det/backend-notifications-domain": "workspace:*",
+    "@det/backend-shared-ddd": "workspace:*",
+    "@det/backend-shared-outbox": "workspace:*",
+    "@det/shared-types": "workspace:*"
+  }
+}

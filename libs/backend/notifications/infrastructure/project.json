@@ -1,0 +1,35 @@
+{
+  "name": "notifications-infrastructure",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/notifications/infrastructure/src",
+  "projectType": "library",
+  "tags": [
+    "scope:notifications",
+    "type:infrastructure",
+    "platform:node"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/notifications/infrastructure/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/notifications/infrastructure/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/notifications/infrastructure/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}

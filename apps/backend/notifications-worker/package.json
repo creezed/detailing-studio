@@ -1,0 +1,10 @@
+{
+  "name": "@det/notifications-worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@det/backend-notifications-infrastructure": "workspace:*",
+    "@det/backend-shared-ddd": "workspace:*"
+  }
+}
