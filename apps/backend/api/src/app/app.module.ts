@@ -15,6 +15,11 @@ import { IamInfrastructureModule } from '@det/backend-iam-infrastructure';
 import { IamInterfacesModule } from '@det/backend-iam-interfaces';
 import { InventoryInfrastructureModule } from '@det/backend-inventory-infrastructure';
 import { InventoryInterfacesModule } from '@det/backend-inventory-interfaces';
+import {
+  NotificationsInfrastructureModule,
+  NotificationsPersistenceModule,
+} from '@det/backend-notifications-infrastructure';
+import { NotificationsHttpModule } from '@det/backend-notifications-interfaces';
 import { SchedulingInterfacesModule } from '@det/backend-scheduling-interfaces';
 import { WorkOrderInterfacesModule } from '@det/backend-work-order-interfaces';
 
@@ -71,6 +76,9 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
     IamInterfacesModule,
     InventoryInfrastructureModule,
     InventoryInterfacesModule,
+    NotificationsInfrastructureModule.register(),
+    NotificationsPersistenceModule.register(),
+    NotificationsHttpModule,
     ApiSchedulingModule,
     SchedulingInterfacesModule,
     ApiWorkOrderModule,
