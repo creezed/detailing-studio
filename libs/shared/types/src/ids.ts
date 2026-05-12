@@ -212,3 +212,10 @@ export const OutboxEventId = {
     return fromUuid<'OutboxEventId'>(value);
   },
 };
+
+export type NotificationId = Brand<string, 'NotificationId'>;
+export const NotificationId = {
+  from(value: string): NotificationId {
+    return fromUuid<'NotificationId'>(value);
+  },
+};
