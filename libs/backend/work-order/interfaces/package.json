@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@det/backend-shared-auth": "workspace:*",
+    "@det/backend-shared-ddd": "workspace:*",
     "@det/backend-work-order-application": "workspace:*",
     "@det/shared-types": "workspace:*"
   }

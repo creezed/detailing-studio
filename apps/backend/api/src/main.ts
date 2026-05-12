@@ -1,4 +1,5 @@
 import fastifyHelmet from '@fastify/helmet';
+import fastifyMultipart from '@fastify/multipart';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -23,6 +24,7 @@ async function bootstrap(): Promise<void> {
   const globalPrefix = 'api';
 
   await app.register(fastifyHelmet);
+  await app.register(fastifyMultipart, { limits: { fileSize: 10 * 1024 * 1024 } });
   app.setGlobalPrefix(globalPrefix);
   app.useGlobalPipes(
     new I18nValidationPipe({
