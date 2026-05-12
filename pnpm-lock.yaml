@@ -584,6 +584,9 @@ importers:
       '@det/backend-shared-auth':
         specifier: workspace:*
         version: link:../../shared/auth
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
       '@det/backend-work-order-application':
         specifier: workspace:*
         version: link:../application
