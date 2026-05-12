@@ -29,3 +29,21 @@ export class NotificationNotRetryableError extends ApplicationError {
     super(`Notification ${notificationId} is ${currentStatus}, not FAILED`);
   }
 }
+
+export class PushSubscriptionNotFoundError extends ApplicationError {
+  readonly code = 'PUSH_SUBSCRIPTION_NOT_FOUND';
+  readonly httpStatus = 404;
+
+  constructor(public readonly subscriptionId: string) {
+    super(`Push subscription ${subscriptionId} not found`);
+  }
+}
+
+export class InvalidUnsubscribeTokenError extends ApplicationError {
+  readonly code = 'INVALID_UNSUBSCRIBE_TOKEN';
+  readonly httpStatus = 400;
+
+  constructor() {
+    super('Invalid or expired unsubscribe token');
+  }
+}

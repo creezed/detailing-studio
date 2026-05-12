@@ -6,13 +6,15 @@ import type {
   INotificationTemplateRepository,
   IUserNotificationPreferencesRepository,
 } from '@det/backend-notifications-domain';
-import type { UserId } from '@det/shared-types';
 
 import { GlobalUnsubscribeCommand } from './global-unsubscribe.command';
 import {
   NOTIFICATION_TEMPLATE_REPOSITORY,
+  UNSUBSCRIBE_SECRET,
   USER_NOTIFICATION_PREFERENCES_REPOSITORY,
 } from '../../di/tokens';
+import { InvalidUnsubscribeTokenError } from '../../errors/application.errors';
+import { verifyUnsubscribeToken } from '../../unsubscribe/unsubscribe-token.service';
 
 import type { ICommandHandler } from '@nestjs/cqrs';
 
@@ -23,12 +25,18 @@ export class GlobalUnsubscribeHandler implements ICommandHandler<GlobalUnsubscri
     private readonly prefsRepo: IUserNotificationPreferencesRepository,
     @Inject(NOTIFICATION_TEMPLATE_REPOSITORY)
     private readonly templateRepo: INotificationTemplateRepository,
+    @Inject(UNSUBSCRIBE_SECRET)
+    private readonly secret: string,
   ) {}
 
   async execute(cmd: GlobalUnsubscribeCommand): Promise<void> {
-    const userId = this.parseUnsubscribeToken(cmd.unsubscribeToken);
+    const parsed = verifyUnsubscribeToken(cmd.unsubscribeToken, this.secret);
 
-    let prefs = await this.prefsRepo.findByUserId(userId);
+    if (!parsed) {
+      throw new InvalidUnsubscribeTokenError();
+    }
+
+    let prefs = await this.prefsRepo.findByUserId(parsed.userId);
 
     if (!prefs) {
       const templates = await this.templateRepo.findAll();
@@ -37,16 +45,11 @@ export class GlobalUnsubscribeHandler implements ICommandHandler<GlobalUnsubscri
       prefs = UserNotificationPreferences.createDefault({
         defaults,
         now: cmd.now,
-        userId,
+        userId: parsed.userId,
       });
     }
 
-    prefs.unsubscribeChannelGlobally(cmd.channel, cmd.now);
+    prefs.unsubscribeChannelGlobally(parsed.channel, cmd.now);
     await this.prefsRepo.save(prefs);
-  }
-
-  private parseUnsubscribeToken(token: string): UserId {
-    // TODO: N.4 — validate HMAC signature and extract userId
-    return token as UserId;
   }
 }
