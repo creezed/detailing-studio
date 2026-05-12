@@ -1,0 +1,1 @@
+export const TELEGRAF_INSTANCE = Symbol('TELEGRAF_INSTANCE');
