@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@det/backend-notifications-application": "workspace:*",
+    "@det/backend-notifications-domain": "workspace:*",
     "@det/backend-notifications-infrastructure": "workspace:*",
-    "@det/backend-shared-ddd": "workspace:*"
+    "@det/backend-shared-ddd": "workspace:*",
+    "@det/backend-shared-outbox": "workspace:*"
   }
 }

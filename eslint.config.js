@@ -326,7 +326,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/backend/api/src/config/**/*.ts'],
+    files: ['apps/backend/api/src/config/**/*.ts', 'apps/backend/notifications-worker/src/config/**/*.ts'],
     rules: {
       'no-restricted-properties': 'off',
     },
