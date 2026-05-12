@@ -17,7 +17,8 @@ export type AppAction =
   | 'approve'
   | 'reject'
   | 'anonymize'
-  | 'export-data';
+  | 'export-data'
+  | 'retry';
 
 export type AppSubjectName =
   | 'User'
@@ -43,6 +44,8 @@ export type AppSubjectName =
   | 'Bay'
   | 'BranchSchedule'
   | 'MasterSchedule'
+  | 'Notification'
+  | 'NotificationTemplate'
   | 'all';
 
 type AppResourceSubjectName = Exclude<AppSubjectName, 'all'>;
@@ -147,6 +150,10 @@ export class AbilityFactory {
       can('read', 'Service');
       can('read', 'ServiceCategory');
       can('read', 'Branch');
+    }
+
+    if (user.role === Role.MANAGER) {
+      can('read', 'Notification', { branchId: { $in: branchIds } });
     }
 
     return build();

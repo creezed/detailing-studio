@@ -50,3 +50,9 @@ export * from './queries/list-notifications-admin/list-notifications-admin.handl
 export * from './queries/list-notifications-admin/list-notifications-admin.query';
 export * from './read-models/notification.read-models';
 export * from './unsubscribe/unsubscribe-token.service';
+export type {
+  IanaTz,
+  NotificationChannel,
+  QuietHoursProps,
+  TemplateCode,
+} from '@det/backend-notifications-domain';
