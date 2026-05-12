@@ -16,6 +16,31 @@ export type { FakeSentNotification } from './lib/adapters/fake/fake.adapter';
 export { NotificationDispatcherAdapter } from './lib/dispatcher/notification-dispatcher.adapter';
 
 export { NotificationsInfrastructureModule } from './lib/notifications-infrastructure.module';
+export { NotificationsPersistenceModule } from './lib/notifications-persistence.module';
+
+export { NotificationSchema } from './lib/persistence/schemas/notification.schema';
+export { NotificationTemplateSchema } from './lib/persistence/schemas/notification-template.schema';
+export { UserNotificationPreferencesSchema } from './lib/persistence/schemas/user-notification-preferences.schema';
+export { PushSubscriptionSchema } from './lib/persistence/schemas/push-subscription.schema';
+export { NotificationDedupKeySchema } from './lib/persistence/schemas/notification-dedup-key.schema';
+
+export { NotificationRepositoryImpl } from './lib/persistence/repositories/notification.repository.impl';
+export { NotificationTemplateRepositoryImpl } from './lib/persistence/repositories/notification-template.repository.impl';
+export { UserNotificationPreferencesRepositoryImpl } from './lib/persistence/repositories/user-notification-preferences.repository.impl';
+export { PushSubscriptionRepositoryImpl } from './lib/persistence/repositories/push-subscription.repository.impl';
+
+export { NotificationIssuedOutboxRelay } from './lib/queue/notification-issued.outbox-relay';
+export { ReminderSchedulerAdapter } from './lib/queue/reminder-scheduler.adapter';
+export { NotificationsQueueModule } from './lib/queue/notifications-queue.module';
+export {
+  NOTIFICATIONS_QUEUE,
+  NOTIFICATIONS_REMINDERS_QUEUE,
+} from './lib/queue/notifications-queue.constants';
+
+export {
+  up as migrationUp,
+  down as migrationDown,
+} from './lib/persistence/migrations/20250513-create-notifications';
 
 export {
   SMS_SENDER,
