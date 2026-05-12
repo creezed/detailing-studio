@@ -99,6 +99,21 @@ services:
       retries: 12
       start_period: 5s
 
+  # notifications-worker: standalone BullMQ consumer for notification sending & reminders.
+  # For local dev use `pnpm nx serve notifications-worker`.
+  # In production, build via `pnpm nx build notifications-worker` and run dist/main.js.
+  # notifications-worker:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/backend/notifications-worker/Dockerfile
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   env_file: .env
+  #   restart: unless-stopped
+
 volumes:
   postgres-data:
   redis-data:

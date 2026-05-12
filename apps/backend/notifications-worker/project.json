@@ -9,6 +9,25 @@
     "platform:node"
   ],
   "targets": {
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "buildTarget": "notifications-worker:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "notifications-worker:build:development"
+        },
+        "production": {
+          "buildTarget": "notifications-worker:build:production"
+        }
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {

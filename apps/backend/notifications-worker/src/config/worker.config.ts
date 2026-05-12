@@ -1,0 +1,4 @@
+export const NOTIFICATIONS_CONCURRENCY = Number(
+  process.env['WORKER_NOTIFICATIONS_CONCURRENCY'] ?? '5',
+);
+export const REMINDERS_CONCURRENCY = Number(process.env['WORKER_REMINDERS_CONCURRENCY'] ?? '2');
