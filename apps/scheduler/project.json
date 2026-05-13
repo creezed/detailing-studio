@@ -1,0 +1,31 @@
+{
+  "name": "scheduler",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/scheduler/src",
+  "projectType": "application",
+  "tags": [
+    "scope:platform",
+    "type:app",
+    "platform:node"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/scheduler",
+        "main": "apps/scheduler/src/main.ts",
+        "tsConfig": "apps/scheduler/tsconfig.app.json"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "apps/scheduler/**/*.ts"
+        ]
+      }
+    }
+  }
+}

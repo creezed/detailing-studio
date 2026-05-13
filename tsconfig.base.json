@@ -63,6 +63,18 @@
       "@det/backend-notifications-interfaces": [
         "libs/backend/notifications/interfaces/src/index.ts"
       ],
+      "@det/backend-billing-application": [
+        "libs/backend/billing/application/src/index.ts"
+      ],
+      "@det/backend-billing-domain": [
+        "libs/backend/billing/domain/src/index.ts"
+      ],
+      "@det/backend-billing-infrastructure": [
+        "libs/backend/billing/infrastructure/src/index.ts"
+      ],
+      "@det/backend-billing-interfaces": [
+        "libs/backend/billing/interfaces/src/index.ts"
+      ],
       "@det/backend-iam-application": ["libs/backend/iam/application/src/index.ts"],
       "@det/backend-iam-domain": ["libs/backend/iam/domain/src/index.ts"],
       "@det/backend-iam-infrastructure": ["libs/backend/iam/infrastructure/src/index.ts"],
