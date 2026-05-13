@@ -1,7 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 
 import {
   LoginByEmailCommand,
@@ -28,8 +27,6 @@ import {
 
 import type { AuthenticatedUser } from '../guards/auth.guard';
 
-const AUTH_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
-
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -37,7 +34,6 @@ export class AuthController {
 
   @Post('register-owner')
   @Public()
-  @Throttle(AUTH_THROTTLE)
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({ type: LoginResponseDto })
   async registerOwner(@Body() dto: RegisterOwnerRequestDto): Promise<LoginResponseDto> {
@@ -52,7 +48,6 @@ export class AuthController {
 
   @Post('login')
   @Public()
-  @Throttle(AUTH_THROTTLE)
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: LoginResponseDto })
   async login(@Body() dto: LoginRequestDto): Promise<LoginResponseDto> {
@@ -63,7 +58,6 @@ export class AuthController {
 
   @Post('otp/request')
   @Public()
-  @Throttle(AUTH_THROTTLE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse()
   async requestOtp(@Body() dto: OtpRequestDto): Promise<void> {
@@ -72,7 +66,6 @@ export class AuthController {
 
   @Post('otp/verify')
   @Public()
-  @Throttle(AUTH_THROTTLE)
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: LoginResponseDto })
   async verifyOtp(@Body() dto: OtpVerifyRequestDto): Promise<LoginResponseDto> {
@@ -83,7 +76,6 @@ export class AuthController {
 
   @Post('refresh')
   @Public()
-  @Throttle(AUTH_THROTTLE)
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: LoginResponseDto })
   async refresh(@Body() dto: RefreshRequestDto): Promise<LoginResponseDto> {

@@ -63,6 +63,8 @@ class ApiProcess {
   constructor(
     private readonly port: number,
     private readonly databaseUrl: string,
+    private readonly redisHost: string = '127.0.0.1',
+    private readonly redisPort: number = 6379,
   ) {}
 
   get baseUrl(): string {
@@ -85,7 +87,21 @@ class ApiProcess {
         JWT_ACCESS_TTL: '15m',
         JWT_SECRET,
         NODE_ENV: 'test',
+        THROTTLE_LIMIT: '10000',
+        NOTIFICATIONS_TRANSPORT: 'fake',
+        REDIS_HOST: this.redisHost,
+        REDIS_PORT: String(this.redisPort),
         SMS_RU_API_KEY: '',
+        SMTP_FROM: 'test@studio.test',
+        SMTP_HOST: '127.0.0.1',
+        SMTP_PASS: 'test',
+        SMTP_PORT: '1025',
+        SMTP_USER: 'test',
+        UNSUBSCRIBE_SECRET: 'e2e-unsubscribe-secret',
+        VAPID_PRIVATE_KEY: '4GWhz4f95DVay2njySkvFgnejHkFiPFiSDk3CGmbcMs',
+        VAPID_PUBLIC_KEY:
+          'BIGEpyJUYnVyA0HmYtgv4qaPihXzI3nEMCsLgpczz10tycprwztP6X2-3KImCrgT20bJBun7Trrr2dDBOrzPQlg',
+        VAPID_SUBJECT: 'mailto:test@studio.test',
       },
       stdio: 'pipe',
     });
@@ -188,37 +204,52 @@ class ApiProcess {
 }
 
 describe('Backend API IAM auth e2e', () => {
-  let container: StartedTestContainer;
+  let pgContainer: StartedTestContainer;
+  let redisContainer: StartedTestContainer;
   let client: Client;
   let api: ApiProcess;
 
   beforeAll(async () => {
-    container = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({
-        POSTGRES_DB: 'backend_api_e2e',
-        POSTGRES_PASSWORD: 'e2e',
-        POSTGRES_USER: 'e2e',
-      })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage('ready to accept connections', 2))
-      .start();
+    const [pg, redis] = await Promise.all([
+      new GenericContainer('postgres:16-alpine')
+        .withEnvironment({
+          POSTGRES_DB: 'backend_api_e2e',
+          POSTGRES_PASSWORD: 'e2e',
+          POSTGRES_USER: 'e2e',
+        })
+        .withExposedPorts(5432)
+        .withWaitStrategy(Wait.forLogMessage('ready to accept connections', 2))
+        .start(),
+      new GenericContainer('redis:7-alpine')
+        .withExposedPorts(6379)
+        .withWaitStrategy(Wait.forLogMessage('Ready to accept connections', 1))
+        .start(),
+    ]);
 
-    const databaseUrl = `postgres://e2e:e2e@${container.getHost()}:${String(
-      container.getMappedPort(5432),
+    pgContainer = pg;
+    redisContainer = redis;
+
+    const databaseUrl = `postgres://e2e:e2e@${pg.getHost()}:${String(
+      pg.getMappedPort(5432),
     )}/backend_api_e2e`;
 
     client = new Client({ connectionString: databaseUrl });
     await client.connect();
     await runMigrations(client);
 
-    api = new ApiProcess(await getFreePort(), databaseUrl);
+    api = new ApiProcess(
+      await getFreePort(),
+      databaseUrl,
+      redis.getHost(),
+      redis.getMappedPort(6379),
+    );
     await api.start();
   }, TEST_TIMEOUT);
 
   afterAll(async () => {
     await api.stop();
     await client.end();
-    await container.stop();
+    await Promise.all([pgContainer.stop(), redisContainer.stop()]);
   });
 
   afterEach(async () => {
@@ -495,6 +526,60 @@ async function runMigrations(client: Client): Promise<void> {
     create index if not exists "idx_iam_refresh_session_user_status" on "iam_refresh_session" ("user_id", "status");
     create index if not exists "idx_iam_refresh_session_token_hash" on "iam_refresh_session" ("token_hash");
     create index if not exists "idx_iam_refresh_session_rotated_hashes" on "iam_refresh_session" using gin ("rotated_token_hashes");
+
+    CREATE TABLE IF NOT EXISTS ntf_notification_template (
+      code TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      body_by_channel JSONB NOT NULL DEFAULT '{}',
+      default_channels JSONB NOT NULL DEFAULT '[]',
+      is_critical BOOLEAN NOT NULL DEFAULT FALSE,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS ntf_notification (
+      id UUID PRIMARY KEY,
+      recipient_kind TEXT NOT NULL,
+      recipient_user_id UUID,
+      recipient_phone TEXT,
+      recipient_email TEXT,
+      recipient_chat_id TEXT,
+      template_code TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      payload JSONB NOT NULL DEFAULT '{}',
+      status TEXT NOT NULL DEFAULT 'PENDING',
+      attempts JSONB NOT NULL DEFAULT '[]',
+      scheduled_for TIMESTAMPTZ,
+      dedup_scope_key TEXT,
+      dedup_template_code TEXT,
+      dedup_window_ends_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      sent_at TIMESTAMPTZ,
+      failed_at TIMESTAMPTZ,
+      expires_at TIMESTAMPTZ NOT NULL,
+      last_error TEXT
+    );
+    CREATE TABLE IF NOT EXISTS ntf_user_notification_preferences (
+      user_id UUID PRIMARY KEY,
+      channels_by_template JSONB NOT NULL DEFAULT '{}',
+      quiet_hours JSONB,
+      unsubscribed_channels JSONB NOT NULL DEFAULT '[]',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS ntf_push_subscription (
+      id UUID PRIMARY KEY,
+      user_id UUID NOT NULL,
+      endpoint TEXT NOT NULL UNIQUE,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      user_agent TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expired_at TIMESTAMPTZ
+    );
+    CREATE TABLE IF NOT EXISTS ntf_notification_dedup_key (
+      scope_key TEXT PRIMARY KEY,
+      template_code TEXT NOT NULL,
+      last_issued_at TIMESTAMPTZ NOT NULL,
+      window_ends_at TIMESTAMPTZ NOT NULL
+    );
   `);
 }
 

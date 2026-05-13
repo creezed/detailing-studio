@@ -2,6 +2,7 @@ import { join } from 'node:path';
 
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
@@ -27,6 +28,7 @@ import { authConfig } from '../config/auth.config';
 import { databaseConfig } from '../config/database.config';
 import { emailConfig } from '../config/email.config';
 import { minioConfig } from '../config/minio.config';
+import { redisConfig } from '../config/redis.config';
 import { smsConfig } from '../config/sms.config';
 import { DomainExceptionFilter } from '../filters/domain-exception.filter';
 import { HealthController } from '../health/health.controller';
@@ -38,7 +40,7 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
     ConfigModule.forRoot({
       envFilePath: '.env',
       isGlobal: true,
-      load: [databaseConfig, authConfig, minioConfig, smsConfig, emailConfig],
+      load: [databaseConfig, authConfig, minioConfig, smsConfig, emailConfig, redisConfig],
     }),
     MikroOrmModule.forRootAsync({
       driver: PostgreSqlDriver,
@@ -52,6 +54,15 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
         },
         driver: PostgreSqlDriver,
         registerRequestContext: true,
+      }),
+    }),
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService) => ({
+        connection: {
+          host: cfg.getOrThrow<string>('redis.host'),
+          port: cfg.getOrThrow<number>('redis.port'),
+        },
       }),
     }),
     I18nModule.forRoot({

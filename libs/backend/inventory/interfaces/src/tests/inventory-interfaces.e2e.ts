@@ -5,6 +5,7 @@ import { type ArgumentsHost, Catch, type ExceptionFilter, ValidationPipe } from 
 import { ConfigModule } from '@nestjs/config';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import * as bcrypt from 'bcryptjs';
 import { Client } from 'pg';
 import request from 'supertest';
@@ -72,6 +73,7 @@ describe('Inventory Interfaces e2e', () => {
           isGlobal: true,
           load: [
             () => ({
+              NODE_ENV: 'test',
               auth: { jwtAccessTtl: '15m', jwtSecret: JWT_SECRET },
               database: { url: dbUrl },
             }),
@@ -89,7 +91,10 @@ describe('Inventory Interfaces e2e', () => {
         InventoryInfrastructureModule,
         InventoryInterfacesModule,
       ],
-    }).compile();
+    })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     app.setGlobalPrefix('api');
