@@ -1,3 +1,4 @@
+export * from './notifications-application.module';
 export * from './commands/delete-push-subscription/delete-push-subscription.command';
 export * from './commands/delete-push-subscription/delete-push-subscription.handler';
 export * from './commands/global-unsubscribe/global-unsubscribe.command';
