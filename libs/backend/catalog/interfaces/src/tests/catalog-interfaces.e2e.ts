@@ -14,6 +14,7 @@ import {
 import { ConfigModule } from '@nestjs/config';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import * as bcrypt from 'bcryptjs';
 import { Client } from 'pg';
 import { from, lastValueFrom, type Observable } from 'rxjs';
@@ -124,6 +125,7 @@ describe('Catalog Interfaces e2e', () => {
           isGlobal: true,
           load: [
             () => ({
+              NODE_ENV: 'test',
               auth: {
                 jwtAccessTtl: '15m',
                 jwtSecret: JWT_SECRET,
@@ -144,7 +146,10 @@ describe('Catalog Interfaces e2e', () => {
         CatalogInfrastructureModule,
         CatalogInterfacesModule,
       ],
-    }).compile();
+    })
+      .overrideProvider(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     app.setGlobalPrefix('api');

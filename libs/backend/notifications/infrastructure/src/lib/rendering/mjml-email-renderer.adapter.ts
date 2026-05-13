@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { convert } from 'html-to-text';
 import mjml from 'mjml';
 
-import type { HandlebarsTemplateRenderer } from './handlebars-template-renderer.adapter';
+import { HandlebarsTemplateRenderer } from './handlebars-template-renderer.adapter';
 
 export interface EmailRenderResult {
   readonly html: string;
