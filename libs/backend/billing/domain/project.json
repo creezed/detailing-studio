@@ -1,0 +1,35 @@
+{
+  "name": "backend-billing-domain",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/billing/domain/src",
+  "projectType": "library",
+  "tags": [
+    "scope:billing",
+    "type:domain",
+    "platform:node"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/billing/domain/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/billing/domain/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/billing/domain/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}

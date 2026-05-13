@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../../../dist/out-tsc/libs/backend/billing/infrastructure",
+    "declaration": true,
+    "composite": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["jest.config.ts", "**/*.e2e.ts", "**/*.spec.ts", "**/*.test.ts"],
+  "references": [
+    {
+      "path": "../domain/tsconfig.lib.json"
+    },
+    {
+      "path": "../application/tsconfig.lib.json"
+    },
+    {
+      "path": "../../shared/ddd/tsconfig.lib.json"
+    },
+    {
+      "path": "../../../shared/types/tsconfig.lib.json"
+    }
+  ]
+}

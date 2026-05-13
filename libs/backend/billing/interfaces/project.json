@@ -1,0 +1,35 @@
+{
+  "name": "backend-billing-interfaces",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/billing/interfaces/src",
+  "projectType": "library",
+  "tags": [
+    "scope:billing",
+    "type:interfaces",
+    "platform:node"
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/backend/billing/interfaces/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/backend/billing/interfaces/**/*.ts"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b libs/backend/billing/interfaces/tsconfig.json --pretty false",
+        "cwd": "."
+      }
+    }
+  }
+}
