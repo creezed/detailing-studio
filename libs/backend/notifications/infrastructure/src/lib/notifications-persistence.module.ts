@@ -2,13 +2,17 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
 
 import {
+  NOTIFICATION_READ_PORT,
   NOTIFICATION_REPOSITORY,
   NOTIFICATION_TEMPLATE_REPOSITORY,
+  PREFERENCES_READ_PORT,
   PUSH_SUBSCRIPTION_REPOSITORY,
   REMINDER_SCHEDULER,
   USER_NOTIFICATION_PREFERENCES_REPOSITORY,
 } from '@det/backend-notifications-application';
 
+import { NotificationReadPortAdapter } from './persistence/read-ports/notification-read-port.adapter';
+import { PreferencesReadPortAdapter } from './persistence/read-ports/preferences-read-port.adapter';
 import { NotificationTemplateRepositoryImpl } from './persistence/repositories/notification-template.repository.impl';
 import { NotificationRepositoryImpl } from './persistence/repositories/notification.repository.impl';
 import { PushSubscriptionRepositoryImpl } from './persistence/repositories/push-subscription.repository.impl';
@@ -55,6 +59,13 @@ const REPOSITORY_PROVIDERS: Provider[] = [
   },
 ];
 
+const READ_PORT_PROVIDERS: Provider[] = [
+  NotificationReadPortAdapter,
+  PreferencesReadPortAdapter,
+  { provide: NOTIFICATION_READ_PORT, useExisting: NotificationReadPortAdapter },
+  { provide: PREFERENCES_READ_PORT, useExisting: PreferencesReadPortAdapter },
+];
+
 const QUEUE_PROVIDERS: Provider[] = [
   NotificationIssuedOutboxRelay,
   ReminderSchedulerAdapter,
@@ -74,10 +85,12 @@ export class NotificationsPersistenceModule {
         USER_NOTIFICATION_PREFERENCES_REPOSITORY,
         PUSH_SUBSCRIPTION_REPOSITORY,
         REMINDER_SCHEDULER,
+        NOTIFICATION_READ_PORT,
+        PREFERENCES_READ_PORT,
       ],
       imports: [MikroOrmModule.forFeature(NOTIFICATION_SCHEMAS), NotificationsQueueModule],
       module: NotificationsPersistenceModule,
-      providers: [...REPOSITORY_PROVIDERS, ...QUEUE_PROVIDERS],
+      providers: [...REPOSITORY_PROVIDERS, ...READ_PORT_PROVIDERS, ...QUEUE_PROVIDERS],
     };
   }
 }
