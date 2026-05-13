@@ -32,6 +32,14 @@ describe('AbilityFactory', () => {
       expect(ability.can('manage', 'Adjustment')).toBe(true);
     });
 
+    it('can read/retry Notification and read NotificationTemplate', () => {
+      const ability = factory.createForUser(user(Role.OWNER));
+
+      expect(ability.can('read', 'Notification')).toBe(true);
+      expect(ability.can('retry', 'Notification')).toBe(true);
+      expect(ability.can('read', 'NotificationTemplate')).toBe(true);
+    });
+
     it('can manage all Inventory subjects', () => {
       const ability = factory.createForUser(user(Role.OWNER));
 
@@ -166,6 +174,16 @@ describe('AbilityFactory', () => {
       expect(ability.can('read', appSubject('StockMovement', { branchId: BRANCH_ID }))).toBe(true);
       expect(ability.can('read', appSubject('Stock', { branchId: OTHER_BRANCH_ID }))).toBe(false);
     });
+
+    it('can read Notification in own branch only, cannot retry', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('read', appSubject('Notification', { branchId: BRANCH_ID }))).toBe(true);
+      expect(ability.can('read', appSubject('Notification', { branchId: OTHER_BRANCH_ID }))).toBe(
+        false,
+      );
+      expect(ability.can('retry', 'Notification')).toBe(false);
+    });
   });
 
   describe('MASTER', () => {
@@ -231,6 +249,13 @@ describe('AbilityFactory', () => {
       expect(ability.can('create', 'Transfer')).toBe(false);
       expect(ability.can('create', 'StockTaking')).toBe(false);
     });
+
+    it('cannot read/retry Notification via admin', () => {
+      const ability = factory.createForUser(user(Role.MASTER));
+
+      expect(ability.can('read', 'Notification')).toBe(false);
+      expect(ability.can('retry', 'Notification')).toBe(false);
+    });
   });
 
   describe('CLIENT', () => {
@@ -283,6 +308,13 @@ describe('AbilityFactory', () => {
       expect(ability.can('create', 'Transfer')).toBe(false);
       expect(ability.can('create', 'StockTaking')).toBe(false);
       expect(ability.can('read', 'StockMovement')).toBe(false);
+    });
+
+    it('cannot read/retry Notification via admin', () => {
+      const ability = factory.createForUser(user(Role.CLIENT));
+
+      expect(ability.can('read', 'Notification')).toBe(false);
+      expect(ability.can('retry', 'Notification')).toBe(false);
     });
   });
 });
