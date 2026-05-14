@@ -1,7 +1,19 @@
-// TODO: standalone BullMQ repeatable jobs runner — реализация в B.4
+import { Logger } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+
+import { SchedulerModule } from './scheduler.module';
+
 async function bootstrap(): Promise<void> {
-  // Placeholder: NestJS standalone application with BullMQ workers
-  // will be implemented in PR B.4
+  const app = await NestFactory.createApplicationContext(SchedulerModule);
+  const logger = new Logger('Scheduler');
+
+  app.enableShutdownHooks();
+  logger.log('Billing scheduler started');
 }
 
-void bootstrap();
+void bootstrap().catch((e: unknown) => {
+  const logger = new Logger('Scheduler');
+
+  logger.error(e, 'Scheduler bootstrap failed');
+  process.exit(1);
+});

@@ -114,6 +114,28 @@ services:
   #   env_file: .env
   #   restart: unless-stopped
 
+  # scheduler: standalone BullMQ + cron runner for billing (monthly invoices, retention).
+  # For local dev use `pnpm nx serve scheduler`.
+  # In production, build via `pnpm nx build scheduler` and run dist/main.js.
+  # scheduler:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/scheduler/Dockerfile
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   environment:
+  #     DATABASE_URL: postgres://${POSTGRES_USER:-detailing}:${POSTGRES_PASSWORD:-placeholder}@postgres:5432/${DEFAULT_DB:-detailing}
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     REDIS_PASSWORD: ${REDIS_PASSWORD:-placeholder}
+  #     DEFAULT_TENANT_ID: ${DEFAULT_TENANT_ID:-00000000-0000-4000-a000-000000000001}
+  #     SCHEDULER_HEALTH_PORT: ${SCHEDULER_HEALTH_PORT:-3201}
+  #   env_file: .env
+  #   restart: unless-stopped
+
 volumes:
   postgres-data:
   redis-data:

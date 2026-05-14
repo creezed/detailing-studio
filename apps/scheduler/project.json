@@ -9,14 +9,21 @@
     "platform:node"
   ],
   "targets": {
-    "build": {
-      "executor": "@nx/webpack:webpack",
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
       "options": {
-        "target": "node",
-        "compiler": "tsc",
-        "outputPath": "dist/apps/scheduler",
-        "main": "apps/scheduler/src/main.ts",
-        "tsConfig": "apps/scheduler/tsconfig.app.json"
+        "buildTarget": "scheduler:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "scheduler:build:development"
+        },
+        "production": {
+          "buildTarget": "scheduler:build:production"
+        }
       }
     },
     "lint": {
@@ -25,6 +32,20 @@
         "lintFilePatterns": [
           "apps/scheduler/**/*.ts"
         ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/apps/scheduler"],
+      "options": {
+        "jestConfig": "apps/scheduler/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -b apps/scheduler/tsconfig.json --pretty false"
       }
     }
   }
