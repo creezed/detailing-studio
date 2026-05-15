@@ -32,6 +32,36 @@ export class DateTime extends ValueObject {
     return new Date(this.value.getTime());
   }
 
+  plusDays(days: number): DateTime {
+    const d = new Date(this.value.getTime());
+    d.setUTCDate(d.getUTCDate() + days);
+
+    return DateTime.from(d);
+  }
+
+  plusMonths(months: number): DateTime {
+    const d = new Date(this.value.getTime());
+    const originalDay = d.getUTCDate();
+    d.setUTCMonth(d.getUTCMonth() + months);
+    if (d.getUTCDate() !== originalDay) {
+      d.setUTCDate(0);
+    }
+
+    return DateTime.from(d);
+  }
+
+  isBefore(other: DateTime): boolean {
+    return this.value.getTime() < other.value.getTime();
+  }
+
+  isAfter(other: DateTime): boolean {
+    return this.value.getTime() > other.value.getTime();
+  }
+
+  getTime(): number {
+    return this.value.getTime();
+  }
+
   override equals(other: this): boolean {
     return this.value.getTime() === other.value.getTime();
   }
