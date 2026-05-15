@@ -120,7 +120,7 @@ services:
   # scheduler:
   #   build:
   #     context: .
-  #     dockerfile: apps/scheduler/Dockerfile
+  #     dockerfile: apps/backend/scheduler/Dockerfile
   #   depends_on:
   #     postgres:
   #       condition: service_healthy
