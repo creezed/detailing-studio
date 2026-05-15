@@ -52,6 +52,16 @@ describe('AbilityFactory', () => {
       expect(ability.can('manage', 'StockTaking')).toBe(true);
       expect(ability.can('manage', 'StockMovement')).toBe(true);
     });
+
+    it('can read/update/cancel/pay Subscription and read Invoice', () => {
+      const ability = factory.createForUser(user(Role.OWNER));
+
+      expect(ability.can('read', 'Subscription')).toBe(true);
+      expect(ability.can('update', 'Subscription')).toBe(true);
+      expect(ability.can('cancel', 'Subscription')).toBe(true);
+      expect(ability.can('pay', 'Subscription')).toBe(true);
+      expect(ability.can('read', 'Invoice')).toBe(true);
+    });
   });
 
   describe('MANAGER', () => {
@@ -184,6 +194,21 @@ describe('AbilityFactory', () => {
       );
       expect(ability.can('retry', 'Notification')).toBe(false);
     });
+
+    it('can read Subscription but cannot update/cancel/pay', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('read', 'Subscription')).toBe(true);
+      expect(ability.can('update', 'Subscription')).toBe(false);
+      expect(ability.can('cancel', 'Subscription')).toBe(false);
+      expect(ability.can('pay', 'Subscription')).toBe(false);
+    });
+
+    it('cannot read Invoice', () => {
+      const ability = factory.createForUser(user(Role.MANAGER));
+
+      expect(ability.can('read', 'Invoice')).toBe(false);
+    });
   });
 
   describe('MASTER', () => {
@@ -256,6 +281,16 @@ describe('AbilityFactory', () => {
       expect(ability.can('read', 'Notification')).toBe(false);
       expect(ability.can('retry', 'Notification')).toBe(false);
     });
+
+    it('has no billing access', () => {
+      const ability = factory.createForUser(user(Role.MASTER));
+
+      expect(ability.can('read', 'Subscription')).toBe(false);
+      expect(ability.can('update', 'Subscription')).toBe(false);
+      expect(ability.can('cancel', 'Subscription')).toBe(false);
+      expect(ability.can('pay', 'Subscription')).toBe(false);
+      expect(ability.can('read', 'Invoice')).toBe(false);
+    });
   });
 
   describe('CLIENT', () => {
@@ -315,6 +350,16 @@ describe('AbilityFactory', () => {
 
       expect(ability.can('read', 'Notification')).toBe(false);
       expect(ability.can('retry', 'Notification')).toBe(false);
+    });
+
+    it('has no billing access', () => {
+      const ability = factory.createForUser(user(Role.CLIENT));
+
+      expect(ability.can('read', 'Subscription')).toBe(false);
+      expect(ability.can('update', 'Subscription')).toBe(false);
+      expect(ability.can('cancel', 'Subscription')).toBe(false);
+      expect(ability.can('pay', 'Subscription')).toBe(false);
+      expect(ability.can('read', 'Invoice')).toBe(false);
     });
   });
 });

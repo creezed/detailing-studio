@@ -18,7 +18,8 @@ export type AppAction =
   | 'reject'
   | 'anonymize'
   | 'export-data'
-  | 'retry';
+  | 'retry'
+  | 'pay';
 
 export type AppSubjectName =
   | 'User'
@@ -46,6 +47,8 @@ export type AppSubjectName =
   | 'MasterSchedule'
   | 'Notification'
   | 'NotificationTemplate'
+  | 'Subscription'
+  | 'Invoice'
   | 'all';
 
 type AppResourceSubjectName = Exclude<AppSubjectName, 'all'>;
@@ -154,6 +157,7 @@ export class AbilityFactory {
 
     if (user.role === Role.MANAGER) {
       can('read', 'Notification', { branchId: { $in: branchIds } });
+      can('read', 'Subscription');
     }
 
     return build();
