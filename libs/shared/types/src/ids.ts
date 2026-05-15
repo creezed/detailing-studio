@@ -219,3 +219,24 @@ export const NotificationId = {
     return fromUuid<'NotificationId'>(value);
   },
 };
+
+export type SubscriptionId = Brand<string, 'SubscriptionId'>;
+export const SubscriptionId = {
+  from(value: string): SubscriptionId {
+    return fromUuid<'SubscriptionId'>(value);
+  },
+};
+
+export type InvoiceId = Brand<string, 'InvoiceId'>;
+export const InvoiceId = {
+  from(value: string): InvoiceId {
+    return fromUuid<'InvoiceId'>(value);
+  },
+};
+
+export type TenantId = Brand<string, 'TenantId'>;
+export const TenantId = {
+  from(value: string): TenantId {
+    return fromUuid<'TenantId'>(value);
+  },
+};

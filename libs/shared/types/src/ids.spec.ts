@@ -7,6 +7,7 @@ import {
   BranchId,
   CancellationRequestId,
   ClientId,
+  InvoiceId,
   InvitationId,
   InvalidUuidError,
   MasterId,
@@ -20,7 +21,9 @@ import {
   SessionId,
   SkuId,
   StockTakingId,
+  SubscriptionId,
   SupplierId,
+  TenantId,
   TransferId,
   UnavailabilityId,
   UserId,
@@ -58,6 +61,9 @@ describe('branded ID factories', () => {
     expect(VehicleId.from(UUID)).toBe(UUID);
     expect(AppointmentServiceId.from(UUID)).toBe(UUID);
     expect(CancellationRequestId.from(UUID)).toBe(UUID);
+    expect(SubscriptionId.from(UUID)).toBe(UUID);
+    expect(InvoiceId.from(UUID)).toBe(UUID);
+    expect(TenantId.from(UUID)).toBe(UUID);
   });
 
   it('throws when value is not a UUID', () => {

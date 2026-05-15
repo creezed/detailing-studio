@@ -306,6 +306,54 @@ importers:
         specifier: workspace:*
         version: link:../../../libs/backend/shared/outbox
 
+  libs/backend/billing/application:
+    dependencies:
+      '@det/backend-billing-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/billing/domain:
+    dependencies:
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/billing/infrastructure:
+    dependencies:
+      '@det/backend-billing-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/backend-billing-domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
+  libs/backend/billing/interfaces:
+    dependencies:
+      '@det/backend-billing-application':
+        specifier: workspace:*
+        version: link:../application
+      '@det/backend-shared-ddd':
+        specifier: workspace:*
+        version: link:../../shared/ddd
+      '@det/shared-types':
+        specifier: workspace:*
+        version: link:../../../shared/types
+
   libs/backend/catalog/application:
     dependencies:
       '@det/backend-catalog-domain':
