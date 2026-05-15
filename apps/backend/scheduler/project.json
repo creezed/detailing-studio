@@ -1,7 +1,7 @@
 {
   "name": "scheduler",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/scheduler/src",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/backend/scheduler/src",
   "projectType": "application",
   "tags": [
     "scope:platform",
@@ -30,22 +30,22 @@
       "executor": "@nx/eslint:lint",
       "options": {
         "lintFilePatterns": [
-          "apps/scheduler/**/*.ts"
+          "apps/backend/scheduler/**/*.ts"
         ]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/apps/scheduler"],
+      "outputs": ["{workspaceRoot}/coverage/apps/backend/scheduler"],
       "options": {
-        "jestConfig": "apps/scheduler/jest.config.ts",
+        "jestConfig": "apps/backend/scheduler/jest.config.ts",
         "passWithNoTests": true
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -b apps/scheduler/tsconfig.json --pretty false"
+        "command": "tsc -b apps/backend/scheduler/tsconfig.json --pretty false"
       }
     }
   }
