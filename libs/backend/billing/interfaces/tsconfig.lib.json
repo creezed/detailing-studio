@@ -14,6 +14,9 @@
       "path": "../application/tsconfig.lib.json"
     },
     {
+      "path": "../../shared/auth/tsconfig.lib.json"
+    },
+    {
       "path": "../../shared/ddd/tsconfig.lib.json"
     },
     {

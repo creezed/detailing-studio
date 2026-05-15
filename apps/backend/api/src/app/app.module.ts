@@ -8,6 +8,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AcceptLanguageResolver, I18nModule } from 'nestjs-i18n';
 
+import { BillingInfrastructureModule } from '@det/backend-billing-infrastructure';
+import { BillingHttpModule } from '@det/backend-billing-interfaces';
 import { CatalogInfrastructureModule } from '@det/backend-catalog-infrastructure';
 import { CatalogInterfacesModule } from '@det/backend-catalog-interfaces';
 import { CrmInfrastructureModule } from '@det/backend-crm-infrastructure';
@@ -21,6 +23,7 @@ import { NotificationsHttpModule } from '@det/backend-notifications-interfaces';
 import { SchedulingInterfacesModule } from '@det/backend-scheduling-interfaces';
 import { WorkOrderInterfacesModule } from '@det/backend-work-order-interfaces';
 
+import { BillingBootstrapService } from './billing-bootstrap.service';
 import { ApiNotificationsModule } from './notifications.module';
 import { ApiSchedulingModule } from './scheduling.module';
 import { ApiWorkOrderModule } from './work-order.module';
@@ -77,6 +80,8 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
       },
       resolvers: [new AcceptLanguageResolver()],
     }),
+    BillingInfrastructureModule,
+    BillingHttpModule,
     CatalogInfrastructureModule,
     CatalogInterfacesModule,
     CrmInfrastructureModule,
@@ -95,6 +100,7 @@ import { TransactionalInterceptor } from '../interceptors/transactional.intercep
   ],
   controllers: [HealthController],
   providers: [
+    BillingBootstrapService,
     { provide: APP_FILTER, useClass: DomainExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: TransactionalInterceptor },
   ],

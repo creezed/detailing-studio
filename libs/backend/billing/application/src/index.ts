@@ -44,4 +44,7 @@ export type { ILimitsUsagePort } from './ports/limits-usage.port';
 export type { ITenantContextPort } from './ports/tenant-context.port';
 export type { IBillingConfigPort } from './ports/billing-config.port';
 
+export { PlanCode } from '@det/backend-billing-domain';
+export type { PaymentRef } from '@det/backend-billing-domain';
+
 export type { SubscriptionId, InvoiceId, TenantId } from '@det/shared-types';
